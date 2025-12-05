@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
         const rotationsJson = formData.get("rotations") as string;
 
         if (!files || files.length === 0) {
-            return NextResponse.json({ error: "No files provided" }, { status: 400 });
+            return NextResponse.json({ error: "No se recibieron archivos" }, { status: 400 });
         }
 
         let rotations: number[] = [];
@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
             rotations = JSON.parse(rotationsJson || "[]");
         } catch (e) {
             console.warn("Failed to parse rotations", e);
-            // Fallback: 0 for all
             rotations = new Array(files.length).fill(0);
         }
 
@@ -28,18 +27,23 @@ export async function POST(req: NextRequest) {
             const rotation = rotations[i] || 0;
 
             const fileBuffer = await file.arrayBuffer();
-            const pdf = await PDFDocument.load(fileBuffer);
 
-            const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+            try {
+                const pdf = await PDFDocument.load(fileBuffer, { ignoreEncryption: true });
+                const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
 
-            copiedPages.forEach((page) => {
-                // Apply rotation. existing rotation + new rotation
-                // pdf-lib rotation is clockwise.
-                // If the page already has a rotation, we add to it.
-                const existingRotation = page.getRotation().angle;
-                page.setRotation(degrees((existingRotation + rotation) % 360));
-                mergedPdf.addPage(page);
-            });
+                copiedPages.forEach((page) => {
+                    const existingRotation = page.getRotation().angle;
+                    page.setRotation(degrees((existingRotation + rotation) % 360));
+                    mergedPdf.addPage(page);
+                });
+            } catch (error) {
+                console.error(`Error loading PDF file ${i}:`, error);
+                return NextResponse.json(
+                    { error: `El archivo "${file.name}" no es un PDF válido o está corrupto.` },
+                    { status: 400 }
+                );
+            }
         }
 
         const pdfBytes = await mergedPdf.save();

@@ -24,6 +24,9 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
 // import { v4 as uuidv4 } from "uuid"; // Unused
 // I'll use simple random string generator to avoid extra deps if possible, or just install uuid.
 // Let's use crypto.randomUUID() if available (modern browsers) or simple fallback.
@@ -33,18 +36,26 @@ export default function MergePdfPage() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [outputName, setOutputName] = useState("merged-document");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [nameError, setNameError] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFiles = (newFiles: File[]) => {
-        const pdfFiles = newFiles.
-            filter(f => f.type === "application/pdf")
-            .map(f => ({
-                id: crypto.randomUUID(),
-                file: f,
-                name: f.name,
-                rotation: 0
-            }));
-        setFiles(prev => [...prev, ...pdfFiles]);
+        const pdfFiles = newFiles.filter(f => f.type === "application/pdf");
+
+        if (pdfFiles.length < newFiles.length) {
+            toast.error("Algunos archivos no eran PDF y fueron ignorados.");
+        }
+
+        if (pdfFiles.length === 0) return;
+
+        const mappedFiles = pdfFiles.map(f => ({
+            id: crypto.randomUUID(),
+            file: f,
+            name: f.name,
+            rotation: 0
+        }));
+
+        setFiles(prev => [...prev, ...mappedFiles]);
         // Reset input
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
@@ -90,7 +101,18 @@ export default function MergePdfPage() {
     };
 
     const handleSubmit = async () => {
-        if (files.length === 0) return;
+        if (files.length < 2) {
+            toast.error("Por favor sube al menos 2 archivos para unir.");
+            return;
+        }
+
+        if (!outputName.trim()) {
+            setNameError(true);
+            toast.error("El nombre del archivo es obligatorio.");
+            return;
+        }
+
+        setNameError(false);
         setIsProcessing(true);
 
         try {
@@ -110,7 +132,10 @@ export default function MergePdfPage() {
                 body: formData,
             });
 
-            if (!response.ok) throw new Error("Merge failed");
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || "Merge failed");
+            }
 
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
@@ -123,10 +148,13 @@ export default function MergePdfPage() {
             document.body.removeChild(a);
 
             setIsDialogOpen(false);
+            toast.success("¡PDF unido correctamente!");
 
         } catch (error) {
             console.error(error);
-            alert("Error merging PDFs");
+            // Check if error is Error object
+            const msg = error instanceof Error ? error.message : "Error al unir los PDFs";
+            toast.error(msg);
         } finally {
             setIsProcessing(false);
         }
@@ -247,8 +275,11 @@ export default function MergePdfPage() {
                                     <Input
                                         id="name"
                                         value={outputName}
-                                        onChange={(e) => setOutputName(e.target.value)}
-                                        className="col-span-3"
+                                        onChange={(e) => {
+                                            setOutputName(e.target.value);
+                                            if (e.target.value.trim()) setNameError(false);
+                                        }}
+                                        className={cn("col-span-3", nameError && "border-red-500 focus-visible:ring-red-500")}
                                         placeholder="merged-document"
                                         suppressHydrationWarning
                                     />
