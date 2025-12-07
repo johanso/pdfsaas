@@ -1,7 +1,13 @@
 import { PdfFile } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { RotateCw, X, GripVertical, FileCode } from "lucide-react";
+import dynamic from "next/dynamic";
+import { RotateCw, X, GripVertical } from "lucide-react";
+
+const PdfThumbnail = dynamic(() => import("./pdf-thumbnail").then((mod) => mod.PdfThumbnail), {
+    ssr: false,
+    loading: () => <div className="w-full h-full bg-zinc-100 dark:bg-zinc-800 animate-pulse" />,
+});
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
@@ -50,13 +56,12 @@ export function PdfCard({ file, onRotate, onRemove }: PdfCardProps) {
                     </div>
 
                     {/* Preview Area */}
-                    <div className="flex-1 relative flex items-center justify-center bg-zinc-100/50 dark:bg-zinc-900/50 overflow-hidden p-4">
+                    <div className="flex-1 relative flex items-center justify-center bg-zinc-100/50 dark:bg-zinc-900/50 overflow-hidden p-2">
                         <div
-                            className="relative transition-transform duration-300 ease-in-out origin-center flex flex-col items-center gap-2"
+                            className="relative transition-transform duration-300 ease-in-out origin-center flex flex-col items-center justify-center w-full h-full"
                             style={{ transform: `rotate(${file.rotation}deg)` }}
                         >
-                            <FileCode className="w-12 h-12 text-zinc-400" />
-                            {/* Visual representation of pages could go here later */}
+                            <PdfThumbnail file={file.file} className="w-full h-full object-contain pointer-events-none" />
                         </div>
 
                         {/* Rotation Badge */}
