@@ -11,9 +11,10 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 interface PdfThumbnailProps {
     file: File;
     className?: string;
+    pageNumber?: number;
 }
 
-export const PdfThumbnail = memo(function PdfThumbnail({ file, className }: PdfThumbnailProps) {
+export const PdfThumbnail = memo(function PdfThumbnail({ file, className, pageNumber = 1 }: PdfThumbnailProps) {
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -32,7 +33,7 @@ export const PdfThumbnail = memo(function PdfThumbnail({ file, className }: PdfT
 
                 loadingTask = pdfjs.getDocument(objectUrl);
                 const pdf = await loadingTask.promise;
-                const page = await pdf.getPage(1);
+                const page = await pdf.getPage(pageNumber);
 
                 const viewport = page.getViewport({ scale: 1.0 });
                 // Calculate scale to fit a reasonable thumbnail size (e.g. width 300px)
@@ -83,7 +84,7 @@ export const PdfThumbnail = memo(function PdfThumbnail({ file, className }: PdfT
                 loadingTask.destroy().catch(() => { });
             }
         };
-    }, [file]);
+    }, [file, pageNumber]);
 
     return (
         <div className={cn("relative w-full h-full flex items-center justify-center overflow-hidden bg-white dark:bg-zinc-900 select-none", className)}>
