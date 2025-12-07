@@ -23,6 +23,7 @@ interface SaveDialogProps {
     isProcessing: boolean;
     title?: string;
     description?: string;
+    extension?: string;
 }
 
 export function SaveDialog({
@@ -32,7 +33,8 @@ export function SaveDialog({
     onSave,
     isProcessing,
     title = "Guardar archivo",
-    description = "Asigna un nombre a tu archivo PDF antes de descargarlo."
+    description = "Asigna un nombre a tu archivo PDF antes de descargarlo.",
+    extension = "pdf"
 }: SaveDialogProps) {
     const [name, setName] = useState(defaultName);
     const [error, setError] = useState(false);
@@ -69,7 +71,7 @@ export function SaveDialog({
                                 className={cn("col-span-3", error && "border-red-500 focus-visible:ring-red-500")}
                                 placeholder="nombre-archivo"
                             />
-                            <span className="text-sm text-zinc-500">.pdf</span>
+                            <span className="text-sm text-zinc-500">.{extension}</span>
                         </div>
                     </div>
                 </div>

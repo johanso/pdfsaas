@@ -26,7 +26,7 @@ const toolsMenu = [
         items: [
             { name: "Unir PDF", href: "/unir-pdf", image: merge },
             { name: "Eliminar", href: "/eliminar-paginas-pdf", image: merge },
-            { name: "Dividir PDF", href: "/dividir-pdf", disabled: true, image: merge },
+            { name: "Dividir PDF", href: "/dividir-pdf", image: merge },
         ],
     },
     {
