@@ -47,28 +47,28 @@ export function PdfToolbar({
                 {children}
 
                 {showAddButton && onAdd && (
-                    <Button variant="outline" onClick={onAdd} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                    <Button variant="outline" onClick={onAdd} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer">
                         <Plus className="w-4 h-4 mr-2" />
                         Añadir
                     </Button>
                 )}
 
                 {onRotateAll && (
-                    <Button variant="outline" onClick={onRotateAll} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                    <Button variant="outline" onClick={onRotateAll} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer">
                         <RotateCw className="w-4 h-4 mr-2" />
                         Rotar todo
                     </Button>
                 )}
 
                 {onSort && (
-                    <Button variant="outline" onClick={onSort} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
+                    <Button variant="outline" onClick={onSort} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer">
                         <ArrowUpDown className="w-4 h-4 mr-2" />
                         Ordenar
                     </Button>
                 )}
 
                 {onReset && (
-                    <Button variant="destructive" onClick={onReset} className="ml-auto md:ml-0">
+                    <Button variant="destructive" onClick={onReset} className="ml-auto md:ml-0 cursor-pointer">
                         <Trash2 className="w-4 h-4 mr-2" />
                         Limpiar
                     </Button>

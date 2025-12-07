@@ -77,11 +77,11 @@ export function PdfCard({ file, onRotate, onRemove }: PdfCardProps) {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10"
+                            className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
                             onClick={() => onRotate(file.id)}
                             title="Rotate 90°"
                         >
-                            <RotateCw className="w-3.5 h-3.5" />
+                            <RotateCw className="w-3.5 h-3.5 cursor-pointer" />
                         </Button>
 
                         <div className="text-[10px] text-zinc-400 font-mono">
@@ -91,7 +91,7 @@ export function PdfCard({ file, onRotate, onRemove }: PdfCardProps) {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-zinc-500 hover:text-destructive hover:bg-destructive/10"
+                            className="h-7 w-7 text-zinc-500 hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                             onClick={() => onRemove(file.id)}
                             title="Remove file"
                         >

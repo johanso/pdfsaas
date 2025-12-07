@@ -104,7 +104,7 @@ export function PdfPageCard({ page, isSelected, onToggle, onRotate }: PdfPageCar
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10"
+                            className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onRotate(page.id);
@@ -118,7 +118,7 @@ export function PdfPageCard({ page, isSelected, onToggle, onRotate }: PdfPageCar
                             checked={isSelected}
                             onCheckedChange={() => onToggle(page.id)}
                             className={cn(
-                                "data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                                "w-5 h-5 border border-neutral-300 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500 cursor-pointer"
                             )}
                         />
                     </div>
