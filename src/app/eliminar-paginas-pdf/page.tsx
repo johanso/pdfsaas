@@ -3,10 +3,13 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FileUp, Loader2, Trash2, X, RotateCw, CheckSquare } from "lucide-react";
+import { FileUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { pdfjs } from "react-pdf";
 import { SortablePageGrid } from "@/components/sortable-page-grid";
+import { PdfToolbar } from "@/components/pdf-toolbar";
+import { PdfActionBar } from "@/components/pdf-action-bar";
+import { SaveDialog } from "@/components/save-dialog";
 
 // Types
 interface PageData {
@@ -21,6 +24,11 @@ export default function DeletePagesPage() {
     const [pages, setPages] = useState<PageData[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [rangeInput, setRangeInput] = useState("");
+
+    // Save Dialog State
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFile = async (newFile: File) => {
@@ -31,6 +39,7 @@ export default function DeletePagesPage() {
         setFile(newFile);
         setSelectedIds([]);
         setPages([]);
+        setRangeInput("");
 
         try {
             // Import pdfjs dynamically
@@ -87,39 +96,74 @@ export default function DeletePagesPage() {
         ));
     };
 
+    const handleRotateAll = () => {
+        setPages(prev => prev.map(p => ({ ...p, rotation: (p.rotation + 90) % 360 })));
+    };
+
     const handleReorder = (newPages: PageData[]) => {
         setPages(newPages);
     };
 
-    const handleSelectAll = (checked: boolean) => {
-        if (checked) {
-            setSelectedIds(pages.map(p => p.id));
-        } else {
-            setSelectedIds([]);
+    const handleRangeChange = (input: string) => {
+        setRangeInput(input);
+
+        if (!input.trim()) return;
+
+        const idsToSelect: string[] = [];
+        const parts = input.split(",");
+
+        // Map originalIndex to ID for easier lookup
+        const indexToIdMap = new Map(pages.map(p => [p.originalIndex, p.id]));
+        const numPages = pages.length; // Actually map size
+
+        parts.forEach(part => {
+            const range = part.trim().split("-");
+            if (range.length === 2) {
+                const start = parseInt(range[0]);
+                const end = parseInt(range[1]);
+                if (!isNaN(start) && !isNaN(end)) {
+                    for (let i = Math.min(start, end); i <= Math.max(start, end); i++) {
+                        const id = indexToIdMap.get(i);
+                        if (id) idsToSelect.push(id);
+                    }
+                }
+            } else if (range.length === 1) {
+                const pageNum = parseInt(range[0]);
+                if (!isNaN(pageNum)) {
+                    const id = indexToIdMap.get(pageNum);
+                    if (id) idsToSelect.push(id);
+                }
+            }
+        });
+
+        const uniqueIds = Array.from(new Set(idsToSelect));
+        if (uniqueIds.length > 0) {
+            setSelectedIds(uniqueIds);
         }
     };
 
-    const handleSubmit = async () => {
+    const handleOpenSaveDialog = () => {
         if (!file || pages.length === 0) return;
 
-        // Filter out deleted pages (those in selectedIds)
+        // Check valid state
         const activePages = pages.filter(p => !selectedIds.includes(p.id));
-
         if (activePages.length === 0) {
             toast.error("No puedes eliminar todas las páginas.");
             return;
         }
 
+        setIsDialogOpen(true);
+    };
+
+    const handleSave = async (outputName: string) => {
+        if (!file) return;
+
+        const activePages = pages.filter(p => !selectedIds.includes(p.id));
+
         setIsProcessing(true);
         try {
             const formData = new FormData();
             formData.append("file", file);
-
-            // Prepare instructions: list of { originalIndex, rotation } in the desired ORDER
-            // Note: originalIndex in pages is 1-based, backend likely expects 0-based if we are standardized, 
-            // OR we send 1-based and handle there. Let's send 0-based to be safe and consistent with previous "Delete" logic potentially.
-            // Previous logic was "page indices to delete".
-            // NEW logic is "page instructions to keep".
 
             const pageInstructions = activePages.map(p => ({
                 originalIndex: p.originalIndex - 1, // 0-based
@@ -142,13 +186,14 @@ export default function DeletePagesPage() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `modified-${file.name}`;
+            a.download = `${outputName}.pdf`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
 
             toast.success("¡PDF procesado correctamente!");
+            setIsDialogOpen(false);
 
         } catch (error) {
             console.error(error);
@@ -160,7 +205,7 @@ export default function DeletePagesPage() {
     };
 
     return (
-        <div className="container mx-auto py-10 px-4 max-w-6xl">
+        <div className="container mx-auto py-10 px-4 max-w-6xl pb-32">
             <div className="space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
@@ -194,37 +239,25 @@ export default function DeletePagesPage() {
                     </div>
                 ) : (
                     <div className="space-y-6">
-                        {/* Toolbar */}
-                        <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-                            <div className="flex items-center gap-4 w-full md:w-auto">
-                                <Button variant="ghost" size="icon" onClick={() => setFile(null)}>
-                                    <X className="w-5 h-5" />
-                                </Button>
-                                <div className="font-medium truncate max-w-[200px]" title={file.name}>
-                                    {file.name}
-                                </div>
-                                <div className="text-sm text-zinc-500 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-md">
-                                    {pages.length} páginas
-                                </div>
+                        {/* Shared Toolbar with Range Input */}
+                        <PdfToolbar
+                            title={file.name}
+                            subtitle={`${pages.length} páginas`}
+                            onAdd={() => { }} // Disabled for single file tools or hidden
+                            showAddButton={false}
+                            onRotateAll={handleRotateAll} // Keep rotate all if user wants
+                            onReset={() => setFile(null)}
+                        >
+                            <div className="flex items-center gap-2 mr-4 min-w-[200px]">
+                                <span className="text-xs text-zinc-500 whitespace-nowrap">Eliminar:</span>
+                                <Input
+                                    className="h-8 text-xs bg-white dark:bg-zinc-900"
+                                    placeholder="Ej: 1, 3-5"
+                                    value={rangeInput}
+                                    onChange={(e) => handleRangeChange(e.target.value)}
+                                />
                             </div>
-
-                            <div className="flex items-center gap-2 w-full md:w-auto">
-                                <div className="flex items-center gap-2 mr-4">
-                                    <span className="text-sm text-zinc-500">
-                                        {selectedIds.length} seleccionadas para eliminar
-                                    </span>
-                                </div>
-
-                                <Button
-                                    className="bg-primary hover:bg-primary/90"
-                                    onClick={handleSubmit}
-                                    disabled={isProcessing}
-                                >
-                                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileUp className="w-4 h-4 mr-2" />}
-                                    Procesar y Descargar
-                                </Button>
-                            </div>
-                        </div>
+                        </PdfToolbar>
 
                         {/* Pages Grid */}
                         <SortablePageGrid
@@ -233,6 +266,39 @@ export default function DeletePagesPage() {
                             onReorder={handleReorder}
                             onToggle={handleToggle}
                             onRotate={handleRotate}
+                        />
+
+                        {/* Shared Action Bar */}
+                        <PdfActionBar
+                            infoText={
+                                <span className={selectedIds.length > 0 ? "text-red-500 font-medium" : ""}>
+                                    {selectedIds.length > 0
+                                        ? `${selectedIds.length} páginas seleccionadas para eliminar`
+                                        : "Selecciona las páginas que deseas eliminar"
+                                    }
+                                </span>
+                            }
+                            actionButton={
+                                <Button
+                                    className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+                                    size="lg"
+                                    onClick={handleOpenSaveDialog}
+                                    disabled={isProcessing}
+                                >
+                                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileUp className="w-4 h-4 mr-2" />}
+                                    Procesar y Descargar
+                                </Button>
+                            }
+                        />
+
+                        <SaveDialog
+                            open={isDialogOpen}
+                            onOpenChange={setIsDialogOpen}
+                            defaultName={`modified-${file.name.replace(".pdf", "")}`}
+                            onSave={handleSave}
+                            isProcessing={isProcessing}
+                            title="Guardar archivo"
+                            description="Asigna un nombre a tu nuevo archivo PDF."
                         />
                     </div>
                 )}
