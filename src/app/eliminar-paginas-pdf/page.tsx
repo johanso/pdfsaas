@@ -203,7 +203,7 @@ export default function DeletePagesPage() {
             <div className="space-y-6">
 
                 <HeadingPage
-                    titlePage={"Organizar y Eliminar Páginas"}
+                    titlePage={"Eliminar Páginas PDF"}
                     descriptionPage="Reordena páginas, rota o elimina las que no necesites permenentemente."
                 />
 
@@ -256,7 +256,7 @@ export default function DeletePagesPage() {
                             }
                             actionButton={
                                 <Button
-                                    className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+                                    className="bg-primary hover:bg-primary/90"
                                     size="lg"
                                     onClick={handleOpenSaveDialog}
                                     disabled={isProcessing}

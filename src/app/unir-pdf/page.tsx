@@ -158,7 +158,7 @@ export default function UnirPdfPage() {
                                 infoText={`${files.length} documentos listos para unir`}
                                 actionButton={
                                     <Button
-                                        className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+                                        className="bg-primary hover:bg-primary/90"
                                         size="lg"
                                         onClick={() => setIsDialogOpen(true)}
                                         disabled={files.length < 2 || isProcessing}

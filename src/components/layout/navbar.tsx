@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Grid, FileText, Zap } from "lucide-react";
+import { LayoutGrid, Grip, FileText, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Sheet,
@@ -24,9 +24,9 @@ const toolsMenu = [
         category: "Organizar PDF",
         icon: LayoutGrid,
         items: [
-            { name: "Unir PDF", href: "/unir-pdf", image: merge },
-            { name: "Eliminar", href: "/eliminar-paginas-pdf", image: merge },
-            { name: "Dividir PDF", href: "/dividir-pdf", image: merge },
+            { name: "Unir PDF", href: "/unir-pdf", image: merge, disabled: false },
+            { name: "Eliminar", href: "/eliminar-paginas-pdf", image: merge, disabled: false },
+            { name: "Dividir PDF", href: "/dividir-pdf", image: merge, disabled: false },
         ],
     },
     {
@@ -46,7 +46,7 @@ export function Navbar() {
 
     return (
         <nav className="h-16 border-b bg-background px-6 flex items-center">
-            <div className="container flex items-center justify-between m-auto">
+            <div className="container flex items-center justify-between mx-auto py-10 md:px-4 max-w-6xl">
                 {/* LADO IZQUIERDO: Logo */}
                 <Link href="/" className="flex items-center gap-1 font-bold text-lg">
                     <div className="bg-primary text-primary-foreground px-2 rounded">
@@ -58,9 +58,9 @@ export function Navbar() {
                 {/* LADO DERECHO: Trigger del Drawer */}
                 <Sheet>
                     <SheetTrigger asChild>
-                        <Button variant="outline" className="gap-2">
-                            <Grid className="h-4 w-4" />
-                            <span className="hidden sm:inline">Herramientas disponibles</span>
+                        <Button variant="ghost" className="gap-2 cursor-pointer">
+                            <span className="hidden sm:inline">Herramientas PDF</span>
+                            <Grip size={32} className="!size-6" />
                         </Button>
                     </SheetTrigger>
 
