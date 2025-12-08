@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FileUp, Loader2 } from "lucide-react";
@@ -10,6 +10,8 @@ import { SortablePageGrid } from "@/components/sortable-page-grid";
 import { PdfToolbar } from "@/components/pdf-toolbar";
 import { PdfActionBar } from "@/components/pdf-action-bar";
 import { SaveDialog } from "@/components/save-dialog";
+import { Dropzone } from "@/components/ui/dropzone";
+import { HeadingPage } from "@/components/ui/heading-page";
 
 // Types
 interface PageData {
@@ -29,7 +31,7 @@ export default function DeletePagesPage() {
     // Save Dialog State
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
+
 
     const handleFile = async (newFile: File) => {
         if (newFile.type !== "application/pdf") {
@@ -68,19 +70,11 @@ export default function DeletePagesPage() {
         }
     };
 
-    const onDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            if (e.dataTransfer.files.length > 1) {
-                toast.warning("Solo se permite un archivo a la vez. Se usará el primero.");
-            }
-            handleFile(e.dataTransfer.files[0]);
-        }
-    };
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            handleFile(e.target.files[0]);
+
+    const handleFilesSelected = (files: File[]) => {
+        if (files.length > 0) {
+            handleFile(files[0]);
         }
     };
 
@@ -207,36 +201,18 @@ export default function DeletePagesPage() {
     return (
         <div className="container mx-auto py-10 px-4 max-w-6xl pb-32">
             <div className="space-y-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Organizar y Eliminar Páginas</h1>
-                        <p className="text-zinc-500">Reordena páginas, rota o elimina las que no necesites permenentemente.</p>
-                    </div>
-                </div>
 
-                <Input
-                    type="file"
-                    accept="application/pdf"
-                    className="hidden"
-                    ref={fileInputRef}
-                    onChange={handleFileSelect}
+                <HeadingPage
+                    titlePage={"Organizar y Eliminar Páginas"}
+                    descriptionPage="Reordena páginas, rota o elimina las que no necesites permenentemente."
                 />
 
                 {!file ? (
-                    <div
-                        onDrop={onDrop}
-                        onDragOver={(e) => e.preventDefault()}
-                        className="border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-12 flex flex-col items-center justify-center bg-zinc-50/50 dark:bg-zinc-900/50 hover:bg-zinc-100/50 transition-colors cursor-pointer h-80"
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        <div className="bg-white dark:bg-zinc-800 p-4 rounded-full mb-6 shadow-sm">
-                            <FileUp className="w-10 h-10 text-primary" />
-                        </div>
-                        <h3 className="text-xl font-bold mb-2">Sube tu archivo PDF</h3>
-                        <p className="text-zinc-500 text-center max-w-sm">
-                            Arrastra y suelta tu archivo aquí o haz clic para explorar.
-                        </p>
-                    </div>
+                    <Dropzone
+                        onFilesSelected={handleFilesSelected}
+                        multiple={false}
+                        className="h-80 bg-zinc-50/50 dark:bg-zinc-900/50"
+                    />
                 ) : (
                     <div className="space-y-6">
                         {/* Shared Toolbar with Range Input */}

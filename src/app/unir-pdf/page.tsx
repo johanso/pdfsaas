@@ -2,12 +2,13 @@
 
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { FileUp, Loader2 } from "lucide-react";
+import { HeadingPage } from "@/components/ui/heading-page";
 import { toast } from "sonner";
 import { PdfFile } from "@/types";
 import { SortableGrid } from "@/components/sortable-grid";
 import { PdfToolbar } from "@/components/pdf-toolbar";
+import { Dropzone } from "@/components/ui/dropzone";
 import { PdfActionBar } from "@/components/pdf-action-bar";
 import { SaveDialog } from "@/components/save-dialog";
 
@@ -40,18 +41,7 @@ export default function UnirPdfPage() {
         }
     };
 
-    const onDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        if (e.dataTransfer.files) {
-            handleFiles(Array.from(e.dataTransfer.files));
-        }
-    };
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            handleFiles(Array.from(e.target.files));
-        }
-    };
 
     const handleRotate = (id: string) => {
         setFiles(files.map(f => {
@@ -132,82 +122,65 @@ export default function UnirPdfPage() {
     return (
         <div className="container mx-auto py-10 px-4 max-w-6xl pb-32">
             <div className="space-y-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Unir PDF</h1>
-                        <p className="text-zinc-500">Combina múltiples archivos PDF en un solo documento ordenado.</p>
-                    </div>
-                </div>
 
-                <Input
-                    type="file"
-                    accept="application/pdf"
-                    multiple
-                    className="hidden"
-                    ref={fileInputRef}
-                    onChange={handleFileSelect}
+                <HeadingPage
+                    titlePage={"Unir PDF"}
+                    descriptionPage="Combina múltiples archivos PDF en un solo documento ordenado."
                 />
 
-                {files.length === 0 ? (
-                    <div
-                        onDrop={onDrop}
-                        onDragOver={(e) => e.preventDefault()}
-                        className="border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-12 flex flex-col items-center justify-center bg-zinc-50/50 dark:bg-zinc-900/50 hover:bg-zinc-100/50 transition-colors cursor-pointer h-80"
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        <div className="bg-white dark:bg-zinc-800 p-4 rounded-full mb-6 shadow-sm">
-                            <FileUp className="w-10 h-10 text-primary" />
+                <div className="w-full">
+                    {files.length === 0 ? (
+                        <Dropzone
+                            onFilesSelected={handleFiles}
+                            multiple={true}
+                            className="bg-zinc-50/50 dark:bg-zinc-900/50 h-80"
+                        />
+                    ) : (
+                        <div className="space-y-6">
+                            <PdfToolbar
+                                title={`${files.length} Archivos seleccionados`}
+                                subtitle={files.reduce((acc, f) => acc + f.file.size, 0) > 0 ? `${(files.reduce((acc, f) => acc + f.file.size, 0) / 1024 / 1024).toFixed(2)} MB total` : undefined}
+                                onAdd={() => fileInputRef.current?.click()}
+                                onRotateAll={handleRotateAll}
+                                onSort={handleSort}
+                                onReset={() => setFiles([])}
+                                showAddButton={true}
+                            />
+
+                            <SortableGrid
+                                files={files}
+                                onReorder={handleReorder}
+                                onRotate={handleRotate}
+                                onRemove={handleRemove}
+                            />
+
+                            <PdfActionBar
+                                infoText={`${files.length} documentos listos para unir`}
+                                actionButton={
+                                    <Button
+                                        className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+                                        size="lg"
+                                        onClick={() => setIsDialogOpen(true)}
+                                        disabled={files.length < 2 || isProcessing}
+                                    >
+                                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileUp className="w-4 h-4 mr-2" />}
+                                        Procesar y Descargar
+                                    </Button>
+                                }
+                            />
+
+                            <SaveDialog
+                                open={isDialogOpen}
+                                onOpenChange={setIsDialogOpen}
+                                defaultName="merged-document"
+                                onSave={handleSubmit}
+                                isProcessing={isProcessing}
+                                title="Guardar archivo"
+                                description="Asigna un nombre a tu archivo PDF fusionado antes de descargarlo."
+                            />
                         </div>
-                        <h3 className="text-xl font-bold mb-2">Sube tus archivos PDF</h3>
-                        <p className="text-zinc-500 text-center max-w-sm">
-                            Arrastra y suelta tus archivos aquí o haz clic para explorar. Puedes seleccionar múltiples archivos.
-                        </p>
-                    </div>
-                ) : (
-                    <div className="space-y-6">
-                        <PdfToolbar
-                            title={`${files.length} Archivos seleccionados`}
-                            subtitle={files.reduce((acc, f) => acc + f.file.size, 0) > 0 ? `${(files.reduce((acc, f) => acc + f.file.size, 0) / 1024 / 1024).toFixed(2)} MB total` : undefined}
-                            onAdd={() => fileInputRef.current?.click()}
-                            onRotateAll={handleRotateAll}
-                            onSort={handleSort}
-                            onReset={() => setFiles([])}
-                            showAddButton={true}
-                        />
-
-                        <SortableGrid
-                            files={files}
-                            onReorder={handleReorder}
-                            onRotate={handleRotate}
-                            onRemove={handleRemove}
-                        />
-
-                        <PdfActionBar
-                            infoText={`${files.length} documentos listos para unir`}
-                            actionButton={
-                                <Button
-                                    className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
-                                    size="lg"
-                                    onClick={() => setIsDialogOpen(true)}
-                                    disabled={files.length < 2 || isProcessing}
-                                >
-                                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileUp className="w-4 h-4 mr-2" />}
-                                    Procesar y Descargar
-                                </Button>
-                            }
-                        />
-
-                        <SaveDialog
-                            open={isDialogOpen}
-                            onOpenChange={setIsDialogOpen}
-                            defaultName="merged-document"
-                            onSave={handleSubmit}
-                            isProcessing={isProcessing}
-                            title="Guardar archivo"
-                            description="Asigna un nombre a tu archivo PDF fusionado antes de descargarlo."
-                        />
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );
