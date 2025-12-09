@@ -1,7 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Plus, RotateCw, Trash2, ArrowUpDown, RotateCcw, RefreshCw } from "lucide-react";
+import { Plus, RotateCw, Trash2, ArrowUpDown, RotateCcw, RefreshCw, ArrowDownAZ, ArrowUpZA } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 interface PdfToolbarProps {
@@ -12,7 +18,9 @@ interface PdfToolbarProps {
     onRotateLeft?: () => void;
     onRotateRight?: () => void;
     onResetRotation?: () => void;
-    onSort?: () => void;
+    onSort?: () => void; // Deprecated: use onSortAZ instead
+    onSortAZ?: () => void;
+    onSortZA?: () => void;
     onReset?: () => void;
     onSelectAll?: () => void;
     onDeselectAll?: () => void;
@@ -31,6 +39,8 @@ export function PdfToolbar({
     onRotateRight,
     onResetRotation,
     onSort,
+    onSortAZ,
+    onSortZA,
     onReset,
     onSelectAll,
     onDeselectAll,
@@ -111,11 +121,29 @@ export function PdfToolbar({
                     </Button>
                 )}
 
-                {onSort && (
-                    <Button variant="outline" onClick={onSort} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer">
-                        <ArrowUpDown className="w-4 h-4" />
-                        Ordenar
-                    </Button>
+                {(onSortAZ || onSortZA || onSort) && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer">
+                                <ArrowUpDown className="w-4 h-4" />
+                                Ordenar
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {(onSortAZ || onSort) && (
+                                <DropdownMenuItem onClick={onSortAZ || onSort} className="cursor-pointer">
+                                    <ArrowDownAZ className="w-4 h-4" />
+                                    Ordenar A-Z
+                                </DropdownMenuItem>
+                            )}
+                            {onSortZA && (
+                                <DropdownMenuItem onClick={onSortZA} className="cursor-pointer">
+                                    <ArrowUpZA className="w-4 h-4" />
+                                    Ordenar Z-A
+                                </DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 )}
 
                 {onReset && (

@@ -2,7 +2,7 @@ import { PdfFile } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import dynamic from "next/dynamic";
-import { RotateCw, X, GripVertical } from "lucide-react";
+import { RotateCw, X, GripVertical, InfoIcon } from "lucide-react";
 
 const PdfThumbnail = dynamic(() => import("./pdf-thumbnail").then((mod) => mod.PdfThumbnail), {
     ssr: false,
@@ -14,11 +14,12 @@ import { cn } from "@/lib/utils";
 
 interface PdfCardProps {
     file: PdfFile;
-    onRotate: (id: string) => void;
+    onRotate?: (id: string) => void;
     onRemove: (id: string) => void;
+    showRotate?: boolean;
 }
 
-export function PdfCard({ file, onRotate, onRemove }: PdfCardProps) {
+export function PdfCard({ file, onRotate, onRemove, showRotate = true }: PdfCardProps) {
     const {
         attributes,
         listeners,
@@ -49,7 +50,7 @@ export function PdfCard({ file, onRotate, onRemove }: PdfCardProps) {
                         {...attributes}
                         {...listeners}
                     >
-                        <GripVertical className="w-4 h-4 text-zinc-400" />
+                        <GripVertical className="w-4 h-4 shrink-0 text-zinc-400" />
                         <span className="text-xs text-zinc-500 font-medium truncate ml-2 select-none">
                             {file.name}
                         </span>
@@ -74,18 +75,26 @@ export function PdfCard({ file, onRotate, onRemove }: PdfCardProps) {
 
                     {/* Actions */}
                     <div className="h-10 border-t flex items-center justify-between px-2 bg-white dark:bg-zinc-900">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
-                            onClick={() => onRotate(file.id)}
-                            title="Rotate 90°"
-                        >
-                            <RotateCw className="w-3.5 h-3.5 cursor-pointer" />
-                        </Button>
+                        {showRotate && onRotate ? (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
+                                onClick={() => onRotate(file.id)}
+                                title="Rotate 90°"
+                            >
+                                <RotateCw className="w-3.5 h-3.5 cursor-pointer" />
+                            </Button>
+                        ) : (
+                            null
+                        )}
 
-                        <div className="text-[10px] text-zinc-400 font-mono">
-                            {(file.file.size / 1024 / 1024).toFixed(2)} MB
+                        <div className="text-[10px] flex items-center gap-2 text-zinc-400 font-mono">
+                            <InfoIcon className="w-3 h-3 cursor-pointer inline" />
+                            <span className="leading-none">
+                                {(file.file.size / 1024 / 1024).toFixed(2)} MB
+                                {file.pageCount != null && <span> / {file.pageCount} págs</span>}
+                            </span>
                         </div>
 
                         <Button

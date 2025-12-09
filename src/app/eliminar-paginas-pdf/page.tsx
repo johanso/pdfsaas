@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { FileUp, Loader2 } from "lucide-react";
+import { FileUp, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { pdfjs } from "react-pdf";
 import { SortablePageGrid } from "@/components/sortable-page-grid";
 import { PdfToolbar } from "@/components/pdf-toolbar";
-import { PdfActionBar } from "@/components/pdf-action-bar";
 import { SaveDialog } from "@/components/save-dialog";
 import { Dropzone } from "@/components/ui/dropzone";
 import { HeadingPage } from "@/components/ui/heading-page";
@@ -211,66 +211,97 @@ export default function DeletePagesPage() {
                     />
                 ) : (
                     <div className="space-y-6">
-                        {/* Shared Toolbar with Range Input */}
+                        {/* Shared Toolbar */}
                         <PdfToolbar
                             title={file.name}
                             subtitle={`${pages.length} páginas`}
                             onAdd={() => { }} // Disabled for single file tools or hidden
                             showAddButton={false}
                             onReset={() => setFile(null)}
-                        >
-                            <div className="flex items-center gap-2 mr-4 min-w-[200px]">
-                                <span className="text-xs text-zinc-500 whitespace-nowrap">Eliminar:</span>
-                                <Input
-                                    className="h-8 text-xs bg-white dark:bg-zinc-900"
-                                    placeholder="Ej: 1, 3-5"
-                                    value={rangeInput}
-                                    onChange={(e) => handleRangeChange(e.target.value)}
+                        />
+
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                            {/* Left Panel: Instructions & Download */}
+                            <div className="lg:col-span-1 space-y-6">
+                                <Card>
+                                    <CardContent className="space-y-6 pt-6">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h3 className="font-medium mb-2 flex items-center gap-2">
+                                                    <Trash2 className="w-4 h-4 text-primary" />
+                                                    Cómo usar
+                                                </h3>
+                                                <ol className="text-sm text-zinc-600 dark:text-zinc-400 space-y-2 list-decimal list-inside">
+                                                    <li>Selecciona las páginas que deseas eliminar</li>
+                                                    <li>Usa el campo de rango para selección rápida (ej: 1,3-5)</li>
+                                                    <li>Haz clic en "Descargar" para guardar el PDF modificado</li>
+                                                </ol>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-xs text-zinc-500">Eliminar páginas:</label>
+                                                <Input
+                                                    className="h-9 text-sm bg-white dark:bg-zinc-900"
+                                                    placeholder="Ej: 1, 3-5"
+                                                    value={rangeInput}
+                                                    onChange={(e) => handleRangeChange(e.target.value)}
+                                                />
+                                            </div>
+
+                                            <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs space-y-1">
+                                                <div className="flex justify-between">
+                                                    <span>Seleccionadas:</span>
+                                                    <span className={`font-bold ${selectedIds.length > 0 ? 'text-red-500' : ''}`}>
+                                                        {selectedIds.length}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span>Total páginas:</span>
+                                                    <span className="font-bold">{pages.length}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="py-4 border-t border-zinc-100 dark:border-zinc-800">
+                                            <Button
+                                                className="w-full"
+                                                size="lg"
+                                                onClick={handleOpenSaveDialog}
+                                                disabled={isProcessing}
+                                            >
+                                                {isProcessing ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                                ) : (
+                                                    <FileUp className="w-4 h-4 mr-2" />
+                                                )}
+                                                {isProcessing ? "Procesando..." : "Descargar"}
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <SaveDialog
+                                open={isDialogOpen}
+                                onOpenChange={setIsDialogOpen}
+                                defaultName={`modified-${file.name.replace(".pdf", "")}`}
+                                onSave={handleSave}
+                                isProcessing={isProcessing}
+                                title="Guardar archivo"
+                                description="Asigna un nombre a tu nuevo archivo PDF."
+                            />
+
+                            {/* Right Panel: Pages Grid */}
+                            <div className="lg:col-span-3 bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 min-h-[500px]">
+                                <SortablePageGrid
+                                    pages={pages}
+                                    selectedIds={selectedIds}
+                                    onReorder={handleReorder}
+                                    onToggle={handleToggle}
+                                    onRotate={handleRotate}
                                 />
                             </div>
-                        </PdfToolbar>
-
-                        {/* Pages Grid */}
-                        <SortablePageGrid
-                            pages={pages}
-                            selectedIds={selectedIds}
-                            onReorder={handleReorder}
-                            onToggle={handleToggle}
-                            onRotate={handleRotate}
-                        />
-
-                        {/* Shared Action Bar */}
-                        <PdfActionBar
-                            infoText={
-                                <span className={selectedIds.length > 0 ? "text-red-500 font-medium" : ""}>
-                                    {selectedIds.length > 0
-                                        ? `${selectedIds.length} páginas seleccionadas para eliminar`
-                                        : "Selecciona las páginas que deseas eliminar"
-                                    }
-                                </span>
-                            }
-                            actionButton={
-                                <Button
-                                    className="bg-primary hover:bg-primary/90"
-                                    size="lg"
-                                    onClick={handleOpenSaveDialog}
-                                    disabled={isProcessing}
-                                >
-                                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileUp className="w-4 h-4 mr-2" />}
-                                    Procesar y Descargar
-                                </Button>
-                            }
-                        />
-
-                        <SaveDialog
-                            open={isDialogOpen}
-                            onOpenChange={setIsDialogOpen}
-                            defaultName={`modified-${file.name.replace(".pdf", "")}`}
-                            onSave={handleSave}
-                            isProcessing={isProcessing}
-                            title="Guardar archivo"
-                            description="Asigna un nombre a tu nuevo archivo PDF."
-                        />
+                        </div>
                     </div>
                 )}
             </div>

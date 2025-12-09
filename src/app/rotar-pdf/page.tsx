@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { FileUp, Loader2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { FileUp, Loader2, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { pdfjs } from "react-pdf";
 import { SortablePageGrid } from "@/components/sortable-page-grid";
 import { PdfToolbar } from "@/components/pdf-toolbar";
-import { PdfActionBar } from "@/components/pdf-action-bar";
 import { SaveDialog } from "@/components/save-dialog";
 import { Dropzone } from "@/components/ui/dropzone";
 import { HeadingPage } from "@/components/ui/heading-page";
@@ -167,39 +167,78 @@ export default function RotatePdfPage() {
                             onReset={() => setFile(null)}
                         />
 
-                        {/* Reuse SortablePageGrid but ignore toggle/selection since we just rotate */}
-                        <SortablePageGrid
-                            pages={pages}
-                            selectedIds={[]} // No selection needed for rotation
-                            onReorder={handleReorder} // Allow reorder if they want, or disable? UX: "Rotate PDF" usually allows organizing too.
-                            onToggle={() => { }} // No toggle needed
-                            onRotate={handleRotate}
-                        />
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                            {/* Left Panel: Instructions & Download */}
+                            <div className="lg:col-span-1 space-y-6">
+                                <Card>
+                                    <CardContent className="space-y-6 pt-6">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h3 className="font-medium mb-2 flex items-center gap-2">
+                                                    <RotateCw className="w-4 h-4 text-primary" />
+                                                    Cómo usar
+                                                </h3>
+                                                <ol className="text-sm text-zinc-600 dark:text-zinc-400 space-y-2 list-decimal list-inside">
+                                                    <li>Usa los botones del toolbar para rotar todas las páginas</li>
+                                                    <li>O rota páginas individuales haciendo clic en el ícono de rotación</li>
+                                                    <li>Haz clic en "Descargar" para guardar el PDF rotado</li>
+                                                </ol>
+                                            </div>
 
-                        <PdfActionBar
-                            infoText="¿Todo listo? Guarda tu nuevo PDF"
-                            actionButton={
-                                <Button
-                                    className="bg-primary hover:bg-primary/90"
-                                    size="lg"
-                                    onClick={() => setIsDialogOpen(true)}
-                                    disabled={isProcessing}
-                                >
-                                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileUp className="w-4 h-4 mr-2" />}
-                                    Guardar PDF Rotado
-                                </Button>
-                            }
-                        />
+                                            <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs space-y-1">
+                                                <div className="flex justify-between">
+                                                    <span>Total páginas:</span>
+                                                    <span className="font-bold">{pages.length}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span>Tamaño:</span>
+                                                    <span className="font-bold">
+                                                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                        <SaveDialog
-                            open={isDialogOpen}
-                            onOpenChange={setIsDialogOpen}
-                            defaultName={`rotated-${file.name.replace(".pdf", "")}`}
-                            onSave={handleSave}
-                            isProcessing={isProcessing}
-                            title="Guardar archivo"
-                            description="Asigna un nombre a tu archivo PDF rotado."
-                        />
+                                        <div className="py-4 border-t border-zinc-100 dark:border-zinc-800">
+                                            <Button
+                                                className="w-full"
+                                                size="lg"
+                                                onClick={() => setIsDialogOpen(true)}
+                                                disabled={isProcessing}
+                                            >
+                                                {isProcessing ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                                ) : (
+                                                    <FileUp className="w-4 h-4 mr-2" />
+                                                )}
+                                                {isProcessing ? "Procesando..." : "Descargar"}
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <SaveDialog
+                                open={isDialogOpen}
+                                onOpenChange={setIsDialogOpen}
+                                defaultName={`rotated-${file.name.replace(".pdf", "")}`}
+                                onSave={handleSave}
+                                isProcessing={isProcessing}
+                                title="Guardar archivo"
+                                description="Asigna un nombre a tu archivo PDF rotado."
+                            />
+
+                            {/* Right Panel: Pages Grid */}
+                            <div className="lg:col-span-3 bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 min-h-[500px]">
+                                <SortablePageGrid
+                                    pages={pages}
+                                    selectedIds={[]}
+                                    onReorder={handleReorder}
+                                    onToggle={() => { }}
+                                    onRotate={handleRotate}
+                                />
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>

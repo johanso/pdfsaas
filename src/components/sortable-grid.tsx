@@ -19,8 +19,9 @@ import { PdfCard } from "./pdf-card";
 interface SortableGridProps {
     files: PdfFile[];
     onReorder: (newFiles: PdfFile[]) => void;
-    onRotate: (id: string) => void;
+    onRotate?: (id: string) => void;
     onRemove: (id: string) => void;
+    showRotate?: boolean;
 }
 
 export function SortableGrid({
@@ -28,6 +29,7 @@ export function SortableGrid({
     onReorder,
     onRotate,
     onRemove,
+    showRotate = true,
 }: SortableGridProps) {
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -53,13 +55,14 @@ export function SortableGrid({
             onDragEnd={handleDragEnd}
         >
             <SortableContext items={files.map((f) => f.id)} strategy={rectSortingStrategy}>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {files.map((file) => (
                         <PdfCard
                             key={file.id}
                             file={file}
                             onRotate={onRotate}
                             onRemove={onRemove}
+                            showRotate={showRotate}
                         />
                     ))}
                 </div>
