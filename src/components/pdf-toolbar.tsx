@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Plus, RotateCw, Trash2, ArrowUpDown } from "lucide-react";
+import { Plus, RotateCw, Trash2, ArrowUpDown, RotateCcw, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PdfToolbarProps {
@@ -9,8 +9,14 @@ interface PdfToolbarProps {
     subtitle?: string;
     onAdd?: () => void;
     onRotateAll?: () => void;
+    onRotateLeft?: () => void;
+    onRotateRight?: () => void;
+    onResetRotation?: () => void;
     onSort?: () => void;
     onReset?: () => void;
+    onSelectAll?: () => void;
+    onDeselectAll?: () => void;
+    onInvertSelection?: () => void;
     showAddButton?: boolean;
     className?: string;
     children?: React.ReactNode;
@@ -21,8 +27,14 @@ export function PdfToolbar({
     subtitle,
     onAdd,
     onRotateAll,
+    onRotateLeft,
+    onRotateRight,
+    onResetRotation,
     onSort,
     onReset,
+    onSelectAll,
+    onDeselectAll,
+    onInvertSelection,
     showAddButton = true,
     className,
     children
@@ -46,30 +58,69 @@ export function PdfToolbar({
             <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
                 {children}
 
+                {onSelectAll && (
+                    <Button variant="outline" onClick={onSelectAll} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer h-9 px-3 text-xs" title="Seleccionar todo">
+                        Todo
+                    </Button>
+                )}
+
+                {onDeselectAll && (
+                    <Button variant="outline" onClick={onDeselectAll} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer h-9 px-3 text-xs" title="Deseleccionar todo">
+                        Nada
+                    </Button>
+                )}
+
+                {onInvertSelection && (
+                    <Button variant="outline" onClick={onInvertSelection} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer h-9 px-3 text-xs" title="Invertir selección">
+                        Invertir
+                    </Button>
+                )}
+
                 {showAddButton && onAdd && (
                     <Button variant="outline" onClick={onAdd} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Añadir
+                        <Plus className="w-4 h-4" />
+                        Añadir PDF
+                    </Button>
+                )}
+
+                {onRotateLeft && (
+                    <Button variant="outline" onClick={onRotateLeft} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer">
+                        <RotateCcw className="w-4 h-4" />
+                        Girar Izq
+                    </Button>
+                )}
+
+                {onRotateRight && (
+                    <Button variant="outline" onClick={onRotateRight} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer">
+                        <RotateCw className="w-4 h-4" />
+                        Girar Der
                     </Button>
                 )}
 
                 {onRotateAll && (
                     <Button variant="outline" onClick={onRotateAll} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer">
-                        <RotateCw className="w-4 h-4 mr-2" />
-                        Rotar todo
+                        <RotateCw className="w-4 h-4" />
+                        Rotar todos
+                    </Button>
+                )}
+
+                {onResetRotation && (
+                    <Button variant="outline" onClick={onResetRotation} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer text-zinc-600 hover:text-zinc-900" title="Restablecer rotación">
+                        <RefreshCw className="w-4 h-4" />
+                        Reset
                     </Button>
                 )}
 
                 {onSort && (
                     <Button variant="outline" onClick={onSort} className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer">
-                        <ArrowUpDown className="w-4 h-4 mr-2" />
+                        <ArrowUpDown className="w-4 h-4" />
                         Ordenar
                     </Button>
                 )}
 
                 {onReset && (
                     <Button variant="destructive" onClick={onReset} className="ml-auto md:ml-0 cursor-pointer">
-                        <Trash2 className="w-4 h-4 mr-2" />
+                        <Trash2 className="w-4 h-4" />
                         Limpiar
                     </Button>
                 )}

@@ -15,12 +15,10 @@ const PdfThumbnail = dynamic(() => import("@/components/pdf-thumbnail").then(mod
 interface SplitGridProps {
     file: File;
     numPages: number;
-    mode: "ranges" | "extract" | "fixed";
+    mode: "ranges" | "fixed";
     ranges: number[]; // Indices of pages after which a split occurs (1-based index to match visual page numbers)
-    selectedPages: number[]; // Indices of selected pages (1-based)
     fixedSize?: number; // Size of fixed groups
     onRangeClick: (pageIndex: number) => void;
-    onExtractClick: (pageIndex: number) => void;
 }
 
 export function SplitGrid({
@@ -28,10 +26,8 @@ export function SplitGrid({
     numPages,
     mode,
     ranges,
-    selectedPages,
     fixedSize,
     onRangeClick,
-    onExtractClick,
 }: SplitGridProps) {
     // Generate array of page numbers 1..N
     const pages = Array.from({ length: numPages }, (_, i) => i + 1);
@@ -71,7 +67,6 @@ export function SplitGrid({
     return (
         <div className="flex flex-wrap gap-y-8 gap-x-0 justify-center pb-20 select-none">
             {pages.map((pageNumber) => {
-                const isSelected = selectedPages.includes(pageNumber);
                 const isSplit = ranges.includes(pageNumber);
                 const isLast = pageNumber === numPages;
 
@@ -87,27 +82,16 @@ export function SplitGrid({
                                 className={cn(
                                     "overflow-hidden border-3 w-full",
                                     getGroupColor(pageNumber),
-                                    mode === "extract" && isSelected && "ring-2 ring-primary border-primary",
-                                    mode === "extract" && "cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800",
                                     // Remove padding from card to allow full content control
                                     "p-0"
                                 )}
-                                onClick={() => {
-                                    if (mode === "extract") onExtractClick(pageNumber);
-                                }}
                             >
                                 <CardContent className="p-0">
-                                    {/* Header: Page Number + Checkbox */}
+                                    {/* Header: Page Number */}
                                     <div className="h-8 bg-zinc-50 dark:bg-zinc-800/50 border-b flex items-center justify-between px-2">
                                         <span className="text-xs text-zinc-500 font-medium truncate select-none">
                                             Página {pageNumber}
                                         </span>
-                                        {mode === "extract" && (
-                                            <Checkbox
-                                                checked={isSelected}
-                                                className="w-4 h-4 bg-white"
-                                            />
-                                        )}
                                     </div>
 
                                     {/* Thumbnail Area */}

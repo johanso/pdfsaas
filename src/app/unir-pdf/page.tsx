@@ -141,7 +141,6 @@ export default function UnirPdfPage() {
                                 title={`${files.length} Archivos seleccionados`}
                                 subtitle={files.reduce((acc, f) => acc + f.file.size, 0) > 0 ? `${(files.reduce((acc, f) => acc + f.file.size, 0) / 1024 / 1024).toFixed(2)} MB total` : undefined}
                                 onAdd={() => fileInputRef.current?.click()}
-                                onRotateAll={handleRotateAll}
                                 onSort={handleSort}
                                 onReset={() => setFiles([])}
                                 showAddButton={true}

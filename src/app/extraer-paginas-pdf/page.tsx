@@ -2,36 +2,26 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Download, Scissors, FileOutput, Layers } from "lucide-react";
+import { Loader2, Download, FileOutput } from "lucide-react";
 import { toast } from "sonner";
-
-import { SplitGrid } from "./split-grid";
-import { PdfToolbar } from "@/components/pdf-toolbar";
-import { SaveDialog } from "@/components/save-dialog";
-import { Dropzone } from "@/components/ui/dropzone";
 import { HeadingPage } from "@/components/ui/heading-page";
+import { Dropzone } from "@/components/ui/dropzone";
+import { PdfToolbar } from "@/components/pdf-toolbar";
+import { PdfPageGrid } from "@/components/pdf-page-grid";
+import { SaveDialog } from "@/components/save-dialog";
 
-// Configure worker inside component or effect to avoid SSR issues
-// pdfjs.GlobalWorkerOptions.workerSrc = ... moved to useEffect
-
-export default function SplitPdfPage() {
+export default function ExtractPdfPage() {
     // File State
     const [file, setFile] = useState<File | null>(null);
     const [numPages, setNumPages] = useState<number>(0);
     const [isProcessing, setIsProcessing] = useState(false);
 
     // Mode State
-    const [mode, setMode] = useState<"ranges" | "fixed">("ranges");
-
-    // Mode Specific Data
-    const [ranges, setRanges] = useState<number[]>([]); // Split AFTER these page numbers
-    const [fixedSize, setFixedSize] = useState<number>(2);
+    // extractMode: 'separate' = zip with individual pages, 'merge' = single new pdf
+    const [extractMode, setExtractMode] = useState<"separate" | "merge">("separate");
+    const [selectedPages, setSelectedPages] = useState<number[]>([]);
     const [showSaveDialog, setShowSaveDialog] = useState(false);
-
-
 
     // Initial PDF Load
     useEffect(() => {
@@ -57,8 +47,7 @@ export default function SplitPdfPage() {
     const handleReset = () => {
         setFile(null);
         setNumPages(0);
-        setRanges([]);
-        setFixedSize(2);
+        setSelectedPages([]);
     };
 
     const handleFilesSelected = (files: File[]) => {
@@ -73,8 +62,9 @@ export default function SplitPdfPage() {
         }
     };
 
-    const handleRangeClick = (pageNumber: number) => {
-        setRanges(prev => {
+    // Selection Handlers
+    const handleTogglePage = (pageNumber: number) => {
+        setSelectedPages(prev => {
             if (prev.includes(pageNumber)) {
                 return prev.filter(p => p !== pageNumber).sort((a, b) => a - b);
             } else {
@@ -83,45 +73,52 @@ export default function SplitPdfPage() {
         });
     };
 
-    const getIsZip = () => {
-        if (mode === "ranges") return ranges.length > 0;
-        if (mode === "fixed") return Math.ceil(numPages / fixedSize) > 1;
-        return false;
+    const handleSelectAll = () => {
+        if (numPages === 0) return;
+        const all = Array.from({ length: numPages }, (_, i) => i + 1);
+        setSelectedPages(all);
+        toast.info("Todas las páginas seleccionadas");
     };
+
+    const handleDeselectAll = () => {
+        setSelectedPages([]);
+        toast.info("Selección limpiada");
+    };
+
+    const handleInvertSelection = () => {
+        if (numPages === 0) return;
+        const all = Array.from({ length: numPages }, (_, i) => i + 1);
+        setSelectedPages(prev => {
+            const newSelection = all.filter(p => !prev.includes(p));
+            return newSelection;
+        });
+        toast.info("Selección invertida");
+    };
+
 
     const handlePreSubmit = () => {
         if (!file) return;
-
-        // Validation
-        if (mode === "ranges" && ranges.length === 0) {
-            toast.error("Define al menos un punto de división");
+        if (selectedPages.length === 0) {
+            toast.error("Selecciona al menos una página para extraer");
             return;
         }
-        if (mode === "fixed" && (fixedSize < 1 || fixedSize >= numPages)) {
-            toast.error("El tamaño de división debe ser válido");
-            return;
-        }
-
         setShowSaveDialog(true);
     };
 
     const handleSubmit = async (fileName: string) => {
         if (!file) return;
         setShowSaveDialog(false);
-
         setIsProcessing(true);
 
         try {
             const formData = new FormData();
             formData.append("file", file);
-            formData.append("mode", mode);
+            formData.append("mode", "extract");
 
-            let config = {};
-            if (mode === "ranges") {
-                config = { ranges };
-            } else if (mode === "fixed") {
-                config = { size: fixedSize };
-            }
+            const config = {
+                pages: selectedPages,
+                merge: extractMode === "merge"
+            };
             formData.append("config", JSON.stringify(config));
 
             const response = await fetch("/api/split-pdf", {
@@ -131,7 +128,7 @@ export default function SplitPdfPage() {
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.error || "Error splitting PDF");
+                throw new Error(data.error || "Error extracting pages");
             }
 
             // Handle Download
@@ -140,7 +137,7 @@ export default function SplitPdfPage() {
             const a = document.createElement("a");
             a.href = downloadUrl;
 
-            // Determine filename
+            // Determine filename extension
             const ext = blob.type === "application/zip" ? "zip" : "pdf";
             a.download = `${fileName}.${ext}`;
 
@@ -149,7 +146,7 @@ export default function SplitPdfPage() {
             window.URL.revokeObjectURL(downloadUrl);
             document.body.removeChild(a);
 
-            toast.success("¡Archivo procesado correctamente!");
+            toast.success("¡Páginas extraídas correctamente!");
 
         } catch (error) {
             console.error(error);
@@ -163,8 +160,8 @@ export default function SplitPdfPage() {
         <div className="container mx-auto py-10 px-4 max-w-6xl pb-32">
             <div className="space-y-6">
                 <HeadingPage
-                    titlePage={"Dividir PDF"}
-                    descriptionPage="Herramienta profesional para separar, extraer y organizar tus documentos."
+                    titlePage="Extraer Páginas PDF"
+                    descriptionPage="Selecciona y extrae páginas específicas de tu documento PDF de forma fácile y rápida."
                 />
 
                 {!file ? (
@@ -181,73 +178,71 @@ export default function SplitPdfPage() {
                             subtitle={`${numPages} páginas | ${(file.size / 1024 / 1024).toFixed(2)} MB`}
                             onReset={handleReset}
                             showAddButton={false}
+                            onSelectAll={handleSelectAll}
+                            onDeselectAll={handleDeselectAll}
+                            onInvertSelection={handleInvertSelection}
                         />
 
                         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                             {/* Left Panel: Controls */}
                             <div className="lg:col-span-1 space-y-6">
                                 <Card>
-                                    <CardContent className="space-y-4 pt-4">
-                                        <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
-                                            <TabsList className="grid w-full grid-cols-2 mb-4">
-                                                <TabsTrigger value="ranges" title="Por Rangos"><Scissors className="w-4 h-4" /></TabsTrigger>
-                                                <TabsTrigger value="fixed" title="Fijo"><Layers className="w-4 h-4" /></TabsTrigger>
-                                            </TabsList>
+                                    <CardContent className="space-y-6 pt-6">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h3 className="font-medium mb-2 flex items-center gap-2">
+                                                    <FileOutput className="w-4 h-4 text-primary" />
+                                                    Modo de Extracción
+                                                </h3>
+                                                <p className="text-sm text-zinc-500 mb-4">
+                                                    Elige cómo quieres recibir tus páginas extraídas.
+                                                </p>
 
-                                            <div className="space-y-4">
-                                                {mode === "ranges" && (
-                                                    <div className="text-sm text-zinc-500">
-                                                        <p className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">Modo Rangos</p>
-                                                        <p>Haz clic en las tijeras entre las páginas para crear nuevos grupos.</p>
-                                                        <div className="mt-4 p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs">
-                                                            Grupos actuales: <strong>{ranges.length + 1}</strong>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-
-
-                                                {mode === "fixed" && (
-                                                    <div className="space-y-4">
-                                                        <div className="text-sm text-zinc-500">
-                                                            <p className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">División Fija</p>
-                                                            <p>Divide el documento en partes de igual tamaño.</p>
-                                                        </div>
-
-                                                        <div className="space-y-2">
-                                                            <p className="text-sm mb-4 font-semibold">Páginas por archivo</p>
-                                                            <Input
-                                                                type="number"
-                                                                min={1}
-                                                                max={numPages}
-                                                                value={fixedSize}
-                                                                onChange={(e) => setFixedSize(parseInt(e.target.value) || 1)}
-                                                            />
-                                                        </div>
-
-                                                        <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs">
-                                                            Total archivos resultantes: <strong>{Math.ceil(numPages / fixedSize)}</strong>
-                                                        </div>
-                                                    </div>
-                                                )}
+                                                <div className="flex flex-col gap-2">
+                                                    <Button
+                                                        variant={extractMode === "separate" ? "default" : "outline"}
+                                                        size="sm"
+                                                        onClick={() => setExtractMode("separate")}
+                                                        className="justify-start"
+                                                    >
+                                                        Separar en archivos (ZIP)
+                                                    </Button>
+                                                    <Button
+                                                        variant={extractMode === "merge" ? "default" : "outline"}
+                                                        size="sm"
+                                                        onClick={() => setExtractMode("merge")}
+                                                        className="justify-start"
+                                                    >
+                                                        Unir en un solo PDF
+                                                    </Button>
+                                                </div>
                                             </div>
-                                        </Tabs>
+
+                                            <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs space-y-1">
+                                                <div className="flex justify-between">
+                                                    <span>Seleccionadas:</span>
+                                                    <span className="font-bold">{selectedPages.length}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span>Total páginas:</span>
+                                                    <span className="font-bold">{numPages}</span>
+                                                </div>
+                                            </div>
+                                        </div>
 
                                         <div className="py-4 border-t border-zinc-100 dark:border-zinc-800">
                                             <Button
                                                 className="w-full"
                                                 size="lg"
                                                 onClick={handlePreSubmit}
-                                                disabled={isProcessing || (mode !== "fixed" && numPages === 0)}
+                                                disabled={isProcessing || selectedPages.length === 0}
                                             >
                                                 {isProcessing ? (
                                                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                                ) : getIsZip() ? (
-                                                    <Layers className="w-4 h-4 mr-2" />
                                                 ) : (
                                                     <Download className="w-4 h-4 mr-2" />
                                                 )}
-                                                {isProcessing ? "Procesando..." : (getIsZip() ? "Descargar ZIP" : "Descargar PDF")}
+                                                {isProcessing ? "Procesando..." : "Descargar"}
                                             </Button>
                                         </div>
                                     </CardContent>
@@ -257,27 +252,25 @@ export default function SplitPdfPage() {
                             <SaveDialog
                                 open={showSaveDialog}
                                 onOpenChange={setShowSaveDialog}
-                                defaultName={file.name.replace(".pdf", "") + (mode === "ranges" ? "-split" : "-fixed")}
+                                defaultName={file.name.replace(".pdf", "") + "-extract"}
                                 onSave={handleSubmit}
                                 isProcessing={isProcessing}
-                                title={getIsZip() ? "Guardar archivo ZIP" : "Guardar archivo PDF"}
-                                description={getIsZip()
-                                    ? "Asigna un nombre a tu archivo comprimido antes de descargarlo."
-                                    : "Asigna un nombre a tu archivo PDF antes de descargarlo."
+                                title={extractMode === "separate" ? "Guardar archivo ZIP" : "Guardar archivo PDF"}
+                                description={extractMode === "separate"
+                                    ? "Asigna un nombre a tu archivo comprimido."
+                                    : "Asigna un nombre a tu nuevo archivo PDF."
                                 }
-                                extension={getIsZip() ? "zip" : "pdf"}
+                                extension={extractMode === "separate" ? "zip" : "pdf"}
                             />
 
                             {/* Right Panel: Preview Grid */}
                             <div className="lg:col-span-3 bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 min-h-[500px]">
                                 {numPages > 0 ? (
-                                    <SplitGrid
+                                    <PdfPageGrid
                                         file={file}
                                         numPages={numPages}
-                                        mode={mode}
-                                        ranges={ranges}
-                                        fixedSize={fixedSize}
-                                        onRangeClick={handleRangeClick}
+                                        selectedPages={selectedPages}
+                                        onTogglePage={handleTogglePage}
                                     />
                                 ) : (
                                     <div className="flex flex-col items-center justify-center h-full text-zinc-400">

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { FileUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { pdfjs } from "react-pdf";
@@ -21,17 +20,11 @@ interface PageData {
     file: File;
 }
 
-export default function DeletePagesPage() {
+export default function RotatePdfPage() {
     const [file, setFile] = useState<File | null>(null);
     const [pages, setPages] = useState<PageData[]>([]);
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [rangeInput, setRangeInput] = useState("");
-
-    // Save Dialog State
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-
 
     const handleFile = async (newFile: File) => {
         if (newFile.type !== "application/pdf") {
@@ -39,19 +32,15 @@ export default function DeletePagesPage() {
             return;
         }
         setFile(newFile);
-        setSelectedIds([]);
         setPages([]);
-        setRangeInput("");
 
         try {
-            // Import pdfjs dynamically
             const { pdfjs } = await import("react-pdf");
             pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
             const buffer = await newFile.arrayBuffer();
             const pdf = await pdfjs.getDocument(buffer).promise;
 
-            // Create page data objects
             const newPages: PageData[] = [];
             for (let i = 1; i <= pdf.numPages; i++) {
                 newPages.push({
@@ -70,99 +59,56 @@ export default function DeletePagesPage() {
         }
     };
 
-
-
     const handleFilesSelected = (files: File[]) => {
         if (files.length > 0) {
             handleFile(files[0]);
         }
     };
 
-    const handleToggle = (id: string) => {
-        setSelectedIds(prev =>
-            prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
-        );
-    };
-
+    // Rotation Handlers
     const handleRotate = (id: string) => {
         setPages(prev => prev.map(p =>
             p.id === id ? { ...p, rotation: (p.rotation + 90) % 360 } : p
         ));
     };
 
+    const handleRotateRight = () => {
+        setPages(prev => prev.map(p => ({ ...p, rotation: (p.rotation + 90) % 360 })));
+        toast.success("Documento rotado a la derecha");
+    };
+
+    const handleRotateLeft = () => {
+        setPages(prev => prev.map(p => ({ ...p, rotation: (p.rotation - 90 + 360) % 360 })));
+        toast.success("Documento rotado a la izquierda");
+    };
+
+    const handleResetRotation = () => {
+        setPages(prev => prev.map(p => ({ ...p, rotation: 0 })));
+        toast.info("Rotación restablecida");
+    };
+
     const handleReorder = (newPages: PageData[]) => {
         setPages(newPages);
     };
 
-    const handleRangeChange = (input: string) => {
-        setRangeInput(input);
-
-        if (!input.trim()) return;
-
-        const idsToSelect: string[] = [];
-        const parts = input.split(",");
-
-        // Map originalIndex to ID for easier lookup
-        const indexToIdMap = new Map(pages.map(p => [p.originalIndex, p.id]));
-        const numPages = pages.length; // Actually map size
-
-        parts.forEach(part => {
-            const range = part.trim().split("-");
-            if (range.length === 2) {
-                const start = parseInt(range[0]);
-                const end = parseInt(range[1]);
-                if (!isNaN(start) && !isNaN(end)) {
-                    for (let i = Math.min(start, end); i <= Math.max(start, end); i++) {
-                        const id = indexToIdMap.get(i);
-                        if (id) idsToSelect.push(id);
-                    }
-                }
-            } else if (range.length === 1) {
-                const pageNum = parseInt(range[0]);
-                if (!isNaN(pageNum)) {
-                    const id = indexToIdMap.get(pageNum);
-                    if (id) idsToSelect.push(id);
-                }
-            }
-        });
-
-        const uniqueIds = Array.from(new Set(idsToSelect));
-        if (uniqueIds.length > 0) {
-            setSelectedIds(uniqueIds);
-        }
-    };
-
-    const handleOpenSaveDialog = () => {
-        if (!file || pages.length === 0) return;
-
-        // Check valid state
-        const activePages = pages.filter(p => !selectedIds.includes(p.id));
-        if (activePages.length === 0) {
-            toast.error("No puedes eliminar todas las páginas.");
-            return;
-        }
-
-        setIsDialogOpen(true);
-    };
-
     const handleSave = async (outputName: string) => {
         if (!file) return;
-
-        const activePages = pages.filter(p => !selectedIds.includes(p.id));
 
         setIsProcessing(true);
         try {
             const formData = new FormData();
             formData.append("file", file);
 
-            const pageInstructions = activePages.map(p => ({
-                originalIndex: p.originalIndex - 1, // 0-based
+            const pageInstructions = pages.map(p => ({
+                originalIndex: p.originalIndex - 1,
                 rotation: p.rotation
             }));
 
             formData.append("pageInstructions", JSON.stringify(pageInstructions));
 
-            const response = await fetch("/api/delete-pages", {
+            // Reuse delete-pages API or create rotate specific?
+            // Since logic is identical (reconstruct PDF from indices with rotation), we can create a dedicated route for clarity.
+            const response = await fetch("/api/rotate-pdf", {
                 method: "POST",
                 body: formData,
             });
@@ -182,7 +128,7 @@ export default function DeletePagesPage() {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
 
-            toast.success("¡PDF procesado correctamente!");
+            toast.success("¡PDF rotado correctamente!");
             setIsDialogOpen(false);
 
         } catch (error) {
@@ -197,10 +143,9 @@ export default function DeletePagesPage() {
     return (
         <div className="container mx-auto py-10 px-4 max-w-6xl pb-32">
             <div className="space-y-6">
-
                 <HeadingPage
-                    titlePage={"Eliminar Páginas PDF"}
-                    descriptionPage="Reordena páginas, rota o elimina las que no necesites permenentemente."
+                    titlePage="Rotar PDF"
+                    descriptionPage="Rota tus archivos PDF permanentemente. Gira todo el documento o páginas específicas."
                 />
 
                 {!file ? (
@@ -211,53 +156,37 @@ export default function DeletePagesPage() {
                     />
                 ) : (
                     <div className="space-y-6">
-                        {/* Shared Toolbar with Range Input */}
                         <PdfToolbar
                             title={file.name}
                             subtitle={`${pages.length} páginas`}
-                            onAdd={() => { }} // Disabled for single file tools or hidden
+                            onAdd={() => { }}
                             showAddButton={false}
+                            onRotateRight={handleRotateRight}
+                            onRotateLeft={handleRotateLeft}
+                            onResetRotation={handleResetRotation}
                             onReset={() => setFile(null)}
-                        >
-                            <div className="flex items-center gap-2 mr-4 min-w-[200px]">
-                                <span className="text-xs text-zinc-500 whitespace-nowrap">Eliminar:</span>
-                                <Input
-                                    className="h-8 text-xs bg-white dark:bg-zinc-900"
-                                    placeholder="Ej: 1, 3-5"
-                                    value={rangeInput}
-                                    onChange={(e) => handleRangeChange(e.target.value)}
-                                />
-                            </div>
-                        </PdfToolbar>
+                        />
 
-                        {/* Pages Grid */}
+                        {/* Reuse SortablePageGrid but ignore toggle/selection since we just rotate */}
                         <SortablePageGrid
                             pages={pages}
-                            selectedIds={selectedIds}
-                            onReorder={handleReorder}
-                            onToggle={handleToggle}
+                            selectedIds={[]} // No selection needed for rotation
+                            onReorder={handleReorder} // Allow reorder if they want, or disable? UX: "Rotate PDF" usually allows organizing too.
+                            onToggle={() => { }} // No toggle needed
                             onRotate={handleRotate}
                         />
 
-                        {/* Shared Action Bar */}
                         <PdfActionBar
-                            infoText={
-                                <span className={selectedIds.length > 0 ? "text-red-500 font-medium" : ""}>
-                                    {selectedIds.length > 0
-                                        ? `${selectedIds.length} páginas seleccionadas para eliminar`
-                                        : "Selecciona las páginas que deseas eliminar"
-                                    }
-                                </span>
-                            }
+                            infoText="¿Todo listo? Guarda tu nuevo PDF"
                             actionButton={
                                 <Button
                                     className="bg-primary hover:bg-primary/90"
                                     size="lg"
-                                    onClick={handleOpenSaveDialog}
+                                    onClick={() => setIsDialogOpen(true)}
                                     disabled={isProcessing}
                                 >
                                     {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileUp className="w-4 h-4 mr-2" />}
-                                    Procesar y Descargar
+                                    Guardar PDF Rotado
                                 </Button>
                             }
                         />
@@ -265,11 +194,11 @@ export default function DeletePagesPage() {
                         <SaveDialog
                             open={isDialogOpen}
                             onOpenChange={setIsDialogOpen}
-                            defaultName={`modified-${file.name.replace(".pdf", "")}`}
+                            defaultName={`rotated-${file.name.replace(".pdf", "")}`}
                             onSave={handleSave}
                             isProcessing={isProcessing}
                             title="Guardar archivo"
-                            description="Asigna un nombre a tu nuevo archivo PDF."
+                            description="Asigna un nombre a tu archivo PDF rotado."
                         />
                     </div>
                 )}

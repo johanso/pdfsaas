@@ -27,6 +27,8 @@ const toolsMenu = [
             { name: "Unir PDF", href: "/unir-pdf", image: merge, disabled: false },
             { name: "Eliminar", href: "/eliminar-paginas-pdf", image: merge, disabled: false },
             { name: "Dividir PDF", href: "/dividir-pdf", image: merge, disabled: false },
+            { name: "Extraer PDF", href: "/extraer-paginas-pdf", image: merge, disabled: false },
+            { name: "Rotar PDF", href: "/rotar-pdf", image: merge, disabled: false },
         ],
     },
     {
