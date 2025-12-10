@@ -2,10 +2,9 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RotateCw, GripVertical, Trash2 } from "lucide-react";
+import { GripVertical, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 
@@ -26,10 +25,9 @@ interface PdfPageCardProps {
     page: PageData;
     isSelected: boolean;
     onToggle: (id: string) => void;
-    onRotate: (id: string) => void;
 }
 
-export function PdfPageCard({ page, isSelected, onToggle, onRotate }: PdfPageCardProps) {
+export function PdfPageCard({ page, isSelected, onToggle }: PdfPageCardProps) {
     const {
         attributes,
         listeners,
@@ -49,22 +47,42 @@ export function PdfPageCard({ page, isSelected, onToggle, onRotate }: PdfPageCar
         <div ref={setNodeRef} style={style} className="relative group">
             <Card
                 className={cn(
-                    "w-full aspect-[3/4] overflow-hidden transition-all duration-200 relative bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800",
+                    "w-full aspect-3/4 overflow-hidden transition-all duration-200 relative border-2",
                     isDragging && "shadow-xl ring-2 ring-primary/20 opacity-50",
-                    isSelected && "ring-2 ring-red-500 border-red-500/50"
+                    isSelected
+                        ? "ring-2 ring-red-500 border-red-500 bg-red-50 dark:bg-red-950/20"
+                        : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
                 )}
             >
                 <CardContent className="p-0 h-full flex flex-col">
-                    {/* Header: Drag Handle + Page Number */}
+                    {/* Header: Drag Handle + Page Number + Checkbox */}
                     <div
-                        className="h-8 bg-zinc-50 dark:bg-zinc-800/50 border-b flex items-center px-2 cursor-grab active:cursor-grabbing"
-                        {...attributes}
-                        {...listeners}
+                        className={cn(
+                            "h-8 border-b flex items-center justify-between px-2",
+                            isSelected
+                                ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900"
+                                : "bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-800"
+                        )}
                     >
-                        <GripVertical className="w-4 h-4 text-zinc-400" />
-                        <span className="text-xs text-zinc-500 font-medium truncate ml-2 select-none">
-                            Página {page.originalIndex}
-                        </span>
+                        <div className="flex items-center gap-2 cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
+                            <GripVertical className="w-4 h-4 shrink-0 text-zinc-400" />
+                            <span className={cn(
+                                "text-xs font-medium truncate select-none",
+                                isSelected ? "text-red-600 dark:text-red-400" : "text-zinc-500"
+                            )}>
+                                Página {page.originalIndex}
+                            </span>
+                        </div>
+                        <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => onToggle(page.id)}
+                            className={cn(
+                                "w-4 h-4 border cursor-pointer",
+                                isSelected
+                                    ? "border-red-500 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                                    : "border-zinc-300 dark:border-zinc-600"
+                            )}
+                        />
                     </div>
 
                     {/* Preview Area */}
@@ -73,7 +91,10 @@ export function PdfPageCard({ page, isSelected, onToggle, onRotate }: PdfPageCar
                         onClick={() => onToggle(page.id)}
                     >
                         <div
-                            className="relative transition-transform duration-300 ease-in-out origin-center flex flex-col items-center justify-center w-full h-full"
+                            className={cn(
+                                "relative transition-all duration-300 ease-in-out origin-center flex flex-col items-center justify-center w-full h-full",
+                                isSelected && "opacity-50"
+                            )}
                             style={{ transform: `rotate(${page.rotation}deg)` }}
                         >
                             <PdfThumbnail
@@ -93,35 +114,13 @@ export function PdfPageCard({ page, isSelected, onToggle, onRotate }: PdfPageCar
                         {/* Deletion Overlay */}
                         <div className={cn(
                             "absolute inset-0 flex items-center justify-center transition-opacity duration-200 pointer-events-none",
-                            isSelected ? "bg-red-500/10 opacity-100" : "opacity-0"
+                            isSelected ? "opacity-100" : "opacity-0"
                         )}>
-                            {isSelected && <Trash2 className="w-8 h-8 text-red-600 drop-shadow-sm" />}
+                            {isSelected && <X className="w-8 h-8 text-red-600 drop-shadow-sm" />}
                         </div>
                     </div>
 
-                    {/* Footer: Rotate + Checkbox */}
-                    <div className="h-10 border-t flex items-center justify-between px-3 bg-white dark:bg-zinc-900">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onRotate(page.id);
-                            }}
-                            title="Rotate 90°"
-                        >
-                            <RotateCw className="w-3.5 h-3.5" />
-                        </Button>
 
-                        <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => onToggle(page.id)}
-                            className={cn(
-                                "w-5 h-5 border border-neutral-300 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500 cursor-pointer"
-                            )}
-                        />
-                    </div>
                 </CardContent>
             </Card>
         </div>

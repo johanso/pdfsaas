@@ -84,14 +84,26 @@ export default function DeletePagesPage() {
         );
     };
 
-    const handleRotate = (id: string) => {
-        setPages(prev => prev.map(p =>
-            p.id === id ? { ...p, rotation: (p.rotation + 90) % 360 } : p
-        ));
-    };
 
     const handleReorder = (newPages: PageData[]) => {
         setPages(newPages);
+    };
+
+    const handleSelectAll = () => {
+        setSelectedIds(pages.map(p => p.id));
+        toast.info("Todas las páginas seleccionadas");
+    };
+
+    const handleDeselectAll = () => {
+        setSelectedIds([]);
+        toast.info("Selección limpiada");
+    };
+
+    const handleInvertSelection = () => {
+        const allIds = pages.map(p => p.id);
+        const newSelection = allIds.filter(id => !selectedIds.includes(id));
+        setSelectedIds(newSelection);
+        toast.info("Selección invertida");
     };
 
     const handleRangeChange = (input: string) => {
@@ -214,32 +226,32 @@ export default function DeletePagesPage() {
                         {/* Shared Toolbar */}
                         <PdfToolbar
                             title={file.name}
-                            subtitle={`${pages.length} páginas`}
+                            // Peso archivo
+                            subtitle={`${(file.size / 1024 / 1024).toFixed(2)} MB total`}
                             onAdd={() => { }} // Disabled for single file tools or hidden
                             showAddButton={false}
+                            onSelectAll={handleSelectAll}
+                            onDeselectAll={handleDeselectAll}
+                            onInvertSelection={handleInvertSelection}
                             onReset={() => setFile(null)}
                         />
 
                         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                            {/* Left Panel: Instructions & Download */}
                             <div className="lg:col-span-1 space-y-6">
-                                <Card>
-                                    <CardContent className="space-y-6 pt-6">
+                                <Card className="sticky top-24">
+                                    <CardContent className="space-y-6 py-4">
                                         <div className="space-y-4">
                                             <div>
-                                                <h3 className="font-medium mb-2 flex items-center gap-2">
-                                                    <Trash2 className="w-4 h-4 text-primary" />
-                                                    Cómo usar
-                                                </h3>
-                                                <ol className="text-sm text-zinc-600 dark:text-zinc-400 space-y-2 list-decimal list-inside">
-                                                    <li>Selecciona las páginas que deseas eliminar</li>
-                                                    <li>Usa el campo de rango para selección rápida (ej: 1,3-5)</li>
-                                                    <li>Haz clic en "Descargar" para guardar el PDF modificado</li>
-                                                </ol>
+                                                <h2 className="text-md font-semibold mb-2">Resumen:</h2>
+                                                <ul className="text-sm text-zinc-600 dark:text-zinc-400 space-y-2 list-inside">
+                                                    <li>Puedes seleccionar las páginas a eliminar de forma individual, incluso cambiar su orden.</li>
+                                                    <li>Tambien puedes usar el campo de rango para una selección rápida (ej: 1,3-5)</li>
+                                                    <li>Las páginas marcadas en rojo se eliminarán permanentemente.</li>
+                                                </ul>
                                             </div>
 
                                             <div className="space-y-2">
-                                                <label className="text-xs text-zinc-500">Eliminar páginas:</label>
+                                                <label className="text-xs text-zinc-500">Campo de rango de páginas:</label>
                                                 <Input
                                                     className="h-9 text-sm bg-white dark:bg-zinc-900"
                                                     placeholder="Ej: 1, 3-5"
@@ -250,21 +262,25 @@ export default function DeletePagesPage() {
 
                                             <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs space-y-1">
                                                 <div className="flex justify-between">
-                                                    <span>Seleccionadas:</span>
+                                                    <span>Total PDF original:</span>
+                                                    <span className="font-normal">{pages.length}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span>Páginas a eliminar:</span>
                                                     <span className={`font-bold ${selectedIds.length > 0 ? 'text-red-500' : ''}`}>
                                                         {selectedIds.length}
                                                     </span>
                                                 </div>
                                                 <div className="flex justify-between">
-                                                    <span>Total páginas:</span>
-                                                    <span className="font-bold">{pages.length}</span>
+                                                    <span>Total final:</span>
+                                                    <span className="font-bold">{pages.length - selectedIds.length}</span>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="py-4 border-t border-zinc-100 dark:border-zinc-800">
+                                        <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
                                             <Button
-                                                className="w-full"
+                                                className="w-full cursor-pointer"
                                                 size="lg"
                                                 onClick={handleOpenSaveDialog}
                                                 disabled={isProcessing}
@@ -274,7 +290,7 @@ export default function DeletePagesPage() {
                                                 ) : (
                                                     <FileUp className="w-4 h-4 mr-2" />
                                                 )}
-                                                {isProcessing ? "Procesando..." : "Descargar"}
+                                                {isProcessing ? "Procesando..." : "Eliminar y Descargar"}
                                             </Button>
                                         </div>
                                     </CardContent>
@@ -298,7 +314,6 @@ export default function DeletePagesPage() {
                                     selectedIds={selectedIds}
                                     onReorder={handleReorder}
                                     onToggle={handleToggle}
-                                    onRotate={handleRotate}
                                 />
                             </div>
                         </div>

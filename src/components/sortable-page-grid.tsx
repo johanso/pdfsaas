@@ -29,7 +29,6 @@ interface SortablePageGridProps {
     selectedIds: string[];
     onReorder: (newPages: PageData[]) => void;
     onToggle: (id: string) => void;
-    onRotate: (id: string) => void;
 }
 
 export function SortablePageGrid({
@@ -37,7 +36,6 @@ export function SortablePageGrid({
     selectedIds,
     onReorder,
     onToggle,
-    onRotate,
 }: SortablePageGridProps) {
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -70,7 +68,6 @@ export function SortablePageGrid({
                             page={page}
                             isSelected={selectedIds.includes(page.id)}
                             onToggle={onToggle}
-                            onRotate={onRotate}
                         />
                     ))}
                 </div>
