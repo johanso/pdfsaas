@@ -208,7 +208,7 @@ export function PdfToolbar({
                 {onReset && (
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button variant="outline" onClick={onReset} size="icon" className="rounded-full">
+                            <Button variant="outline" onClick={onReset} size="icon" className="rounded-full cursor-pointer">
                                 <Trash2 className="w-4 h-4" />
                             </Button>
                         </TooltipTrigger>

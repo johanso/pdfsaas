@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Download, Scissors, FileOutput, Layers } from "lucide-react";
+import { Loader2, Download, Scissors, FileOutput, Layers, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { SplitGrid } from "./split-grid";
@@ -13,6 +13,7 @@ import { PdfToolbar } from "@/components/pdf-toolbar";
 import { SaveDialog } from "@/components/save-dialog";
 import { Dropzone } from "@/components/ui/dropzone";
 import { HeadingPage } from "@/components/ui/heading-page";
+import { getSplitGroupColor } from "@/lib/split-colors";
 
 // Configure worker inside component or effect to avoid SSR issues
 // pdfjs.GlobalWorkerOptions.workerSrc = ... moved to useEffect
@@ -83,10 +84,59 @@ export default function SplitPdfPage() {
         });
     };
 
+    // Delete a specific group by removing its split point
+    const handleDeleteGroup = (groupIndex: number) => {
+        const sortedRanges = [...ranges].sort((a, b) => a - b);
+
+        // If it's the last group, remove the last split point
+        if (groupIndex === sortedRanges.length) {
+            if (sortedRanges.length > 0) {
+                const lastSplit = sortedRanges[sortedRanges.length - 1];
+                setRanges(prev => prev.filter(p => p !== lastSplit));
+            }
+        } else if (groupIndex < sortedRanges.length) {
+            // Remove the split point at the end of this group
+            const splitToRemove = sortedRanges[groupIndex];
+            setRanges(prev => prev.filter(p => p !== splitToRemove));
+        }
+    };
+
     const getIsZip = () => {
         if (mode === "ranges") return ranges.length > 0;
         if (mode === "fixed") return Math.ceil(numPages / fixedSize) > 1;
         return false;
+    };
+
+    // Calculate groups for ranges mode
+    const getRangeGroups = () => {
+        if (mode !== "ranges" || numPages === 0) return [];
+
+        const groups: { start: number; end: number; color: string }[] = [];
+
+        const sortedRanges = [...ranges].sort((a, b) => a - b);
+        let start = 1;
+
+        sortedRanges.forEach((splitPoint, index) => {
+            const colorObj = getSplitGroupColor(index);
+            groups.push({
+                start,
+                end: splitPoint,
+                color: colorObj.dot
+            });
+            start = splitPoint + 1;
+        });
+
+        // Add final group
+        if (start <= numPages) {
+            const colorObj = getSplitGroupColor(sortedRanges.length);
+            groups.push({
+                start,
+                end: numPages,
+                color: colorObj.dot
+            });
+        }
+
+        return groups;
     };
 
     const handlePreSubmit = () => {
@@ -190,8 +240,14 @@ export default function SplitPdfPage() {
                                     <CardContent className="space-y-4 pt-4">
                                         <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
                                             <TabsList className="grid w-full grid-cols-2 mb-4">
-                                                <TabsTrigger value="ranges" title="Por Rangos"><Scissors className="w-4 h-4" /></TabsTrigger>
-                                                <TabsTrigger value="fixed" title="Fijo"><Layers className="w-4 h-4" /></TabsTrigger>
+                                                <TabsTrigger className="flex items-center gap-2 cursor-pointer" value="ranges" title="Por Rangos">
+                                                    <Scissors className="w-4 h-4" />
+                                                    <span className="text-xs">Manual</span>
+                                                </TabsTrigger>
+                                                <TabsTrigger className="flex items-center gap-2 cursor-pointer" value="fixed" title="Fijo">
+                                                    <Layers className="w-4 h-4" />
+                                                    <span className="text-xs">Fija</span>
+                                                </TabsTrigger>
                                             </TabsList>
 
                                             <div className="space-y-4">
@@ -199,9 +255,46 @@ export default function SplitPdfPage() {
                                                     <div className="text-sm text-zinc-500">
                                                         <p className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">Modo Rangos</p>
                                                         <p>Haz clic en las tijeras entre las páginas para crear nuevos grupos.</p>
-                                                        <div className="mt-4 p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs">
-                                                            Grupos actuales: <strong>{ranges.length + 1}</strong>
-                                                        </div>
+
+                                                        {getRangeGroups().length > 0 && (
+                                                            <div className="mt-6 space-y-2">
+                                                                <p className="text-sm mb-4 font-semibold text-zinc-700 dark:text-zinc-300">
+                                                                    Grupos a crear ({getRangeGroups().length}):
+                                                                </p>
+                                                                <div className="space-y-1.5">
+                                                                    {getRangeGroups().map((group, index) => (
+                                                                        <div
+                                                                            key={index}
+                                                                            className="flex items-center gap-2 p-2 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-700 group/item hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
+                                                                        >
+                                                                            <div className={`w-2 h-2 rounded-full ${group.color} shrink-0`} />
+                                                                            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 min-w-[60px]">
+                                                                                Archivo {index + 1}:
+                                                                            </span>
+                                                                            <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-1">
+                                                                                {group.start === group.end
+                                                                                    ? `Pág ${group.start}`
+                                                                                    : `Págs ${group.start}-${group.end}`
+                                                                                }
+                                                                            </span>
+                                                                            {
+                                                                                getRangeGroups().length > 1 && (
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="icon"
+                                                                                        className="h-5 w-5 transition-opacity hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20 cursor-pointer"
+                                                                                        onClick={() => handleDeleteGroup(index)}
+                                                                                        title="Eliminar grupo"
+                                                                                    >
+                                                                                        <X className="h-3 w-3" />
+                                                                                    </Button>
+                                                                                )
+                                                                            }
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
 
@@ -226,16 +319,17 @@ export default function SplitPdfPage() {
                                                         </div>
 
                                                         <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs">
-                                                            Total archivos resultantes: <strong>{Math.ceil(numPages / fixedSize)}</strong>
+                                                            Se crearán <strong>{Math.ceil(numPages / fixedSize)}</strong> archivos de <strong>{fixedSize}</strong> páginas cada uno (aprox).
                                                         </div>
+
                                                     </div>
                                                 )}
                                             </div>
                                         </Tabs>
 
-                                        <div className="py-4 border-t border-zinc-100 dark:border-zinc-800">
+                                        <div className="py-4 border-t border-zinc-200 dark:border-zinc-800">
                                             <Button
-                                                className="w-full"
+                                                className="w-full cursor-pointer"
                                                 size="lg"
                                                 onClick={handlePreSubmit}
                                                 disabled={isProcessing || (mode !== "fixed" && numPages === 0)}
@@ -247,7 +341,7 @@ export default function SplitPdfPage() {
                                                 ) : (
                                                     <Download className="w-4 h-4 mr-2" />
                                                 )}
-                                                {isProcessing ? "Procesando..." : (getIsZip() ? "Descargar ZIP" : "Descargar PDF")}
+                                                {isProcessing ? "Procesando..." : (getIsZip() ? "Dividir y Descargar ZIP" : "Dividir y Descargar PDF")}
                                             </Button>
                                         </div>
                                     </CardContent>
