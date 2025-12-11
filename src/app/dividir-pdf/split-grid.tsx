@@ -75,8 +75,8 @@ export function SplitGrid({
                                 </div>
 
                                 {/* Thumbnail Area */}
-                                <div className="relative flex-1 p-2 bg-white dark:bg-zinc-950/50">
-                                    <div className="w-full h-full rounded shadow-sm overflow-hidden">
+                                <div className="flex-1 relative flex items-center justify-center bg-zinc-100 dark:bg-zinc-900/50 overflow-hidden p-2">
+                                    <div className="w-full h-full rounded overflow-hidden">
                                         <PdfThumbnail file={file} pageNumber={pageNumber} />
                                     </div>
                                 </div>

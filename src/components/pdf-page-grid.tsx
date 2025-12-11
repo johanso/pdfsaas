@@ -38,7 +38,7 @@ export function PdfPageGrid({
                     >
                         <Card
                             className={cn(
-                                "overflow-hidden border-2 w-full aspect-3/4 cursor-pointer transition-colors",
+                                "overflow-hidden border w-full aspect-3/4 cursor-pointer transition-colors",
                                 isSelected
                                     ? "ring-2 ring-primary border-primary bg-zinc-50 dark:bg-zinc-800"
                                     : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900",
@@ -68,7 +68,7 @@ export function PdfPageGrid({
                                 </div>
 
                                 {/* Thumbnail Area */}
-                                <div className="flex-1 relative flex items-center justify-center bg-zinc-100/50 dark:bg-zinc-900/50 overflow-hidden p-2">
+                                <div className="flex-1 relative flex items-center justify-center bg-zinc-100 dark:bg-zinc-900/50 overflow-hidden p-2">
                                     <div className="w-full h-full rounded overflow-hidden bg-white dark:bg-zinc-900 relative">
                                         <PdfThumbnail file={file} pageNumber={pageNumber} />
 

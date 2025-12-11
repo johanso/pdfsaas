@@ -229,13 +229,12 @@ export default function RotatePdfPage() {
                             />
 
                             {/* Right Panel: Pages Grid */}
-                            <div className="lg:col-span-3 bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 min-h-[500px]">
+                            <div className="lg:col-span-3 bg-zinc-50/50 dark:bg-zinc-900/20 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 min-h-[500px]">
                                 <SortablePageGrid
                                     pages={pages}
                                     selectedIds={[]}
                                     onReorder={handleReorder}
                                     onToggle={() => { }}
-                                    onRotate={handleRotate}
                                 />
                             </div>
                         </div>

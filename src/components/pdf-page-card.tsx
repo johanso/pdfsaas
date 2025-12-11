@@ -47,7 +47,7 @@ export function PdfPageCard({ page, isSelected, onToggle }: PdfPageCardProps) {
         <div ref={setNodeRef} style={style} className="relative group">
             <Card
                 className={cn(
-                    "w-full aspect-3/4 overflow-hidden transition-all duration-200 relative border-2",
+                    "w-full aspect-3/4 overflow-hidden transition-all duration-200 relative border",
                     isDragging && "shadow-xl ring-2 ring-primary/20 opacity-50",
                     isSelected
                         ? "ring-2 ring-red-500 border-red-500 bg-red-50 dark:bg-red-950/20"
