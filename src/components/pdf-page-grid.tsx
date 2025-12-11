@@ -27,21 +27,18 @@ export function PdfPageGrid({
     const pages = Array.from({ length: numPages }, (_, i) => i + 1);
 
     return (
-        <div className="flex flex-wrap gap-6 justify-center pb-20 select-none">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 select-none">
             {pages.map((pageNumber) => {
                 const isSelected = selectedPages.includes(pageNumber);
 
                 return (
                     <div
                         key={pageNumber}
-                        className={cn(
-                            "relative w-[150px] transition-all duration-200 group",
-                            isSelected ? "scale-105" : "hover:scale-102"
-                        )}
+                        className="relative transition-all duration-200 group"
                     >
                         <Card
                             className={cn(
-                                "overflow-hidden border-2 w-full cursor-pointer transition-colors",
+                                "overflow-hidden border-2 w-full aspect-3/4 cursor-pointer transition-colors",
                                 isSelected
                                     ? "ring-2 ring-primary border-primary bg-zinc-50 dark:bg-zinc-800"
                                     : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900",
@@ -49,11 +46,11 @@ export function PdfPageGrid({
                             )}
                             onClick={() => onTogglePage(pageNumber)}
                         >
-                            <CardContent className="p-0">
+                            <CardContent className="p-0 h-full flex flex-col">
                                 {/* Header: Page Number + Checkbox */}
                                 <div className={cn(
-                                    "h-9 border-b flex items-center justify-between px-3 transition-colors",
-                                    isSelected ? "bg-primary/5 border-primary/20" : "bg-zinc-50 dark:bg-zinc-800/50 border-zinc-100 dark:border-zinc-800"
+                                    "h-8 border-b flex items-center justify-between px-2 shrink-0 transition-colors",
+                                    isSelected ? "bg-primary/5 border-primary/20" : "bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-800"
                                 )}>
                                     <span className={cn(
                                         "text-xs font-medium truncate select-none",
@@ -71,8 +68,8 @@ export function PdfPageGrid({
                                 </div>
 
                                 {/* Thumbnail Area */}
-                                <div className="relative aspect-[3/4] p-3 bg-zinc-50/50 dark:bg-zinc-950/30">
-                                    <div className="w-full h-full rounded shadow-sm overflow-hidden bg-white dark:bg-zinc-900 relative">
+                                <div className="flex-1 relative flex items-center justify-center bg-zinc-100/50 dark:bg-zinc-900/50 overflow-hidden p-2">
+                                    <div className="w-full h-full rounded overflow-hidden bg-white dark:bg-zinc-900 relative">
                                         <PdfThumbnail file={file} pageNumber={pageNumber} />
 
                                         {/* Overlay for selected state */}

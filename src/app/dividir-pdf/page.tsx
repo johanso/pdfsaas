@@ -236,8 +236,8 @@ export default function SplitPdfPage() {
                         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                             {/* Left Panel: Controls */}
                             <div className="lg:col-span-1 space-y-6">
-                                <Card>
-                                    <CardContent className="space-y-4 pt-4">
+                                <Card className="sticky top-24">
+                                    <CardContent className="space-y-6 py-4">
                                         <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
                                             <TabsList className="grid w-full grid-cols-2 mb-4">
                                                 <TabsTrigger className="flex items-center gap-2 cursor-pointer" value="ranges" title="Por Rangos">
@@ -327,12 +327,12 @@ export default function SplitPdfPage() {
                                             </div>
                                         </Tabs>
 
-                                        <div className="py-4 border-t border-zinc-200 dark:border-zinc-800">
+                                        <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
                                             <Button
-                                                className="w-full cursor-pointer"
+                                                className="w-full bg-red-500 hover:bg-red-600 cursor-pointer disabled:bg-red-600 disabled:hover:bg-red-600 disabled:cursor-not-allowed"
                                                 size="lg"
                                                 onClick={handlePreSubmit}
-                                                disabled={isProcessing || (mode !== "fixed" && numPages === 0)}
+                                                disabled={isProcessing || (mode !== "fixed" && numPages === 0) || (mode === "ranges" && getRangeGroups().length <= 1)}
                                             >
                                                 {isProcessing ? (
                                                     <Loader2 className="w-4 h-4 animate-spin mr-2" />

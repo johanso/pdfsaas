@@ -197,7 +197,7 @@ export default function UnirPdfPage() {
 
                                             <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
                                                 <Button
-                                                    className="w-full cursor-pointer"
+                                                    className="w-full bg-red-500 hover:bg-red-600 cursor-pointer disabled:bg-red-600 disabled:hover:bg-red-600 disabled:cursor-not-allowed"
                                                     size="lg"
                                                     onClick={() => setIsDialogOpen(true)}
                                                     disabled={files.length < 2 || isProcessing}

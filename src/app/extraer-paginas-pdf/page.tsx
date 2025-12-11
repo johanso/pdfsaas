@@ -161,7 +161,7 @@ export default function ExtractPdfPage() {
             <div className="space-y-6">
                 <HeadingPage
                     titlePage="Extraer Páginas PDF"
-                    descriptionPage="Selecciona y extrae páginas específicas de tu documento PDF de forma fácile y rápida."
+                    descriptionPage="Selecciona las páginas que quieres conservar y crea un nuevo PDF o descárgalas por separado."
                 />
 
                 {!file ? (
@@ -186,13 +186,13 @@ export default function ExtractPdfPage() {
                         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                             {/* Left Panel: Controls */}
                             <div className="lg:col-span-1 space-y-6">
-                                <Card>
-                                    <CardContent className="space-y-6 pt-6">
+                                <Card className="sticky top-24">
+                                    <CardContent className="space-y-6 pt-4">
                                         <div className="space-y-4">
                                             <div>
                                                 <h3 className="font-medium mb-2 flex items-center gap-2">
                                                     <FileOutput className="w-4 h-4 text-primary" />
-                                                    Modo de Extracción
+                                                    Opciones de Salida
                                                 </h3>
                                                 <p className="text-sm text-zinc-500 mb-4">
                                                     Elige cómo quieres recibir tus páginas extraídas.
@@ -203,36 +203,51 @@ export default function ExtractPdfPage() {
                                                         variant={extractMode === "separate" ? "default" : "outline"}
                                                         size="sm"
                                                         onClick={() => setExtractMode("separate")}
-                                                        className="justify-start"
+                                                        className="cursor-pointer"
                                                     >
-                                                        Separar en archivos (ZIP)
+                                                        Separar páginas (ZIP)
                                                     </Button>
                                                     <Button
                                                         variant={extractMode === "merge" ? "default" : "outline"}
                                                         size="sm"
                                                         onClick={() => setExtractMode("merge")}
-                                                        className="justify-start"
+                                                        className="cursor-pointer"
                                                     >
-                                                        Unir en un solo PDF
+                                                        Fusionar en un nuevo PDF
                                                     </Button>
                                                 </div>
                                             </div>
 
                                             <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs space-y-1">
                                                 <div className="flex justify-between">
-                                                    <span>Seleccionadas:</span>
+                                                    <span>Páginas a extraer:</span>
                                                     <span className="font-bold">{selectedPages.length}</span>
                                                 </div>
                                                 <div className="flex justify-between">
-                                                    <span>Total páginas:</span>
+                                                    <span>De un total de:</span>
                                                     <span className="font-bold">{numPages}</span>
                                                 </div>
                                             </div>
+
+                                            <div className="text-xs">
+                                                {
+                                                    extractMode === "separate" ? (
+                                                        <p>
+                                                            {selectedPages.length === 1
+                                                                ? "Se descargará un archivo PDF con la página seleccionada."
+                                                                : "Se descargará un archivo .zip con las páginas seleccionadas de forma independiente."
+                                                            }
+                                                        </p>
+                                                    ) : (
+                                                        <p>Se creará un único documento PDF con las <strong>{selectedPages.length}</strong> páginas seleccionadas.</p>
+                                                    )
+                                                }
+                                            </div>
                                         </div>
 
-                                        <div className="py-4 border-t border-zinc-100 dark:border-zinc-800">
+                                        <div className="py-4 border-t border-zinc-200 dark:border-zinc-800">
                                             <Button
-                                                className="w-full"
+                                                className="w-full bg-red-500 hover:bg-red-600 cursor-pointer disabled:bg-red-600 disabled:hover:bg-red-600 disabled:cursor-not-allowed"
                                                 size="lg"
                                                 onClick={handlePreSubmit}
                                                 disabled={isProcessing || selectedPages.length === 0}
@@ -242,7 +257,7 @@ export default function ExtractPdfPage() {
                                                 ) : (
                                                     <Download className="w-4 h-4 mr-2" />
                                                 )}
-                                                {isProcessing ? "Procesando..." : "Descargar"}
+                                                {isProcessing ? "Procesando..." : extractMode === "separate" && selectedPages.length > 1 ? "Descargar ZIP" : "Descargar PDF"}
                                             </Button>
                                         </div>
                                     </CardContent>
