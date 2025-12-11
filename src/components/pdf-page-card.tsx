@@ -120,7 +120,6 @@ export function PdfPageCard({ page, isSelected, onToggle }: PdfPageCardProps) {
                         </div>
                     </div>
 
-
                 </CardContent>
             </Card>
         </div>

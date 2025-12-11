@@ -112,6 +112,40 @@ export function PdfToolbar({
                         )
                     }
 
+                    {
+                        (onRotateLeft || onRotateRight || onResetRotation) && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="gap-2 focus:outline-none focus-visible:outline-none focus-visible:ring-0 cursor-pointer">
+                                        Opciones de rotación
+                                        <MoreHorizontalIcon className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+
+                                <DropdownMenuContent align="end" className="w-48">
+
+                                    {onRotateLeft && (
+                                        <DropdownMenuItem onClick={onRotateLeft}>
+                                            <span>Girar todo a la izquierda</span>
+                                        </DropdownMenuItem>
+                                    )}
+
+                                    {onRotateRight && (
+                                        <DropdownMenuItem onClick={onRotateRight}>
+                                            <span>Girar todo a la derecha</span>
+                                        </DropdownMenuItem>
+                                    )}
+
+                                    {onResetRotation && (
+                                        <DropdownMenuItem onClick={onResetRotation}>
+                                            <span>Restablecer rotación</span>
+                                        </DropdownMenuItem>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )
+                    }
+
                     {showAddButton && onAdd && (
                         <Button
                             variant="outline"
@@ -124,30 +158,6 @@ export function PdfToolbar({
                         </Button>
                     )}
 
-                    {onRotateLeft && (
-                        <Button
-                            variant="outline"
-                            onClick={onRotateLeft}
-                            size="sm"
-                            className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer"
-                        >
-                            <RotateCcw className="w-4 h-4" />
-                            Girar Izq
-                        </Button>
-                    )}
-
-                    {onRotateRight && (
-                        <Button
-                            variant="outline"
-                            onClick={onRotateRight}
-                            size="sm"
-                            className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer"
-                        >
-                            <RotateCw className="w-4 h-4" />
-                            Girar Der
-                        </Button>
-                    )}
-
                     {onRotateAll && (
                         <Button
                             variant="outline"
@@ -157,19 +167,6 @@ export function PdfToolbar({
                         >
                             <RotateCw className="w-4 h-4" />
                             Rotar todos
-                        </Button>
-                    )}
-
-                    {onResetRotation && (
-                        <Button
-                            variant="outline"
-                            onClick={onResetRotation}
-                            size="sm"
-                            className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer text-zinc-600 hover:text-zinc-900"
-                            title="Restablecer rotación"
-                        >
-                            <RefreshCw className="w-4 h-4" />
-                            Reset
                         </Button>
                     )}
 
