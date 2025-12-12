@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { GripVertical, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+import { PageData } from "@/types";
 
 // Dynamic import for the thumbnail to prevent SSR issues
 const PdfThumbnail = dynamic(() => import("./pdf-thumbnail").then((mod) => mod.PdfThumbnail), {
@@ -14,20 +15,15 @@ const PdfThumbnail = dynamic(() => import("./pdf-thumbnail").then((mod) => mod.P
     loading: () => <div className="w-full h-full bg-zinc-100 dark:bg-zinc-800 animate-pulse" />,
 });
 
-interface PageData {
-    id: string;
-    originalIndex: number; // 1-based index from the PDF
-    rotation: number;
-    file: File;
-}
-
 interface PdfPageCardProps {
     page: PageData;
     isSelected: boolean;
     onToggle: (id: string) => void;
+    actions?: React.ReactNode;
+    hideSelection?: boolean;
 }
 
-export function PdfPageCard({ page, isSelected, onToggle }: PdfPageCardProps) {
+export function PdfPageCard({ page, isSelected, onToggle, actions, hideSelection }: PdfPageCardProps) {
     const {
         attributes,
         listeners,
@@ -55,7 +51,7 @@ export function PdfPageCard({ page, isSelected, onToggle }: PdfPageCardProps) {
                 )}
             >
                 <CardContent className="p-0 h-full flex flex-col">
-                    {/* Header: Drag Handle + Page Number + Checkbox */}
+                    {/* Header: Drag Handle + Page Number + Actions/Checkbox */}
                     <div
                         className={cn(
                             "h-8 border-b flex items-center justify-between px-2",
@@ -73,16 +69,22 @@ export function PdfPageCard({ page, isSelected, onToggle }: PdfPageCardProps) {
                                 Página {page.originalIndex}
                             </span>
                         </div>
-                        <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => onToggle(page.id)}
-                            className={cn(
-                                "w-4 h-4 border cursor-pointer",
-                                isSelected
-                                    ? "border-red-500 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
-                                    : "border-zinc-300 dark:border-zinc-600"
+
+                        <div className="flex items-center gap-1">
+                            {actions}
+                            {!hideSelection && (
+                                <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => onToggle(page.id)}
+                                    className={cn(
+                                        "w-4 h-4 border cursor-pointer",
+                                        isSelected
+                                            ? "border-red-500 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                                            : "border-zinc-300 dark:border-zinc-600"
+                                    )}
+                                />
                             )}
-                        />
+                        </div>
                     </div>
 
                     {/* Preview Area */}

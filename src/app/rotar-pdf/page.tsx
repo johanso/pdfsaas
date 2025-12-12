@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, FileUp, Loader2, RotateCw } from "lucide-react";
+import { Download, Loader2, RotateCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { pdfjs } from "react-pdf";
 import { SortablePageGrid } from "@/components/sortable-page-grid";
 import { PdfToolbar } from "@/components/pdf-toolbar";
 import { SaveDialog } from "@/components/save-dialog";
@@ -13,6 +12,7 @@ import { Dropzone } from "@/components/ui/dropzone";
 import { HeadingPage } from "@/components/ui/heading-page";
 import { usePdfPages } from "@/hooks/usePdfPages";
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { PageData } from "@/types";
 
 
 
@@ -20,7 +20,7 @@ export default function RotatePdfPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { pages, rotatePage, rotateAllPages, resetRotation, reorderPages } = usePdfPages(file);
+  const { pages, rotatePage, rotateAllPages, resetRotation, reorderPages, removePage } = usePdfPages(file);
   const { isProcessing, processAndDownload } = usePdfProcessing();
 
   const handleRotateRight = () => {
@@ -64,6 +64,23 @@ export default function RotatePdfPage() {
     }
   };
 
+  const renderCardActions = (page: PageData) => (
+    <div className="flex items-center gap-0.5">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6 text-zinc-500 hover:bg-neutral-50 cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          rotatePage(page.id);
+        }}
+        title="Rotar 90°"
+      >
+        <RotateCw className="w-3.5 h-3.5" />
+      </Button>
+    </div>
+  );
+
 
 
   return (
@@ -101,7 +118,6 @@ export default function RotatePdfPage() {
                     <div className="space-y-4">
                       <div>
                         <h3 className="font-medium mb-2 flex items-center gap-2">
-                          {/* <RotateCw className="w-4 h-4 text-primary" /> */}
                           Resumen:
                         </h3>
                         <ol className="text-sm text-zinc-600 dark:text-zinc-400 space-y-2 list-inside">
@@ -110,10 +126,6 @@ export default function RotatePdfPage() {
                       </div>
 
                       <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs space-y-1">
-
-                        {/* Detecta cuántas páginas tienen una rotación != 0.
-                        Muestra: "Páginas modificadas: 3 de 6".
-                        Si todas están en 0°, muestra: "Sin cambios pendientes". */}
 
                         {pages.some(p => p.rotation !== 0) ? (
                           <div className="flex justify-between">
@@ -165,6 +177,7 @@ export default function RotatePdfPage() {
                   selectedIds={[]}
                   onReorder={reorderPages}
                   onToggle={() => { }}
+                  renderCardActions={renderCardActions}
                 />
               </div>
             </div>

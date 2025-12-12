@@ -16,19 +16,14 @@ import {
     rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { PdfPageCard } from "./pdf-page-card";
-
-interface PageData {
-    id: string;
-    originalIndex: number;
-    rotation: number;
-    file: File;
-}
+import { PageData } from "@/types";
 
 interface SortablePageGridProps {
     pages: PageData[];
     selectedIds: string[];
     onReorder: (newPages: PageData[]) => void;
     onToggle: (id: string) => void;
+    renderCardActions?: (page: PageData) => React.ReactNode;
 }
 
 export function SortablePageGrid({
@@ -36,6 +31,7 @@ export function SortablePageGrid({
     selectedIds,
     onReorder,
     onToggle,
+    renderCardActions,
 }: SortablePageGridProps) {
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -68,6 +64,8 @@ export function SortablePageGrid({
                             page={page}
                             isSelected={selectedIds.includes(page.id)}
                             onToggle={onToggle}
+                            actions={renderCardActions?.(page)}
+                            hideSelection={!!renderCardActions}
                         />
                     ))}
                 </div>

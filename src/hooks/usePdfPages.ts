@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-
-export interface PageData {
-  id: string;
-  originalIndex: number;
-  rotation: number;
-  file: File;
-}
+import { PageData } from "@/types";
 
 export function usePdfPages(file: File | null) {
   const [pages, setPages] = useState<PageData[]>([]);
@@ -66,12 +60,17 @@ export function usePdfPages(file: File | null) {
     setPages(newPages);
   };
 
+  const removePage = (id: string) => {
+    setPages(prev => prev.filter(p => p.id !== id));
+  };
+
   return {
     pages,
     setPages,
     rotatePage,
     rotateAllPages,
     resetRotation,
-    reorderPages
+    reorderPages,
+    removePage
   };
 }
