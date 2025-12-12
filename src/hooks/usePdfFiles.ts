@@ -1,0 +1,101 @@
+import { useState } from "react";
+import { toast } from "sonner";
+
+export interface PdfFile {
+  id: string;
+  file: File;
+  name: string;
+  rotation: number;
+  pageCount?: number;
+}
+
+export function usePdfFiles() {
+  const [files, setFiles] = useState<PdfFile[]>([]);
+
+  const addFiles = async (newFiles: File[]) => {
+    const pdfFiles = newFiles.filter(f => f.type === "application/pdf");
+
+    if (pdfFiles.length < newFiles.length) {
+      toast.error("Algunos archivos no eran PDF y fueron ignorados.");
+    }
+
+    if (pdfFiles.length === 0) return;
+
+    // Extract page counts for each PDF
+    const mappedFilesPromises = pdfFiles.map(async (f) => {
+      let pageCount: number | undefined;
+      try {
+        const { pdfjs } = await import("react-pdf");
+        pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+        const buffer = await f.arrayBuffer();
+        const pdf = await pdfjs.getDocument(buffer).promise;
+        pageCount = pdf.numPages;
+      } catch (error) {
+        console.error("Error extracting page count:", error);
+      }
+
+      return {
+        id: crypto.randomUUID(),
+        file: f,
+        name: f.name,
+        rotation: 0,
+        pageCount
+      };
+    });
+
+    const mappedFiles = await Promise.all(mappedFilesPromises);
+    setFiles(prev => [...prev, ...mappedFiles]);
+  };
+
+  const rotateFile = (id: string, degrees: number = 90) => {
+    setFiles(files => files.map(f => {
+      if (f.id === id) {
+        return { ...f, rotation: (f.rotation + degrees) % 360 };
+      }
+      return f;
+    }));
+  };
+
+  const removeFile = (id: string) => {
+    setFiles(files => files.filter(f => f.id !== id));
+  };
+
+  const reorderFiles = (newFiles: PdfFile[]) => {
+    setFiles(newFiles);
+  };
+
+  const sortAZ = () => {
+    setFiles(prev => [...prev].sort((a, b) => a.name.localeCompare(b.name)));
+  };
+
+  const sortZA = () => {
+    setFiles(prev => [...prev].sort((a, b) => b.name.localeCompare(a.name)));
+  };
+
+  const reset = () => {
+    setFiles([]);
+  };
+
+  const getTotalSize = () => {
+    return files.reduce((acc, f) => acc + f.file.size, 0);
+  };
+
+  const getTotalPages = () => {
+    return files.reduce((acc, f) => acc + (f.pageCount || 0), 0);
+  };
+
+  return {
+    files,
+    setFiles,
+    addFiles,
+    rotateFile,
+    removeFile,
+    reorderFiles,
+    sortAZ,
+    sortZA,
+    reset,
+    getTotalSize,
+    getTotalPages
+  };
+}
