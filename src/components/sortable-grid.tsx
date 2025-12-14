@@ -1,72 +1,35 @@
-import {
-    DndContext,
-    closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    DragEndEvent,
-} from "@dnd-kit/core";
-import {
-    arrayMove,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    rectSortingStrategy,
-} from "@dnd-kit/sortable";
 import { PdfFile } from "@/types";
 import { PdfCard } from "./pdf-card";
+import { SortableGridBase } from "./sortable-grid-base";
 
 interface SortableGridProps {
-    files: PdfFile[];
-    onReorder: (newFiles: PdfFile[]) => void;
-    onRotate?: (id: string) => void;
-    onRemove: (id: string) => void;
-    showRotate?: boolean;
+  files: PdfFile[];
+  onReorder: (newFiles: PdfFile[]) => void;
+  onRotate?: (id: string) => void;
+  onRemove: (id: string) => void;
+  showRotate?: boolean;
 }
 
 export function SortableGrid({
-    files,
-    onReorder,
-    onRotate,
-    onRemove,
-    showRotate = true,
+  files,
+  onReorder,
+  onRotate,
+  onRemove,
+  showRotate = true,
 }: SortableGridProps) {
-    const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
-
-    function handleDragEnd(event: DragEndEvent) {
-        const { active, over } = event;
-
-        if (over && active.id !== over.id) {
-            const oldIndex = files.findIndex((f) => f.id === active.id);
-            const newIndex = files.findIndex((f) => f.id === over.id);
-            onReorder(arrayMove(files, oldIndex, newIndex));
-        }
-    }
-
-    return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-        >
-            <SortableContext items={files.map((f) => f.id)} strategy={rectSortingStrategy}>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {files.map((file) => (
-                        <PdfCard
-                            key={file.id}
-                            file={file}
-                            onRotate={onRotate}
-                            onRemove={onRemove}
-                            showRotate={showRotate}
-                        />
-                    ))}
-                </div>
-            </SortableContext>
-        </DndContext>
-    );
+  return (
+    <SortableGridBase
+      items={files}
+      onReorder={onReorder}
+      getItemId={(file) => file.id}
+      renderItem={(file) => (
+        <PdfCard
+          file={file}
+          onRotate={onRotate}
+          onRemove={onRemove}
+          showRotate={showRotate}
+        />
+      )}
+    />
+  );
 }
