@@ -11,4 +11,5 @@ export interface PageData {
     originalIndex: number; // 1-based index from the PDF
     rotation: number;
     file: File;
+    isBlank: boolean;
 }
