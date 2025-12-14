@@ -74,75 +74,97 @@ export function PdfToolbar({
       <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
         {children}
 
+        {showAddButton && onAdd && (
+          <Button variant="default" onClick={onAdd} size="sm" className="cursor-pointer shadow-none">
+            <span className="text-xs font-medium">Añadir PDF</span>
+            <Plus className=" h-4 w-4" />
+          </Button>
+        )}
+
         <ButtonGroup>
-          {
-            (onInvertSelection || onSelectAll || onDeselectAll) && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2 focus:outline-none focus-visible:outline-none focus-visible:ring-0 cursor-pointer">
-                    Opciones de selección
-                    <MoreHorizontalIcon className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="end" className="w-48">
+          {onSelectAll && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={onSelectAll} size="sm" className="text-xs cursor-pointer shadow-none">
+                  <span className="text-xs font-medium">Seleccionar todos</span>
+                  <SquareCheck className=" h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-center">Marca todas las páginas <br /> del documento</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
-                  {onSelectAll && (
-                    <DropdownMenuItem onClick={onSelectAll}>
-                      <SquareCheck className="mr-2 h-4 w-4" />
-                      <span>Seleccionar todo</span>
-                    </DropdownMenuItem>
-                  )}
+          {onDeselectAll && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={onDeselectAll} size="sm" className="text-xs cursor-pointer shadow-none">
+                  <span className="text-xs font-medium">Ninguno</span>
+                  <Square className=" h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-center">Desmarca todas las páginas <br /> seleccionadas</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
-                  {onDeselectAll && (
-                    <DropdownMenuItem onClick={onDeselectAll}>
-                      <Square className="mr-2 h-4 w-4" />
-                      <span>Deseleccionar todo</span>
-                    </DropdownMenuItem>
-                  )}
-
-                  {onInvertSelection && (
-                    <DropdownMenuItem onClick={onInvertSelection}>
-                      <ArrowRightLeft className="mr-2 h-4 w-4" />
-                      <span>Invertir selección</span>
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )
-          }
+          {onInvertSelection && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={onInvertSelection} size="sm" className="text-xs cursor-pointer shadow-none">
+                  <span className="text-xs font-medium">Invertir</span>
+                  <ArrowRightLeft className=" h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-center">Intercambia las páginas marcadas <br /> por las no marcadas.</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           {onRotateLeft && (
-            <Button variant="outline" onClick={onRotateLeft} size="sm" className="text-xs cursor-pointer shadow-none">
-              <RotateCcw className="mr-2 h-4 w-4" />
-              <span>Izquierda</span>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={onRotateLeft} size="sm" className="text-xs cursor-pointer shadow-none">
+                  <span className="text-xs font-medium">Rotar a izquierda</span>
+                  <RotateCcw className=" h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-center">Gira todo el documento 90° <br /> en sentido antihorario</p>
+              </TooltipContent>
+            </Tooltip>
           )}
 
           {onRotateRight && (
-            <Button variant="outline" onClick={onRotateRight} size="sm" className="text-xs cursor-pointer shadow-none">
-              <RotateCw className="mr-2 h-4 w-4" />
-              <span>Derecha</span>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={onRotateRight} size="sm" className="text-xs cursor-pointer shadow-none">
+                  <span className="text-xs font-medium">Derecha</span>
+                  <RotateCw className=" h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-center">Gira todo el documento 90° <br /> en sentido horario</p>
+              </TooltipContent>
+            </Tooltip>
           )}
 
           {onResetRotation && (
-            <Button variant="outline" onClick={onResetRotation} size="sm" className="text-xs cursor-pointer shadow-none">
-              <RefreshCcw className="mr-2 h-4 w-4" />
-              <span>Restablecer</span>
-            </Button>
-          )}
-
-          {showAddButton && onAdd && (
-            <Button
-              variant="outline"
-              onClick={onAdd}
-              size="sm"
-              className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              Añadir PDF
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={onResetRotation} size="sm" className="text-xs cursor-pointer shadow-none">
+                  <span className="text-xs font-medium">Restablecer</span>
+                  <RefreshCcw className=" h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-center">Devuelve todas las páginas a <br /> su orientación original</p>
+              </TooltipContent>
+            </Tooltip>
           )}
 
           {onRotateAll && (
@@ -157,47 +179,46 @@ export function PdfToolbar({
             </Button>
           )}
 
-          {(onSortAZ || onSortZA || onSort) && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 cursor-pointer"
-                >
-                  <ArrowUpDown className="w-4 h-4" />
-                  Ordenar
+          {(onSortAZ || onSort) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={onSortAZ || onSort} size="sm" className="text-xs cursor-pointer shadow-none">
+                  <span className="text-xs font-medium">Ordenar A-Z</span>
+                  <ArrowDownAZ className=" h-4 w-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {(onSortAZ || onSort) && (
-                  <DropdownMenuItem onClick={onSortAZ || onSort} className="cursor-pointer">
-                    <ArrowDownAZ className="w-4 h-4" />
-                    Ordenar A-Z
-                  </DropdownMenuItem>
-                )}
-                {onSortZA && (
-                  <DropdownMenuItem onClick={onSortZA} className="cursor-pointer">
-                    <ArrowUpZA className="w-4 h-4" />
-                    Ordenar Z-A
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-center">Organiza los archivos por <br />nombre (ascendente)</p>
+              </TooltipContent>
+            </Tooltip>
           )}
-        </ButtonGroup>
 
+          {(onSortZA || onSort) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" onClick={onSortZA || onSort} size="sm" className="text-xs cursor-pointer shadow-none">
+                  <span className="text-xs font-medium">Ordenar Z-A</span>
+                  <ArrowDownAZ className=" h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-center">Organiza los archivos por <br />nombre (descendente)</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+        </ButtonGroup>
 
 
         {onReset && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" onClick={onReset} size="icon" className="rounded-full cursor-pointer">
+              <Button variant="destructive" onClick={onReset} size="icon" className="rounded-full cursor-pointer">
                 <Trash2 className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Eliminar Documento(s) de la herramienta</p>
+              <p className="text-center">Eliminar todos los archivos <br />y empezar de cero</p>
             </TooltipContent>
           </Tooltip>
         )}

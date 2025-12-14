@@ -7,6 +7,12 @@ interface PdfPageCardProps {
   onToggle: (id: string) => void;
   actions?: React.ReactNode;
   hideSelection?: boolean;
+  selectedClassName?: string;
+  selectedHeaderClassName?: string;
+  selectedTitleClassName?: string;
+  selectionIcon?: React.ReactNode;
+  selectedCheckboxColor?: string;
+  isDraggable?: boolean;
 }
 
 export function PdfPageCard({
@@ -14,7 +20,13 @@ export function PdfPageCard({
   isSelected,
   onToggle,
   actions,
-  hideSelection
+  hideSelection,
+  selectedClassName,
+  selectedHeaderClassName,
+  selectedCheckboxColor,
+  selectedTitleClassName,
+  selectionIcon,
+  isDraggable,
 }: PdfPageCardProps) {
   return (
     <BasePdfCard
@@ -27,6 +39,12 @@ export function PdfPageCard({
       onToggle={() => onToggle(page.id)}
       showCheckbox={!hideSelection}
       customActions={actions}
+      selectedClassName={selectedClassName}
+      selectedHeaderClassName={selectedHeaderClassName}
+      selectedTitleClassName={selectedTitleClassName}
+      selectedCheckboxColor={selectedCheckboxColor}
+      selectionIcon={selectionIcon}
+      isDraggable={isDraggable}
     />
   );
 }

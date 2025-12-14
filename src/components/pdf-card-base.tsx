@@ -37,6 +37,11 @@ interface BasePdfCardProps {
 
   // Styling
   selectedClassName?: string;
+  selectedHeaderClassName?: string;
+  selectedTitleClassName?: string;
+  selectedCheckboxColor?: string;
+  selectionIcon?: React.ReactNode;
+  isDraggable?: boolean;
 }
 
 export function BasePdfCard({
@@ -54,6 +59,11 @@ export function BasePdfCard({
   showRotate = false,
   customActions,
   selectedClassName,
+  selectedHeaderClassName,
+  selectedCheckboxColor,
+  selectedTitleClassName,
+  selectionIcon,
+  isDraggable = true,
 }: BasePdfCardProps) {
   const {
     attributes,
@@ -82,11 +92,9 @@ export function BasePdfCard({
         className={cn(
           "w-full aspect-3/4 overflow-hidden transition-all duration-200 relative border",
           isDragging && "shadow-xl ring-2 ring-primary/20 opacity-50",
-          isSelected && selectedClassName
-            ? selectedClassName
-            : isSelected
-              ? "ring-2 ring-red-500 border-red-500 bg-red-50 dark:bg-red-950/20"
-              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:shadow-md"
+          isSelected
+            ? (selectedClassName || "ring-2 ring-red-500 border-red-500 bg-red-50 dark:bg-red-950/20")
+            : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:shadow-md"
         )}
       >
         <CardContent className="p-0 h-full flex flex-col">
@@ -95,19 +103,21 @@ export function BasePdfCard({
             className={cn(
               "h-8 border-b flex items-center justify-between px-2",
               isSelected
-                ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900"
+                ? (selectedHeaderClassName || "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900")
                 : "bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-800"
             )}
           >
             <div
-              className="flex items-center gap-2 cursor-grab active:cursor-grabbing flex-1 min-w-0"
+              className={cn("flex items-center gap-2 flex-1 min-w-0", isDraggable ? "cursor-grab active:cursor-grabbing" : "cursor-default")}
               {...attributes}
-              {...listeners}
+              {...(isDraggable ? listeners : {})}
             >
-              <GripVertical className="w-4 h-4 shrink-0 text-zinc-400" />
+              {isDraggable && <GripVertical className="w-4 h-4 shrink-0 text-zinc-400" />}
               <span className={cn(
                 "text-xs font-medium truncate select-none",
-                isSelected ? "text-red-600 dark:text-red-400" : "text-zinc-500"
+                isSelected
+                  ? (selectedTitleClassName || "text-red-600 dark:text-red-400")
+                  : "text-zinc-500"
               )}>
                 {title}
               </span>
@@ -122,7 +132,8 @@ export function BasePdfCard({
                   className={cn(
                     "w-4 h-4 border cursor-pointer",
                     isSelected
-                      ? "border-red-500 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                      ?
+                      selectedCheckboxColor ? `border-${selectedCheckboxColor} bg-${selectedCheckboxColor} data-[state=checked]:bg-${selectedCheckboxColor} data-[state=checked]:border-${selectedCheckboxColor}` : "border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                       : "border-zinc-300 dark:border-zinc-600"
                   )}
                 />
@@ -162,7 +173,7 @@ export function BasePdfCard({
             {/* Selection Overlay */}
             {isSelected && showCheckbox && (
               <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-200 pointer-events-none">
-                <X className="w-8 h-8 text-red-600 drop-shadow-sm" />
+                {selectionIcon || <X className="w-8 h-8 text-red-600 drop-shadow-sm" />}
               </div>
             )}
           </div>

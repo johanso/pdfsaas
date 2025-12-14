@@ -8,6 +8,8 @@ interface SortablePageGridProps {
   onReorder: (newPages: PageData[]) => void;
   onToggle: (id: string) => void;
   renderCardActions?: (page: PageData) => React.ReactNode;
+  selectedCheckboxColor?: string;
+  isDraggable?: boolean;
 }
 
 export function SortablePageGrid({
@@ -16,6 +18,8 @@ export function SortablePageGrid({
   onReorder,
   onToggle,
   renderCardActions,
+  selectedCheckboxColor,
+  isDraggable = true,
 }: SortablePageGridProps) {
   return (
     <SortableGridBase
@@ -29,6 +33,8 @@ export function SortablePageGrid({
           onToggle={onToggle}
           actions={renderCardActions?.(page)}
           hideSelection={!!renderCardActions}
+          selectedCheckboxColor={selectedCheckboxColor}
+          isDraggable={isDraggable}
         />
       )}
     />
