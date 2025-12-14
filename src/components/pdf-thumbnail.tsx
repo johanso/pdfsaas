@@ -7,6 +7,10 @@ import { cn } from "@/lib/utils";
 
 // Configure worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// @ts-ignore
+pdfjs.GlobalWorkerOptions.cMapUrl = `//unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`;
+// @ts-ignore
+pdfjs.GlobalWorkerOptions.cMapPacked = true;
 
 interface PdfThumbnailProps {
     file: File;

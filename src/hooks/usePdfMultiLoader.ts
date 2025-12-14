@@ -1,0 +1,75 @@
+import { useState, useCallback } from "react";
+import { toast } from "sonner";
+
+let isWorkerConfigured = false;
+
+export function usePdfMultiLoader() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loadPdfPages = useCallback(async (files: File[]) => {
+    setIsLoading(true);
+
+    try {
+      const { pdfjs } = await import("react-pdf");
+
+      if (!isWorkerConfigured) {
+        pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        // @ts-ignore - cMapUrl might be missing in types but is valid in pdfjs-dist
+        pdfjs.GlobalWorkerOptions.cMapUrl = `//unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`;
+        // @ts-ignore
+        pdfjs.GlobalWorkerOptions.cMapPacked = true;
+        isWorkerConfigured = true;
+      }
+
+      const allPages: Array<{
+        id: string;
+        file: File;
+        originalIndex: number;
+        rotation: number;
+        isBlank: boolean;
+      }> = [];
+
+      for (const file of files) {
+        if (file.type !== "application/pdf") {
+          toast.error(`${file.name} no es un archivo PDF válido`);
+          continue;
+        }
+
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const loadingTask = pdfjs.getDocument(arrayBuffer);
+          const pdf = await loadingTask.promise;
+
+          for (let i = 1; i <= pdf.numPages; i++) {
+            allPages.push({
+              id: crypto.randomUUID(),
+              file: file,
+              originalIndex: i,
+              rotation: 0,
+              isBlank: false
+            });
+          }
+
+          // Cleanup
+          await pdf.destroy();
+        } catch (error) {
+          console.error(`Error loading ${file.name}:`, error);
+          toast.error(`Error al cargar ${file.name}`);
+        }
+      }
+
+      return allPages;
+    } catch (error) {
+      console.error("Error in loadPdfPages:", error);
+      toast.error("Error al procesar los archivos PDF");
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    loadPdfPages,
+    isLoading
+  };
+}
