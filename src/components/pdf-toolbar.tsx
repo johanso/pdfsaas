@@ -17,7 +17,7 @@ import {
 import { ButtonGroup } from "@/components/ui/button-group"
 
 interface PdfToolbarProps {
-  title: string;
+  title?: string;
   subtitle?: string;
   onAdd?: () => void;
   onRotateAll?: () => void;

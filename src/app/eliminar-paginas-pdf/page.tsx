@@ -6,13 +6,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { FileUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { SortablePageGrid } from "@/components/sortable-page-grid";
 import { PdfToolbar } from "@/components/pdf-toolbar";
 import { SaveDialog } from "@/components/save-dialog";
 import { Dropzone } from "@/components/ui/dropzone";
 import { HeadingPage } from "@/components/ui/heading-page";
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
 import { usePdfPages } from "@/hooks/usePdfPages";
+import { PdfGrid } from "@/components/pdf-system/pdf-grid";
+import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 
 export default function DeletePagesPage() {
 
@@ -88,7 +89,6 @@ export default function DeletePagesPage() {
 
     // Map originalIndex to ID for easier lookup
     const indexToIdMap = new Map(pages.map(p => [p.originalIndex, p.id]));
-    const numPages = pages.length; // Actually map size
 
     parts.forEach(part => {
       const range = part.trim().split("-");
@@ -232,10 +232,19 @@ export default function DeletePagesPage() {
 
               {/* Right Panel: Pages Grid */}
               <div className="lg:col-span-3 bg-zinc-50/50 dark:bg-zinc-900/20 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 min-h-[500px]">
-                <SortablePageGrid
-                  pages={pages}
+                <PdfGrid
+                  items={pages.map(p => ({
+                    id: p.id,
+                    file: p.file,
+                    pageNumber: p.originalIndex,
+                    rotation: p.rotation
+                  }))}
+                  config={PDF_CARD_PRESETS.delete}
                   selectedIds={selectedIds}
-                  onReorder={reorderPages}
+                  onReorder={(newItems) => {
+                    const newPages = newItems.map(item => pages.find(p => p.id === item.id)!).filter(Boolean);
+                    reorderPages(newPages);
+                  }}
                   onToggle={handleToggle}
                 />
               </div>

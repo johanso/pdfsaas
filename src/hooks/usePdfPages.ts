@@ -25,7 +25,8 @@ export function usePdfPages(file: File | null) {
             id: crypto.randomUUID(),
             originalIndex: i,
             rotation: 0,
-            file: file
+            file: file,
+            isBlank: false
           });
         }
         setPages(newPages);

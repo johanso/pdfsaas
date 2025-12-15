@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { FileUp, GripVertical, Loader2 } from "lucide-react";
 import { HeadingPage } from "@/components/ui/heading-page";
 import { toast } from "sonner";
-import { SortableGrid } from "@/components/sortable-grid";
 import { PdfToolbar } from "@/components/pdf-toolbar";
 import { Dropzone } from "@/components/ui/dropzone";
 import { SaveDialog } from "@/components/save-dialog";
@@ -14,6 +13,8 @@ import { SaveDialog } from "@/components/save-dialog";
 // hooks
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
 import { usePdfFiles } from "@/hooks/usePdfFiles";
+import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
+import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 
 export default function UnirPdfPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -22,7 +23,6 @@ export default function UnirPdfPage() {
   const {
     files,
     addFiles,
-    rotateFile,
     removeFile,
     reorderFiles,
     sortAZ,
@@ -147,12 +147,19 @@ export default function UnirPdfPage() {
 
                 {/* Right Panel: PDF Grid */}
                 <div className="lg:col-span-3 bg-zinc-50/50 dark:bg-zinc-900/20 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 min-h-[500px]">
-                  <SortableGrid
-                    files={files}
+                  <PdfGrid
+                    items={files}
+                    config={PDF_CARD_PRESETS.merge}
+                    extractCardData={(f) => ({
+                      id: f.id,
+                      file: f.file,
+                      name: f.name,
+                      size: f.file.size,
+                      pageCount: f.pageCount,
+                      rotation: f.rotation
+                    })}
                     onReorder={reorderFiles}
-                    onRotate={rotateFile}
                     onRemove={removeFile}
-                    showRotate={false}
                   />
                 </div>
               </div>

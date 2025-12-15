@@ -8,11 +8,12 @@ import { toast } from "sonner";
 import { HeadingPage } from "@/components/ui/heading-page";
 import { Dropzone } from "@/components/ui/dropzone";
 import { PdfToolbar } from "@/components/pdf-toolbar";
-import { PdfPageGrid } from "@/components/pdf-page-grid";
 import { SaveDialog } from "@/components/save-dialog";
 import { usePdfLoader } from "@/hooks/usePdfLoader";
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
 import { usePageSelection } from "@/hooks/usePageSelection";
+import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
+import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 
 export default function ExtractPdfPage() {
   // File State
@@ -204,19 +205,20 @@ export default function ExtractPdfPage() {
 
               {/* Right Panel: Preview Grid */}
               <div className="lg:col-span-3 bg-zinc-50/50 dark:bg-zinc-900/20 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 min-h-[500px]">
-                {numPages > 0 ? (
-                  <PdfPageGrid
-                    file={file}
-                    numPages={numPages}
-                    selectedPages={selectedPages}
-                    onTogglePage={togglePage}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-zinc-400">
-                    <Loader2 className="w-8 h-8 animate-spin mb-2" />
-                    <p>Cargando vista previa...</p>
-                  </div>
-                )}
+                <PdfGrid
+                  items={Array.from({ length: numPages }, (_, i) => ({
+                    id: String(i + 1),
+                    pageNum: i + 1
+                  }))}
+                  config={PDF_CARD_PRESETS.extract}
+                  extractCardData={(item) => ({
+                    id: item.id,
+                    file: file,
+                    pageNumber: item.pageNum
+                  })}
+                  selectedIds={selectedPages.map(String)}
+                  onToggle={(id) => togglePage(Number(id))}
+                />
               </div>
             </div>
           </div>

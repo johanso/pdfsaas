@@ -3,24 +3,27 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, Loader2, RotateCw, Trash2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { SortablePageGrid } from "@/components/sortable-page-grid";
 import { PdfToolbar } from "@/components/pdf-toolbar";
 import { SaveDialog } from "@/components/save-dialog";
 import { Dropzone } from "@/components/ui/dropzone";
 import { HeadingPage } from "@/components/ui/heading-page";
 import { usePdfPages } from "@/hooks/usePdfPages";
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
-import { PageData } from "@/types";
 
+import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
+import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 
 
 export default function RotatePdfPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { pages, rotatePage, rotateAllPages, resetRotation, reorderPages, removePage } = usePdfPages(file);
+  const { pages, rotateAllPages, resetRotation, rotatePage, reorderPages } = usePdfPages(file);
+
+  const rotatePageLeft = (id: string) => rotatePage(id, -90);
+  const rotatePageRight = (id: string) => rotatePage(id, 90);
   const { isProcessing, processAndDownload } = usePdfProcessing();
 
   const handleRotateRight = () => {
@@ -64,22 +67,6 @@ export default function RotatePdfPage() {
     }
   };
 
-  const renderCardActions = (page: PageData) => (
-    <div className="flex items-center gap-0.5">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-6 w-6 text-zinc-500 hover:bg-neutral-50 cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation();
-          rotatePage(page.id);
-        }}
-        title="Rotar 90°"
-      >
-        <RotateCw className="w-3.5 h-3.5" />
-      </Button>
-    </div>
-  );
 
 
 
@@ -172,12 +159,19 @@ export default function RotatePdfPage() {
 
               {/* Right Panel: Pages Grid */}
               <div className="lg:col-span-3 bg-zinc-50/50 dark:bg-zinc-900/20 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 min-h-[500px]">
-                <SortablePageGrid
-                  pages={pages}
-                  selectedIds={[]}
+                <PdfGrid
+                  items={pages}
+                  config={PDF_CARD_PRESETS.rotate}
+                  extractCardData={(page) => ({
+                    id: page.id,
+                    file: page.file,
+                    pageNumber: page.originalIndex,
+                    rotation: page.rotation
+                  })}
                   onReorder={reorderPages}
-                  onToggle={() => { }}
-                  renderCardActions={renderCardActions}
+                  onRotate={rotatePage}
+                  onRotateLeft={rotatePageLeft}
+                  onRotateRight={rotatePageRight}
                 />
               </div>
             </div>
