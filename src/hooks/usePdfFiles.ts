@@ -45,7 +45,7 @@ export function usePdfFiles() {
     });
 
     const mappedFiles = await Promise.all(mappedFilesPromises);
-    setFiles(prev => [...prev, ...mappedFiles]);
+    setFiles(prev => [...mappedFiles, ...prev]);
   };
 
   const rotateFile = (id: string, degrees: number = 90) => {

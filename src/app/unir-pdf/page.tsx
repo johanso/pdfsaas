@@ -1,9 +1,8 @@
 "use client";
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileUp, GripVertical, Loader2 } from "lucide-react";
+import { ArrowDownToLine } from "lucide-react";
 import { HeadingPage } from "@/components/ui/heading-page";
 import { toast } from "sonner";
 import { PdfToolbar } from "@/components/pdf-toolbar";
@@ -15,18 +14,20 @@ import { usePdfProcessing } from "@/hooks/usePdfProcessing";
 import { usePdfFiles } from "@/hooks/usePdfFiles";
 import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
+import { SummaryList } from "@/components/summaryList";
+import { ToolbarAll } from "@/components/toolbar-all";
+import { useIsMobile } from "@/hooks/useMobile";
 
 export default function UnirPdfPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   const {
     files,
     addFiles,
     removeFile,
     reorderFiles,
-    sortAZ,
-    sortZA,
     reset,
   } = usePdfFiles();
   const { isProcessing, processAndDownload } = usePdfProcessing();
@@ -76,91 +77,85 @@ export default function UnirPdfPage() {
               className="bg-zinc-50/50 dark:bg-zinc-900/50 h-80"
             />
           ) : (
-            <div className="space-y-6">
-              <PdfToolbar
-                title={`${files.length} Archivos seleccionados`}
-                subtitle={''}
-                onAdd={() => fileInputRef.current?.click()}
-                onSortAZ={sortAZ}
-                onSortZA={sortZA}
-                onReset={() => reset()}
-                showAddButton={true}
-              />
-
+            <div className="space-y-2">
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <div className="lg:col-span-1 space-y-6">
-                  <Card className="sticky top-24">
-                    <CardContent className="space-y-6 py-4">
-                      <div className="space-y-4">
-                        <div>
-                          <h2 className="text-md font-semibold mb-2">Resumen:</h2>
-                          <ul className="text-sm text-zinc-600 dark:text-zinc-400 space-y-2 list-inside">
-                            <li>Estás a punto de combinar <strong className="underline">{files.length} archivos</strong> en un único PDF.</li>
-                            <li>Arrastra (<GripVertical className="w-4 h-4 text-zinc-400 inline" />) y suelta las tarjetas para definir el orden de las páginas en tu documento final.</li>
-                          </ul>
-                        </div>
+                <div className="lg:col-span-3 space-y-2">
 
-                        <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs space-y-1">
-                          <div className="flex justify-between">
-                            <span>Total páginas a unir:</span>
-                            <span className="font-bold">
-                              {files.reduce((acc, f) => acc + (f.pageCount || 0), 0)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Peso de archivo final:</span>
-                            <span className="font-bold">
-                              {(files.reduce((acc, f) => acc + f.file.size, 0) / 1024 / 1024).toFixed(2)} MB
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                  {isMobile && (
+                    <PdfToolbar
+                      onAdd={() => fileInputRef.current?.click()}
+                      onReset={() => reset()}
+                    />
+                  )}
 
-                      <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                        <Button
-                          className="w-full bg-red-500 hover:bg-red-600 cursor-pointer disabled:bg-red-600 disabled:hover:bg-red-600 disabled:cursor-not-allowed"
-                          size="lg"
-                          onClick={() => setIsDialogOpen(true)}
-                          disabled={files.length < 2 || isProcessing}
-                        >
-                          {isProcessing ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <FileUp className="w-4 h-4" />
-                          )}
-                          {isProcessing ? "Procesando..." : "Unir y Descargar PDF"}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <section className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2">
+                    <ToolbarAll />
+                  </section>
+
+                  <section className="bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-2 md:p-6 min-h-[500px]">
+                    <PdfGrid
+                      items={files}
+                      config={PDF_CARD_PRESETS.merge}
+                      extractCardData={(f) => ({
+                        id: f.id,
+                        file: f.file,
+                        name: f.name,
+                        size: f.file.size,
+                        pageCount: f.pageCount,
+                        rotation: f.rotation
+                      })}
+                      onReorder={reorderFiles}
+                      onRemove={removeFile}
+                    />
+                  </section>
                 </div>
 
-                <SaveDialog
-                  open={isDialogOpen}
-                  onOpenChange={setIsDialogOpen}
-                  defaultName="merged-document"
-                  onSave={handleSubmit}
-                  isProcessing={isProcessing}
-                  title="Guardar archivo"
-                  description="Asigna un nombre a tu archivo PDF fusionado antes de descargarlo."
-                />
+                <div className="lg:col-span-1">
+                  <div className="fixed bottom-0 lg:sticky lg:top-4 space-y-6 z-9 w-[calc(100svw-2rem)] lg:w-auto">
 
-                {/* Right Panel: PDF Grid */}
-                <div className="lg:col-span-3 bg-zinc-50/50 dark:bg-zinc-900/20 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 min-h-[500px]">
-                  <PdfGrid
-                    items={files}
-                    config={PDF_CARD_PRESETS.merge}
-                    extractCardData={(f) => ({
-                      id: f.id,
-                      file: f.file,
-                      name: f.name,
-                      size: f.file.size,
-                      pageCount: f.pageCount,
-                      rotation: f.rotation
-                    })}
-                    onReorder={reorderFiles}
-                    onRemove={removeFile}
-                  />
+                    {!isMobile && (
+                      <PdfToolbar
+                        onAdd={() => fileInputRef.current?.click()}
+                        onReset={() => reset()}
+                      />
+                    )}
+
+                    <Card>
+                      <CardContent className="space-y-4 py-4">
+
+                        <SummaryList
+                          title="Resumen"
+                          items={[
+                            {
+                              label: "Total archivos",
+                              value: files.length
+                            },
+                            {
+                              label: "Total páginas a unir",
+                              value: files.reduce((acc, f) => acc + (f.pageCount || 0), 0)
+                            },
+                            {
+                              label: "Peso archivo final",
+                              value: (files.reduce((acc, f) => acc + f.file.size, 0) / 1024 / 1024).toFixed(2) + " MB"
+                            }
+                          ]}
+                        />
+
+                        <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                          <Button
+                            variant="hero"
+                            className="w-full py-6 font-medium"
+                            size="lg"
+                            onClick={() => setIsDialogOpen(true)}
+                            disabled={files.length < 2 || isProcessing}
+                          >
+                            {isProcessing ? "Procesando..." : "Unir y Descargar PDF"}
+                            <ArrowDownToLine className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               </div>
             </div>
@@ -180,6 +175,16 @@ export default function UnirPdfPage() {
             handleFiles(Array.from(e.target.files));
           }
         }}
+      />
+
+      <SaveDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        defaultName="merged-document"
+        onSave={handleSubmit}
+        isProcessing={isProcessing}
+        title="Guardar archivo"
+        description="Asigna un nombre a tu archivo PDF fusionado antes de descargarlo."
       />
     </div>
   );

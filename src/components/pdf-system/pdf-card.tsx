@@ -5,7 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { GripVertical, X, RotateCw, RotateCcw, InfoIcon, Trash2, Copy, StickyNote } from "lucide-react";
+import { GripVertical, X, RotateCw, RotateCcw, InfoIcon, Copy, StickyNote } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 
@@ -75,11 +75,11 @@ export const PDF_CARD_PRESETS = {
   merge: {
     draggable: true,
     selectable: false,
-    rotatable: true,
+    rotatable: false,
     removable: true,
     showFileName: true,
     showFileInfo: true,
-    showRotationBadge: true,
+    showRotationBadge: false,
   } as PdfCardConfig,
 
   // Para Eliminar Páginas (con selección)
@@ -161,7 +161,7 @@ export function PdfCard({
   const {
     draggable = true,
     selectable = false,
-    rotatable = false,
+    rotatable = true,
     allowRotateLeft = false,
     allowRotateRight = false,
     allowDuplicate = false,
@@ -324,74 +324,71 @@ export function PdfCard({
           {/* Footer Actions */}
           {(rotatable || allowRotateLeft || allowRotateRight || subtitle || removable || allowDelete) && (
             <div className="h-10 border-t flex items-center justify-between px-2 bg-white dark:bg-zinc-900">
-              <div className="flex items-center gap-1">
-                {/* Left Rotation */}
-                {allowRotateLeft && onRotateLeft && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRotateLeft();
-                    }}
-                    title="Rotar Izquierda (-90°)"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </Button>
-                )}
 
-                {/* Right Rotation (Standard or granular) */}
-                {(allowRotateRight || rotatable) && (onRotateRight || onRotate) && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Prioritize specific handler, fallback to generic
-                      if (onRotateRight) onRotateRight();
-                      else if (onRotate) onRotate();
-                    }}
-                    title="Rotar Derecha (90°)"
-                  >
-                    <RotateCw className="w-3.5 h-3.5" />
-                  </Button>
-                )}
-              </div>
+              {/* Left Rotation */}
+              {allowRotateLeft && onRotateLeft && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRotateLeft();
+                  }}
+                  title="Rotar Izquierda (-90°)"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </Button>
+              )}
 
-              {/* Middle Actions: Duplicate / Blank */}
-              <div className="flex items-center gap-1">
-                {allowInsertBlank && onInsertBlank && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onInsertBlank();
-                    }}
-                    title="Insertar hoja en blanco"
-                  >
-                    <StickyNote className="w-3.5 h-3.5" />
-                  </Button>
-                )}
+              {/* Right Rotation (Standard or granular) */}
+              {(allowRotateRight || rotatable) && (onRotateRight || onRotate) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Prioritize specific handler, fallback to generic
+                    if (onRotateRight) onRotateRight();
+                    else if (onRotate) onRotate();
+                  }}
+                  title="Rotar Derecha (90°)"
+                >
+                  <RotateCw className="w-3.5 h-3.5" />
+                </Button>
+              )}
 
-                {allowDuplicate && onDuplicate && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDuplicate();
-                    }}
-                    title="Duplicar página"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                  </Button>
-                )}
-              </div>
+              {allowInsertBlank && onInsertBlank && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onInsertBlank();
+                  }}
+                  title="Insertar hoja en blanco"
+                >
+                  <StickyNote className="w-3.5 h-3.5" />
+                </Button>
+              )}
+
+              {allowDuplicate && onDuplicate && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate();
+                  }}
+                  title="Duplicar página"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </Button>
+              )}
+
 
               {subtitle && (
                 <div className="text-[10px] flex items-center gap-2 text-zinc-400 font-mono">
@@ -412,7 +409,7 @@ export function PdfCard({
                   }}
                   title="Eliminar"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <X className="w-3.5 h-3.5" />
                 </Button>
               )}
             </div>

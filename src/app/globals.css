@@ -6,8 +6,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-nunito-sans);
+  --font-mono: var(--font-roboto);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -44,6 +44,10 @@
 }
 
 :root {
+
+  --primary: 12 76% 61%;
+  --primary-foreground: 0 0% 100%;
+
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -76,6 +80,10 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  --gradient-primary: linear-gradient(135deg, hsl(12 76% 61%) 0%, hsl(24 95% 53%) 100%);
+  --gradient-hero: linear-gradient(180deg, hsl(30 20% 98%) 0%, hsl(30 25% 95%) 100%);
+  --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(30 15% 98%) 100%);
 }
 
 .dark {
@@ -115,8 +123,24 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    font-family: 'Roboto', sans-serif;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Nunito Sans', sans-serif;
+    font-weight: 800;
+  }
+
+  button {
+    cursor: pointer;
   }
 }

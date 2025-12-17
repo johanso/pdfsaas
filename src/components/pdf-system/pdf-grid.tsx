@@ -67,7 +67,7 @@ export function PdfGrid<T extends { id: string }>({
   onRemove,
   renderCardActions,
   extractCardData,
-  className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
+  className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-4"
 }: PdfGridProps<T>) {
   const draggable = config?.draggable !== false;
 
@@ -84,18 +84,15 @@ export function PdfGrid<T extends { id: string }>({
     if (over && active.id !== over.id && onReorder) {
       const oldIndex = items.findIndex((item) => item.id === active.id);
       const newIndex = items.findIndex((item) => item.id === over.id);
-      // ✅ Devuelve los items originales completos, no los simplificados
       onReorder(arrayMove(items, oldIndex, newIndex));
     }
   }
 
-  // ✨ Función por defecto para extraer datos
   const getCardData = (item: T): PdfGridItem => {
     if (extractCardData) {
       return extractCardData(item);
     }
 
-    // Auto-detect: si el item ya tiene las propiedades necesarias
     return item as unknown as PdfGridItem;
   };
 
