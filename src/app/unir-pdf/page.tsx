@@ -13,6 +13,7 @@ import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { SummaryList } from "@/components/summaryList";
 import { GlobalToolbar } from "@/components/globalToolbar";
+import { SuccessDialog } from "@/components/success-dialog";
 // hooks
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
 import { usePdfFiles } from "@/hooks/usePdfFiles";
@@ -20,6 +21,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 
 export default function UnirPdfPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
 
@@ -52,12 +54,12 @@ export default function UnirPdfPage() {
       formData.append("files", f.file);
     });
 
-    const success = await processAndDownload(outputName, formData, {
+    await processAndDownload(outputName, formData, {
       endpoint: "/api/merge-pdf",
       successMessage: "¡PDF unido correctamente!",
       onSuccess: () => {
         setIsDialogOpen(false);
-        reset();
+        setIsSuccessDialogOpen(true);
       }
     });
   };
@@ -195,6 +197,16 @@ export default function UnirPdfPage() {
         isProcessing={isProcessing}
         title="Guardar archivo"
         description="Asigna un nombre a tu archivo PDF fusionado antes de descargarlo."
+      />
+
+      <SuccessDialog
+        open={isSuccessDialogOpen}
+        onOpenChange={setIsSuccessDialogOpen}
+        onContinue={() => setIsSuccessDialogOpen(false)}
+        onStartNew={() => {
+          setIsSuccessDialogOpen(false);
+          reset();
+        }}
       />
     </div>
   );
