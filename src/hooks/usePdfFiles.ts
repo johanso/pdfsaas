@@ -67,14 +67,17 @@ export function usePdfFiles() {
 
   const sortAZ = () => {
     setFiles(prev => [...prev].sort((a, b) => a.name.localeCompare(b.name)));
+    toast.success("Archivos ordenados alfabéticamente (A-Z).");
   };
 
   const sortZA = () => {
     setFiles(prev => [...prev].sort((a, b) => b.name.localeCompare(a.name)));
+    toast.success("Archivos ordenados alfabéticamente (Z-A).");
   };
 
   const reset = () => {
     setFiles([]);
+    toast.success("Archivos restablecidos.");
   };
 
   const getTotalSize = () => {

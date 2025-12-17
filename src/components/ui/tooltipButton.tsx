@@ -21,11 +21,18 @@ export function TooltipButton({
   iconSize = 16,
   side = "top",
   disabled = false,
+  onClick,
 }: TooltipButtonProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button size="icon" variant="outline" className="shadow-none disabled:opacity-35 disabled:bg-zinc-100" disabled={disabled}>
+        <Button
+          size="icon"
+          variant="outline"
+          className="shadow-none disabled:opacity-20 disabled:bg-zinc-100"
+          disabled={disabled}
+          onClick={onClick}
+        >
           <BootstrapIcon name={icon} size={iconSize} />
         </Button>
       </TooltipTrigger>

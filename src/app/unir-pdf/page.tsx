@@ -1,21 +1,21 @@
 "use client";
 import { useState, useRef } from "react";
+import { toast } from "sonner";
+// components
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowDownToLine } from "lucide-react";
 import { HeadingPage } from "@/components/ui/heading-page";
-import { toast } from "sonner";
 import { PdfToolbar } from "@/components/pdf-toolbar";
 import { Dropzone } from "@/components/ui/dropzone";
 import { SaveDialog } from "@/components/save-dialog";
-
-// hooks
-import { usePdfProcessing } from "@/hooks/usePdfProcessing";
-import { usePdfFiles } from "@/hooks/usePdfFiles";
 import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { SummaryList } from "@/components/summaryList";
-import { ToolbarAll } from "@/components/toolbar-all";
+import { GlobalToolbar } from "@/components/globalToolbar";
+// hooks
+import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { usePdfFiles } from "@/hooks/usePdfFiles";
 import { useIsMobile } from "@/hooks/useMobile";
 
 export default function UnirPdfPage() {
@@ -28,6 +28,8 @@ export default function UnirPdfPage() {
     addFiles,
     removeFile,
     reorderFiles,
+    sortAZ,
+    sortZA,
     reset,
   } = usePdfFiles();
   const { isProcessing, processAndDownload } = usePdfProcessing();
@@ -88,8 +90,16 @@ export default function UnirPdfPage() {
                     />
                   )}
 
-                  <section className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2">
-                    <ToolbarAll />
+                  <section className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2">
+                    <GlobalToolbar
+                      features={{
+                        sorting: true,
+                      }}
+                      actions={{
+                        onSortAZ: sortAZ,
+                        onSortZA: sortZA,
+                      }}
+                    />
                   </section>
 
                   <section className="bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-2 md:p-6 min-h-[500px]">
