@@ -109,9 +109,9 @@ export const PDF_CARD_PRESETS = {
     allowRotateLeft: true,
     allowRotateRight: true,
     allowDelete: true,
-    removable: true, // Legacy support if needed
     showPageNumber: true,
     showRotationBadge: true,
+    removable: false,
   } as PdfCardConfig,
 
   // Para Extraer Páginas (sin drag, con selección)
@@ -319,9 +319,9 @@ export function PdfCard({
             </div>
 
             {/* Rotation Badge */}
-            {showRotationBadge && rotation > 0 && (
-              <div className="absolute top-2 right-2 text-[10px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full border border-primary/20">
-                {rotation}°
+            {showRotationBadge && ((rotation % 360) !== 0) && (
+              <div className="absolute top-1 right-1 text-[10px] leading-none font-medium dark:bg-white bg-zinc-800/70 dark:text-primary text-white px-1.5 py-1 rounded-full h-8 w-8 flex items-center justify-center">
+                {((rotation % 360) + 360) % 360}°
               </div>
             )}
 

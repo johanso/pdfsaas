@@ -42,14 +42,14 @@ export function usePdfPages(file: File | null) {
 
   const rotatePage = (id: string, degrees: number = 90) => {
     setPages(prev => prev.map(p =>
-      p.id === id ? { ...p, rotation: (p.rotation + degrees) % 360 } : p
+      p.id === id ? { ...p, rotation: p.rotation + degrees } : p
     ));
   };
 
   const rotateAllPages = (degrees: number) => {
     setPages(prev => prev.map(p => ({
       ...p,
-      rotation: (p.rotation + degrees + 360) % 360
+      rotation: p.rotation + degrees
     })));
   };
 
