@@ -1,64 +1,121 @@
 "use client";
-
 import { useState } from "react";
+import { toast } from "sonner";
+// components
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { FileUp, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { ArrowDownToLine } from "lucide-react";
 import { PdfToolbar } from "@/components/pdf-toolbar";
 import { SaveDialog } from "@/components/save-dialog";
 import { Dropzone } from "@/components/ui/dropzone";
 import { HeadingPage } from "@/components/ui/heading-page";
-import { usePdfProcessing } from "@/hooks/usePdfProcessing";
-import { usePdfPages } from "@/hooks/usePdfPages";
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
+import { GlobalToolbar } from "@/components/globalToolbar";
+import { SummaryList } from "@/components/summaryList";
+import { SuccessDialog } from "@/components/success-dialog";
+// hooks
+import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { usePdfPages } from "@/hooks/usePdfPages";
+import { usePageSelection } from "@/hooks/usePageSelection";
+import { useIsMobile } from "@/hooks/useMobile";
 
 export default function DeletePagesPage() {
-
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
-  const [rangeInput, setRangeInput] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
 
-  const { pages, reorderPages } = usePdfPages(file);
+  // Hooks principales
+  const { pages, reorderPages, removePage } = usePdfPages(file);
+  const {
+    selectedPages,
+    togglePage,
+    selectAll,
+    deselectAll,
+    invertSelection,
+    selectByRange,
+    reset: resetSelection
+  } = usePageSelection(pages.length);
   const { isProcessing, processAndDownload } = usePdfProcessing();
 
+  // Convertir selectedPages (números) a IDs
+  const selectedIds = pages
+    .filter(p => selectedPages.includes(p.originalIndex))
+    .map(p => p.id);
 
   const handleToggle = (id: string) => {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
-    );
+    const page = pages.find(p => p.id === id);
+    if (page) {
+      togglePage(page.originalIndex);
+    }
   };
 
-  const handleSelectAll = () => {
-    setSelectedIds(pages.map(p => p.id));
-    toast.info("Todas las páginas seleccionadas");
+  const handleFilesSelected = (files: File[]) => {
+    if (files.length > 0) {
+      setFile(files[0]);
+      resetSelection();
+    }
   };
 
-  const handleDeselectAll = () => {
-    setSelectedIds([]);
-    toast.info("Selección limpiada");
+  const handleRangeChange = (input: string) => {
+    // Solo permitir números, comas y guiones. Eliminar letras y el '0' si es el primer carácter o está después de una coma/guion
+    const sanitized = input
+      .replace(/[^0-9,-]/g, "") // Solo números, comas y guiones
+      .replace(/^0+|(?<=[,-])0+/g, ""); // No permitir ceros a la izquierda o después de separadores
+
+    selectByRange(sanitized);
   };
 
-  const handleInvertSelection = () => {
-    const allIds = pages.map(p => p.id);
-    const newSelection = allIds.filter(id => !selectedIds.includes(id));
-    setSelectedIds(newSelection);
-    toast.info("Selección invertida");
+  const handleDeleteSelected = () => {
+    if (selectedIds.length === 0) {
+      toast.error("No hay páginas seleccionadas para eliminar");
+      return;
+    }
+
+    if (selectedIds.length === pages.length) {
+      toast.error("No puedes eliminar todas las páginas");
+      return;
+    }
+
+    // Eliminar páginas seleccionadas
+    selectedIds.forEach(id => removePage(id));
+    resetSelection();
+    toast.success(`${selectedIds.length} página(s) eliminada(s)`);
+  };
+
+  const handleReset = () => {
+    setFile(null);
+    resetSelection();
+    setIsSuccessDialogOpen(false);
+  };
+
+  const handleOpenSaveDialog = () => {
+    if (!file || pages.length === 0) {
+      toast.error("No hay páginas para procesar");
+      return;
+    }
+
+    if (selectedPages.length === pages.length) {
+      toast.error("No puedes eliminar todas las páginas.");
+      return;
+    }
+
+    setIsDialogOpen(true);
   };
 
   const handleSave = async (outputName: string) => {
-    if (!file) return;
-
-    const activePages = pages.filter(p => !selectedIds.includes(p.id));
+    if (!file || pages.length === 0) return;
 
     const formData = new FormData();
     formData.append("file", file);
 
-    const pageInstructions = activePages.map(p => ({
-      originalIndex: p.originalIndex - 1,
+    // Enviar solo las páginas que NO están seleccionadas para eliminar
+    const remainingPages = pages.filter(p => !selectedPages.includes(p.originalIndex));
+
+    const pageInstructions = remainingPages.map(p => ({
+      originalIndex: p.originalIndex - 1, // API espera índice base 0
       rotation: p.rotation
     }));
 
@@ -67,191 +124,146 @@ export default function DeletePagesPage() {
     await processAndDownload(outputName, formData, {
       endpoint: "/api/delete-pages",
       successMessage: "¡PDF procesado correctamente!",
-      onSuccess: () => setIsDialogOpen(false)
-    });
-  };
-
-  const handleFilesSelected = (files: File[]) => {
-    if (files.length > 0) {
-      setFile(files[0]);
-      setSelectedIds([]);
-      setRangeInput("");
-    }
-  };
-
-  const handleRangeChange = (input: string) => {
-    setRangeInput(input);
-
-    if (!input.trim()) return;
-
-    const idsToSelect: string[] = [];
-    const parts = input.split(",");
-
-    // Map originalIndex to ID for easier lookup
-    const indexToIdMap = new Map(pages.map(p => [p.originalIndex, p.id]));
-
-    parts.forEach(part => {
-      const range = part.trim().split("-");
-      if (range.length === 2) {
-        const start = parseInt(range[0]);
-        const end = parseInt(range[1]);
-        if (!isNaN(start) && !isNaN(end)) {
-          for (let i = Math.min(start, end); i <= Math.max(start, end); i++) {
-            const id = indexToIdMap.get(i);
-            if (id) idsToSelect.push(id);
-          }
-        }
-      } else if (range.length === 1) {
-        const pageNum = parseInt(range[0]);
-        if (!isNaN(pageNum)) {
-          const id = indexToIdMap.get(pageNum);
-          if (id) idsToSelect.push(id);
-        }
+      onSuccess: () => {
+        setIsDialogOpen(false);
+        setIsSuccessDialogOpen(true);
       }
     });
-
-    const uniqueIds = Array.from(new Set(idsToSelect));
-    if (uniqueIds.length > 0) {
-      setSelectedIds(uniqueIds);
-    }
   };
-
-  const handleOpenSaveDialog = () => {
-    if (!file || pages.length === 0) return;
-
-    // Check valid state
-    const activePages = pages.filter(p => !selectedIds.includes(p.id));
-    if (activePages.length === 0) {
-      toast.error("No puedes eliminar todas las páginas.");
-      return;
-    }
-
-    setIsDialogOpen(true);
-  };
-
-
 
   return (
     <div className="container mx-auto py-10 px-4 max-w-6xl pb-32">
       <div className="space-y-6">
-
         <HeadingPage
-          titlePage={"Eliminar Páginas PDF"}
-          descriptionPage="Reordena páginas, rota o elimina las que no necesites permenentemente."
+          titlePage="Eliminar Páginas PDF"
+          descriptionPage="Selecciona, reordena y elimina las páginas que no necesites de tu documento."
         />
 
-        {!file ? (
-          <Dropzone
-            onFilesSelected={handleFilesSelected}
-            multiple={false}
-            className="h-80 bg-zinc-50/50 dark:bg-zinc-900/50"
-          />
-        ) : (
-          <div className="space-y-6">
-            {/* Shared Toolbar */}
-            <PdfToolbar
-              title={file.name}
-              subtitle={`${pages.length} páginas | ${(file.size / 1024 / 1024).toFixed(2)} MB total`}
-              onAdd={() => { }} // Disabled for single file tools or hidden
-              showAddButton={false}
-              onSelectAll={handleSelectAll}
-              onDeselectAll={handleDeselectAll}
-              onInvertSelection={handleInvertSelection}
-              onReset={() => setFile(null)}
+        <div className="w-full">
+          {!file ? (
+            <Dropzone
+              onFilesSelected={handleFilesSelected}
+              multiple={false}
+              className="h-80 bg-zinc-50/50 dark:bg-zinc-900/50"
             />
+          ) : (
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <div className="lg:col-span-3 space-y-2">
+                  {isMobile && (
+                    <PdfToolbar onReset={handleReset} />
+                  )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              <div className="lg:col-span-1 space-y-6">
-                <Card className="sticky top-24">
-                  <CardContent className="space-y-6 py-4">
-                    <div className="space-y-4">
-                      <div>
-                        <h2 className="text-md font-semibold mb-2">Resumen:</h2>
-                        <ul className="text-sm text-zinc-600 dark:text-zinc-400 space-y-2 list-inside">
-                          <li>Puedes seleccionar las páginas a eliminar de forma individual, incluso cambiar su orden.</li>
-                          <li>Tambien puedes usar el campo de rango para una selección rápida (ej: 1,3-5)</li>
-                        </ul>
-                      </div>
+                  <section className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2">
+                    <GlobalToolbar
+                      features={{
+                        selection: true,
+                      }}
+                      actions={{
+                        onSelectAll: selectAll,
+                        onDeselectAll: deselectAll,
+                        onInvertSelection: invertSelection,
+                        onDeleteSelected: handleDeleteSelected,
+                      }}
+                    />
+                  </section>
 
-                      <div className="space-y-2">
-                        <label className="text-xs text-zinc-500">Campo de rango de páginas:</label>
-                        <Input
-                          className="h-9 text-sm bg-white dark:bg-zinc-900"
-                          placeholder="Ej: 1, 3-5"
-                          value={rangeInput}
-                          onChange={(e) => handleRangeChange(e.target.value)}
+                  <section className="bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-2 md:p-6 min-h-[500px]">
+                    <PdfGrid
+                      items={pages}
+                      config={PDF_CARD_PRESETS.delete}
+                      selectedIds={selectedIds}
+                      extractCardData={(p) => ({
+                        id: p.id,
+                        file: p.file,
+                        pageNumber: p.originalIndex,
+                        rotation: p.rotation,
+                        isBlank: p.isBlank
+                      })}
+                      onReorder={reorderPages}
+                      onToggle={handleToggle}
+                    />
+                  </section>
+                </div>
+
+                <div className="lg:col-span-1">
+                  <div className="fixed bottom-0 lg:sticky lg:top-4 space-y-6 z-9 w-[calc(100svw-2rem)] lg:w-auto">
+                    {!isMobile && (
+                      <PdfToolbar onReset={handleReset} />
+                    )}
+
+                    <Card>
+                      <CardContent className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                            Selección por rango:
+                          </label>
+                          <Input
+                            className="h-9 text-sm bg-white dark:bg-zinc-900"
+                            placeholder="Ej: 1, 3-5, 8"
+                            onChange={(e) => handleRangeChange(e.target.value)}
+                          />
+                          <p className="text-[10px] text-zinc-500">
+                            Usa comas y guiones para especificar páginas
+                          </p>
+                        </div>
+
+                        <SummaryList
+                          title="Resumen"
+                          items={[
+                            {
+                              label: "Total páginas cargadas",
+                              value: pages.length,
+                            },
+                            {
+                              label: "Páginas a eliminar",
+                              value: selectedPages.length,
+                            },
+                            {
+                              label: "Documento final",
+                              value: `${pages.length - selectedPages.length} páginas`,
+                            },
+                          ]}
                         />
-                      </div>
 
-                      <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs space-y-1">
-                        <div className="flex justify-between">
-                          <span>Total PDF original:</span>
-                          <span className="font-normal">{pages.length}</span>
+                        <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                          <Button
+                            variant="hero"
+                            className="w-full py-6 font-medium"
+                            size="lg"
+                            onClick={handleOpenSaveDialog}
+                            disabled={isProcessing || pages.length === 0}
+                          >
+                            {isProcessing ? "Procesando..." : "Guardar Documento"}
+                            <ArrowDownToLine className="w-4 h-4" />
+                          </Button>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Páginas a eliminar:</span>
-                          <span className={`font-bold ${selectedIds.length > 0 ? 'text-red-500' : ''}`}>
-                            {selectedIds.length}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Total final:</span>
-                          <span className="font-bold">{pages.length - selectedIds.length}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                      <Button
-                        className="w-full bg-red-500 hover:bg-red-600 cursor-pointer disabled:bg-red-600 disabled:hover:bg-red-600 disabled:cursor-not-allowed"
-                        size="lg"
-                        onClick={handleOpenSaveDialog}
-                        disabled={isProcessing || selectedIds.length === 0}
-                      >
-                        {isProcessing ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <FileUp className="w-4 h-4" />
-                        )}
-                        {isProcessing ? "Procesando..." : "Eliminar y Descargar"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <SaveDialog
-                open={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
-                defaultName={`modified-${file.name.replace(".pdf", "")}`}
-                onSave={handleSave}
-                isProcessing={isProcessing}
-                title="Guardar archivo"
-                description="Asigna un nombre a tu nuevo archivo PDF."
-              />
-
-              {/* Right Panel: Pages Grid */}
-              <div className="lg:col-span-3 bg-zinc-50/50 dark:bg-zinc-900/20 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 min-h-[500px]">
-                <PdfGrid
-                  items={pages.map(p => ({
-                    id: p.id,
-                    file: p.file,
-                    pageNumber: p.originalIndex,
-                    rotation: p.rotation
-                  }))}
-                  config={PDF_CARD_PRESETS.delete}
-                  selectedIds={selectedIds}
-                  onReorder={(newItems) => {
-                    const newPages = newItems.map(item => pages.find(p => p.id === item.id)!).filter(Boolean);
-                    reorderPages(newPages);
-                  }}
-                  onToggle={handleToggle}
-                />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      <SaveDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        defaultName="documento-modificado"
+        onSave={handleSave}
+        isProcessing={isProcessing}
+        title="Guardar documento"
+        description="Asigna un nombre a tu documento PDF modificado."
+      />
+
+      <SuccessDialog
+        open={isSuccessDialogOpen}
+        onOpenChange={setIsSuccessDialogOpen}
+        onContinue={() => setIsSuccessDialogOpen(false)}
+        onStartNew={handleReset}
+      />
     </div>
   );
 }

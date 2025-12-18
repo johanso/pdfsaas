@@ -16,15 +16,15 @@ Es una aplicación web SaaS moderna para la manipulación y procesamiento de arc
 ## 2. Tecnologías Clave
 
 ### Frontend
-*   **Framework:** [Next.js 14+](https://nextjs.org/) (App Router) para la estructura de la aplicación y renderizado.
-*   **UI Library:** [Shadcn UI](https://ui.shadcn.com/) (basado en Radix UI) + Tailwind CSS para estilos.
+*   **Framework:** [Next.js 14+](https://nextjs.org/) (App Router).
+*   **UI Library:** [Shadcn UI](https://ui.shadcn.com/) + Tailwind CSS.
 *   **Iconos:** `lucide-react`.
-*   **Drag & Drop:** `@dnd-kit` (core y sortable) para la interfaz de arrastrar y soltar tarjetas.
-*   **Visualización PDF:** `react-pdf` (usa `pdfjs-dist` bajo el capó) para renderizar miniaturas de las páginas en el navegador.
+*   **Drag & Drop:** `@dnd-kit` para la interfaz de arrastrar y soltar tarjetas.
+*   **Visualización PDF:** `react-pdf` (`pdfjs-dist`) para miniaturas.
 
 ### Backend (Server-Side)
-*   **Procesamiento PDF:** `pdf-lib`. Se utiliza en las API Routes de Next.js para realizar las modificaciones reales a los archivos (merge, rotate, save). Es rápido y no requiere binarios externos.
-*   **Runtime:** Node.js (entorno estándar de Next.js).
+*   **Procesamiento PDF:** `pdf-lib`. Se utiliza en las API Routes de Next.js para realizar las modificaciones reales a los archivos.
+*   **Runtime:** Node.js.
 
 ## 3. Arquitectura de Carpetas
 
@@ -32,106 +32,68 @@ Es una aplicación web SaaS moderna para la manipulación y procesamiento de arc
 src/
 ├── app/                        # Next.js App Router
 │   ├── api/                    # API Routes (Backend logic)
-│   │   ├── merge-pdf/          # Endpoint para unir
-│   │   ├── rotate-pdf/         # Endpoint para rotar
-│   │   └── ...                 # Otros endpoints por herramienta
 │   ├── unir-pdf/               # Página frontend "Unir PDF"
 │   ├── rotar-pdf/              # Página frontend "Rotar PDF"
-│   ├── ...                     # Otras páginas de herramientas
-│   └── globals.css             # Estilos globales y variables CSS
-│
-├── components/                 # Componentes de React
-│   ├── layout/                 # Componentes estructurales (Navbar, Footer)
-│   ├── pdf-system/             # SISTEMA NÚCLEO DE UI PDF
-│   │   ├── pdf-card.tsx        # Tarjeta individual (archivo o página)
-│   │   └── pdf-grid.tsx        # Grid reordenable (DndContext)
-│   ├── ui/                     # Componentes base (Buttons, Cards, Dialogs...)
-│   ├── pdf-toolbar.tsx         # Barra de acciones (Zoom, Reset)
-│   └── save-dialog.tsx         # Modal para guardar/nombrar archivo
-│
-├── hooks/                      # Lógica de negocio y Estado (Custom Hooks)
-│   ├── usePdfFiles.ts          # Gestión de lista de ARCHIVOS (Unir, Organizar)
-│   ├── usePdfPages.ts          # Gestión de lista de PÁGINAS (Rotar, Eliminar)
-│   ├── usePdfProcessing.ts     # Comunicación con API y descargas
 │   └── ...
 │
-└── lib/                        # Utilidades (cn class merger, etc.)
+├── components/                 # Componentes de React
+│   ├── pdf-system/             # SISTEMA NÚCLEO DE UI PDF
+│   │   ├── pdf-card.tsx        # Tarjeta individual
+│   │   └── pdf-grid.tsx        # Grid reordenable
+│   ├── ui/                     # Componentes base (shadcn)
+│   ├── globalToolbar.tsx       # Barra de comandos contextual
+│   └── success-dialog.tsx      # Flujo post-descarga
+│
+├── hooks/                      # Lógica de negocio
+│   ├── usePdfFiles.ts          # Gestión de ARCHIVOS
+│   ├── usePdfPages.ts          # Gestión de PÁGINAS
+│   └── usePdfProcessing.ts     # Comunicación con API
 ```
 
 ## 4. Componentes Principales del Sistema PDF
 
-El proyecto utiliza un sistema unificado para mostrar PDFs, ya sea como lista de archivos o como grilla de páginas.
+### `PdfGrid` y `PdfCard`
+El núcleo visual para mostrar PDFs.
+*   **`PdfGrid`**: Maneja el layout y la lógica de reordenamiento (Drag & Drop).
+*   **`PdfCard`**: Representa un archivo o página. Se configura mediante **Presets** (`merge`, `rotate`, `delete`, etc.) para adaptar su interfaz a cada herramienta.
 
-### `PdfGrid` (`src/components/pdf-system/pdf-grid.tsx`)
-Es el contenedor inteligente. Recibe una lista de items (`files` o `pages`) y maneja la lógica de **Drag and Drop**.
-*   Utiliza `SortableContext` de dnd-kit.
-*   Se adapta responsive (columnas variables).
-*   Expone eventos: `onReorder`, `onRemove`, `onRotate`, etc.
+### `GlobalToolbar` (`src/components/globalToolbar.tsx`)
+El centro de mandos de la aplicación. Es un componente **stateless** y **context-aware**.
+*   **Configuración por Props:** Recibe un objeto `features` para habilitar/deshabilitar grupos de botones (Selección, Ordenamiento, Rotación, Acciones Masivas) según la herramienta actual.
+*   **Eventos:** Emite acciones que la página principal captura para actualizar el estado del hook correspondiente.
 
-### `PdfCard` (`src/components/pdf-system/pdf-card.tsx`)
-Es la unidad visual. Representa un PDF o una Página. Es altamente configurable a través de **PRESETS**.
-*   **Visualización:** Usa `PdfThumbnail` (wrapper de react-pdf) para mostrar la previsualización real del contenido.
-*   **Interactividad:** Puede tener checkbox de selección, botones de rotación, botón de eliminar, badge de número de página, etc.
-*   **Presets (`PDF_CARD_PRESETS`):** Define configuraciones pre-fabricadas para no repetir props:
-    *   `merge`: Muestra nombre de archivo, tamaño, sin selección.
-    *   `rotate`: Muestra botones de giro a la derecha/izquierda.
-    *   `delete`: Muestra checkbox de selección grande y estilo de "borrado" al seleccionar.
+### `SuccessDialog` (`src/components/success-dialog.tsx`)
+Gestiona el flujo post-procesamiento para mejorar la retención y la experiencia.
+*   **Barra de Progreso:** Simula el procesamiento/descarga para dar feedback visual.
+*   **Opciones Finales:** Permite al usuario "Seguir editando" (mantener estado) o iniciar una "Nueva operación" (reset).
 
 ## 5. Hooks: El Cerebro de la Aplicación
 
-La lógica no reside en los componentes visuales, sino en estos hooks personalizados:
-
 ### `usePdfFiles`
-**Uso:** Herramientas que manipulan archivos enteros (Unir PDF).
-**Estado:** `files: PdfFile[]`
-**Funciones clave:**
-*   `addFiles(File[])`: Valida PDFs y extrae el conteo de páginas usando `pdfjs`.
-*   `reorderFiles`: Actualiza el orden del array tras un drag & drop.
-*   `reset`: Limpia todo.
+Gestiona listas de archivos completos (ej: Unir PDF).
+*   **Funciones:** `addFiles`, `removeFile`, `reorderFiles`, `sortAZ`, `sortZA`, `reset`.
+*   Incluye notificaciones (Toasts) para feedback inmediato del usuario.
 
 ### `usePdfPages`
-**Uso:** Herramientas que manipulan páginas de un solo archivo (Rotar, Eliminar, Extraer).
-**Estado:** `pages: PageData[]`
-**Funciones clave:**
-*   Carga inicial: Desglosa un `File` en N objetos `PageData` (uno por página).
-*   `rotatePage(id, degrees)`: Actualiza el estado de rotación local (visual).
-*   `rotateAllPages(degrees)`: Rotación masiva.
-*   `removePage(id)`: Quita una página de la lista (para herramientas de eliminación o extracción).
+Gestiona páginas individuales de un documento (ej: Rotar, Eliminar).
+*   **Funciones:** Carga de archivo único, `rotatePage`, `rotateAllPages`, `removePage`.
 
 ### `usePdfProcessing`
-**Uso:** Abstracción para llamar al backend.
-**Responsabilidad:**
-1.  Maneja el estado `isProcessing` (para deshabilitar botones y mostrar loaders).
-2.  `processAndDownload(fileName, formData, options)`:
-    *   Envía el `FormData` al endpoint configurado.
-    *   Maneja errores (Toast notifications).
-    *   Recibe el Blob de respuesta y fuerza la descarga automática en el navegador.
+Abstracción para la comunicación con el backend y gestión de descargas (Blob handling).
 
-## 6. Flujo de Datos: Ejemplo "Rotar PDF"
+## 6. Flujo de Datos Típico (Workflow)
 
-1.  **Input:** El usuario selecciona un archivo en `Dropzone`.
-2.  **Carga:** `RotatePdfPage` (frontend) instancia `usePdfPages(file)`.
-    *   El hook lee el PDF y genera un array de objetos `{ originalIndex: 1, rotation: 0, ... }`.
-    *   `PdfGrid` renderiza una tarjeta por cada página.
-3.  **Interacción:**
-    *   El usuario hace clic en "Rotar Derecha" en la página 3.
-    *   `usePdfPages` actualiza el estado local: la página 3 ahora tiene `rotation: 90`.
-    *   Visualmente la tarjeta gira (CSS transform), pero el archivo original sigue intacto.
-4.  **Guardado:**
-    *   El usuario clic en "Guardar". Se abre `SaveDialog` para poner nombre.
-    *   Al confirmar, se crea un `FormData` con:
-        *   El archivo original (`file`).
-        *   Un JSON `pageInstructions`: `[{ originalIndex: 2, rotation: 90 }]` (indices corchados para backend 0-based).
-5.  **Procesamiento (API):**
-    *   `usePdfProcessing` envía todo a `/api/rotate-pdf`.
-    *   El servidor recibe el archivo y las instrucciones.
-    *   **pdf-lib** carga el PDF, itera sobre las páginas y aplica `page.setRotation()`.
-    *   Devuelve el PDF modificado como stream.
-6.  **Descarga:** El navegador descarga el archivo final.
+1.  **Carga:** El usuario sube archivos vía `Dropzone`.
+2.  **Preparación:** La página usa el hook adecuado (`usePdfFiles` o `usePdfPages`) para gestionar el estado.
+3.  **Edición:** El usuario interactúa con `PdfGrid` y `GlobalToolbar`. Los cambios son visuales y locales.
+4.  **Procesamiento:** Se envía el estado y los archivos al endpoint de la API.
+5.  **Descarga:** `usePdfProcessing` gestiona el archivo resultante.
+6.  **Confirmación:** `SuccessDialog` aparece para guiar al usuario en su siguiente paso.
 
-## 7. Notas Adicionales
-*   **Persistencia:** No hay base de datos. Todo el procesamiento es efímero y en memoria durante la petición.
-*   **Límites:** Depende de la memoria del servidor (Vercel/Node) y del cliente (para previsualización).
+## 7. Notas Técnicas
+*   **Sin Persistencia:** No hay base de datos. Todo el procesamiento es efímero.
+*   **SEO:** Implementación de metadatos dinámicos por página.
+*   **Accesibilidad:** Uso de componentes Radix UI para asegurar una experiencia inclusiva.
 
 ---
-*Documentación generada automáticamente para el proyecto PDF SaaS.*
+*Documentación generada y actualizada para el proyecto PDF SaaS.*
