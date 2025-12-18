@@ -1,13 +1,12 @@
 "use client";
-
 import { useState } from "react";
+import { toast } from "sonner";
+// components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Download, Scissors, Layers, X } from "lucide-react";
-import { toast } from "sonner";
-
 import { SplitGrid } from "./split-grid";
 import { PdfToolbar } from "@/components/pdf-toolbar";
 import { SaveDialog } from "@/components/save-dialog";
@@ -18,6 +17,11 @@ import { getSplitGroupColor } from "@/lib/split-colors";
 // Hooks
 import { usePdfLoader } from "@/hooks/usePdfLoader";
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { useIsMobile } from "@/hooks/useMobile";
+import { GlobalToolbar } from "@/components/globalToolbar";
+import { SuccessDialog } from "@/components/success-dialog";
+import { SummaryList } from "@/components/summaryList";
+import { cn } from "@/lib/utils";
 
 export default function SplitPdfPage() {
 
@@ -27,6 +31,8 @@ export default function SplitPdfPage() {
   const [ranges, setRanges] = useState<number[]>([]);
   const [fixedSize, setFixedSize] = useState<number>(2);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const { numPages } = usePdfLoader(file);
   const { isProcessing, processAndDownload } = usePdfProcessing();
@@ -36,6 +42,7 @@ export default function SplitPdfPage() {
     setFile(null);
     setRanges([]);
     setFixedSize(2);
+    setIsSuccessDialogOpen(false);
   };
 
   const handleFilesSelected = (files: File[]) => {
@@ -147,144 +154,220 @@ export default function SplitPdfPage() {
     await processAndDownload(fileName, formData, {
       endpoint: "/api/split-pdf",
       successMessage: "¡Archivo procesado correctamente!",
-      onSuccess: () => setShowSaveDialog(false)
+      onSuccess: () => {
+        setShowSaveDialog(false);
+        setIsSuccessDialogOpen(true);
+      }
     });
   };
+
 
   return (
     <div className="container mx-auto py-10 px-4 max-w-6xl pb-32">
       <div className="space-y-6">
+
         <HeadingPage
           titlePage={"Dividir PDF"}
           descriptionPage="Herramienta profesional para separar, extraer y organizar tus documentos."
         />
 
-        {!file ? (
-          <Dropzone
-            onFilesSelected={handleFilesSelected}
-            multiple={false}
-            className="h-80 bg-zinc-50/50 dark:bg-zinc-900/50"
-          />
-        ) : (
-          // Editor State
-          <div className="space-y-6">
-            <PdfToolbar
-              title={file.name}
-              subtitle={`${numPages} páginas | ${(file.size / 1024 / 1024).toFixed(2)} MB total`}
-              onReset={handleReset}
-              showAddButton={false}
+        <div className="w-full">
+          {!file ? (
+            <Dropzone
+              onFilesSelected={handleFilesSelected}
+              multiple={false}
+              className="h-80 bg-zinc-50/50 dark:bg-zinc-900/50"
             />
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <div className="lg:col-span-3 space-y-2">
+                  {isMobile && (
+                    <PdfToolbar onReset={handleReset} />
+                  )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              {/* Left Panel: Controls */}
-              <div className="lg:col-span-1 space-y-6">
-                <Card className="sticky top-24">
-                  <CardContent className="space-y-6 py-4">
-                    <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
-                      <TabsList className="grid w-full grid-cols-2 mb-4">
-                        <TabsTrigger className="flex items-center gap-2 cursor-pointer" value="ranges" title="Por Rangos">
-                          <Scissors className="w-4 h-4" />
-                          <span className="text-xs">Manual</span>
-                        </TabsTrigger>
-                        <TabsTrigger className="flex items-center gap-2 cursor-pointer" value="fixed" title="Fijo">
-                          <Layers className="w-4 h-4" />
-                          <span className="text-xs">Fija</span>
-                        </TabsTrigger>
-                      </TabsList>
+                  <section className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2">
+                    <GlobalToolbar
+                      features={{ sorting: true }}
+                      actions={{
+                        onSortAZ: () => toast.info("No aplicable en dividir"),
+                        onSortZA: () => toast.info("No aplicable en dividir"),
+                      }}
+                    />
+                  </section>
 
-                      <div className="space-y-4">
-                        {mode === "ranges" && (
-                          <div className="text-sm text-zinc-500">
-                            <p className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">Modo Rangos</p>
-                            <p>Haz clic en las tijeras entre las páginas para crear nuevos grupos.</p>
+                  <section className="bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-2 md:p-6 min-h-[500px]">
+                    {numPages === 0 ? (
+                      <div className="flex items-center justify-center h-full">
+                        <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+                      </div>
+                    ) : (
+                      <SplitGrid
+                        file={file}
+                        numPages={numPages}
+                        mode={mode}
+                        ranges={ranges}
+                        fixedSize={fixedSize}
+                        onRangeClick={handleRangeClick}
+                      />
+                    )}
+                  </section>
+                </div>
 
-                            {getRangeGroups().length > 0 && (
-                              <div className="mt-6 space-y-2">
-                                <p className="text-sm mb-4 font-semibold text-zinc-700 dark:text-zinc-300">
-                                  Grupos a crear ({getRangeGroups().length}):
-                                </p>
-                                <div className="space-y-1.5">
-                                  {getRangeGroups().map((group, index) => (
-                                    <div
-                                      key={index}
-                                      className="flex items-center gap-2 p-2 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-700 group/item hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
-                                    >
-                                      <div className={`w-2 h-2 rounded-full ${group.color} shrink-0`} />
-                                      <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 min-w-[60px]">
-                                        Archivo {index + 1}:
-                                      </span>
-                                      <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-1">
-                                        {group.start === group.end
-                                          ? `Pág ${group.start}`
-                                          : `Págs ${group.start}-${group.end}`
-                                        }
-                                      </span>
-                                      {
-                                        getRangeGroups().length > 1 && (
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-5 w-5 transition-opacity hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20 cursor-pointer"
-                                            onClick={() => handleDeleteGroup(index)}
-                                            title="Eliminar grupo"
-                                          >
-                                            <X className="h-3 w-3" />
-                                          </Button>
-                                        )
-                                      }
+                <div className="lg:col-span-1">
+                  <div className="fixed bottom-0 lg:sticky lg:top-4 space-y-6 z-9 w-[calc(100svw-2rem)] lg:w-auto">
+                    {!isMobile && (
+                      <PdfToolbar onReset={handleReset} />
+                    )}
+
+                    <Card>
+                      <CardContent className="space-y-4 pt-4 pb-4">
+                        <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
+                          <TabsList className="grid w-full grid-cols-2 mb-4">
+                            <TabsTrigger className="flex items-center gap-2 cursor-pointer" value="ranges" title="Por Rangos">
+                              <Scissors className="w-4 h-4" />
+                              <span className="text-xs">Rangos</span>
+                            </TabsTrigger>
+                            <TabsTrigger className="flex items-center gap-2 cursor-pointer" value="fixed" title="Fijo">
+                              <Layers className="w-4 h-4" />
+                              <span className="text-xs">Cantidad</span>
+                            </TabsTrigger>
+                          </TabsList>
+
+                          <div className="space-y-4">
+                            {mode === "ranges" && (
+                              <div className="text-sm text-zinc-500">
+                                <p className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">Modo Rangos</p>
+                                <p>Haz clic en las tijeras entre las páginas para crear nuevos grupos.</p>
+
+                                {getRangeGroups().length > 0 && (
+                                  <div className="mt-6 space-y-4">
+                                    <div className="space-y-1.5">
+                                      {getRangeGroups().map((group, index) => (
+                                        <div
+                                          key={index}
+                                          className="flex items-center gap-2 p-2 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-700 group/item hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
+                                        >
+                                          <div className={`w-2 h-2 rounded-full ${group.color} shrink-0`} />
+                                          <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 min-w-[60px]">
+                                            archivo-{index + 1}.pdf:
+                                          </span>
+                                          <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-1">
+                                            {group.start === group.end
+                                              ? `Pág ${group.start}`
+                                              : `Págs ${group.start}-${group.end}`
+                                            }
+                                          </span>
+                                          {
+                                            getRangeGroups().length > 1 && (
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-5 w-5 transition-opacity hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20 cursor-pointer"
+                                                onClick={() => handleDeleteGroup(index)}
+                                                title="Eliminar grupo"
+                                              >
+                                                <X className="h-3 w-3" />
+                                              </Button>
+                                            )
+                                          }
+                                        </div>
+                                      ))}
                                     </div>
-                                  ))}
+                                    <div className="p-3 text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs">
+                                      Se crearán <strong>{getRangeGroups().length} archivos PDF</strong> en un .zip
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {mode === "fixed" && (
+                              <div className="space-y-4">
+                                <div className="text-sm text-zinc-500">
+                                  <p className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">División Fija</p>
+                                  <p>Divide el documento en partes de igual tamaño.</p>
                                 </div>
+
+                                <div className="space-y-2">
+                                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                                    Páginas por archivo:
+                                  </label>
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    max={numPages}
+                                    value={fixedSize}
+                                    onChange={(e) => {
+                                      const val = parseInt(e.target.value) || 1;
+                                      if (val > numPages) {
+                                        toast.error(`Máximo ${numPages} páginas`);
+                                        setFixedSize(numPages);
+                                      } else {
+                                        setFixedSize(val);
+                                      }
+                                    }}
+                                    className={cn(
+                                      fixedSize > numPages && "border-red-500"
+                                    )}
+                                  />
+                                </div>
+
+                                {(() => {
+                                  const totalGroups = Math.ceil(numPages / fixedSize);
+                                  const lastGroupSize = numPages % fixedSize || fixedSize;
+                                  const allSameSize = lastGroupSize === fixedSize;
+
+                                  return (
+                                    <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs space-y-1">
+                                      <span>
+                                        Se crearán <strong>{totalGroups}</strong> archivo{totalGroups > 1 ? 's' : ''} PDF,
+                                      </span>
+                                      {allSameSize ? (
+                                        <span className="text-zinc-700 dark:text-zinc-300">
+                                          &nbsp; todos con <strong>{fixedSize}</strong> página{fixedSize > 1 ? 's' : ''}
+                                        </span>
+                                      ) : (
+                                        <span className="text-zinc-700 dark:text-zinc-300">
+                                          &nbsp; {totalGroups - 1} de <strong>{fixedSize}</strong> págs, el último de <strong>{lastGroupSize}</strong> pág{lastGroupSize > 1 ? 's' : ''}
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+
+
                               </div>
                             )}
                           </div>
-                        )}
+                        </Tabs>
 
-                        {mode === "fixed" && (
-                          <div className="space-y-4">
-                            <div className="text-sm text-zinc-500">
-                              <p className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">División Fija</p>
-                              <p>Divide el documento en partes de igual tamaño.</p>
-                            </div>
-
-                            <div className="space-y-2">
-                              <p className="text-sm mb-4 font-semibold">Páginas por archivo</p>
-                              <Input
-                                type="number"
-                                min={1}
-                                max={numPages}
-                                value={fixedSize}
-                                onChange={(e) => setFixedSize(parseInt(e.target.value) || 1)}
-                              />
-                            </div>
-
-                            <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs">
-                              Se crearán <strong>{Math.ceil(numPages / fixedSize)}</strong> archivos de <strong>{fixedSize}</strong> páginas cada uno (aprox).
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </Tabs>
-
-                    <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                      <Button
-                        className="w-full bg-red-500 hover:bg-red-600 cursor-pointer disabled:bg-red-600 disabled:hover:bg-red-600 disabled:cursor-not-allowed"
-                        size="lg"
-                        onClick={handlePreSubmit}
-                        disabled={isProcessing || (mode !== "fixed" && numPages === 0) || (mode === "ranges" && getRangeGroups().length <= 1)}
-                      >
-                        {isProcessing ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : getIsZip() ? (
-                          <Layers className="w-4 h-4" />
-                        ) : (
-                          <Download className="w-4 h-4" />
-                        )}
-                        {isProcessing ? "Procesando..." : (getIsZip() ? "Dividir y Descargar ZIP" : "Dividir y Descargar PDF")}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                        <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                          <Button
+                            variant="hero"
+                            className="w-full py-6 font-medium"
+                            size="lg"
+                            onClick={handlePreSubmit}
+                            disabled={
+                              isProcessing ||
+                              numPages === 0 ||
+                              (mode === "ranges" && ranges.length === 0) ||
+                              (mode === "fixed" && fixedSize < 1)
+                            }
+                          >
+                            {isProcessing ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : getIsZip() ? (
+                              <Layers className="w-4 h-4" />
+                            ) : (
+                              <Download className="w-4 h-4" />
+                            )}
+                            {isProcessing ? "Procesando..." : (getIsZip() ? "Dividir y Descargar ZIP" : "Dividir y Descargar PDF")}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
               </div>
 
               <SaveDialog
@@ -301,28 +384,16 @@ export default function SplitPdfPage() {
                 extension={getIsZip() ? "zip" : "pdf"}
               />
 
-              {/* Right Panel: Preview Grid */}
-              <div className="lg:col-span-3 bg-zinc-50/50 dark:bg-zinc-900/20 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 min-h-[500px]">
-                {numPages > 0 ? (
-                  <SplitGrid
-                    file={file}
-                    numPages={numPages}
-                    mode={mode}
-                    ranges={ranges}
-                    fixedSize={fixedSize}
-                    onRangeClick={handleRangeClick}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-zinc-400">
-                    <Loader2 className="w-8 h-8 animate-spin mb-2" />
-                    <p>Cargando vista previa...</p>
-                  </div>
-                )}
-              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+      <SuccessDialog
+        open={isSuccessDialogOpen}
+        onOpenChange={setIsSuccessDialogOpen}
+        onContinue={() => setIsSuccessDialogOpen(false)}
+        onStartNew={handleReset}
+      />
     </div>
   );
 }

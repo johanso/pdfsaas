@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
                 if (pageIndices.length > 0) {
                     const newPdf = await createDocFromIndices(pageIndices);
                     outputs.push({
-                        name: `part-${rangeCounter}.pdf`,
+                        name: `archivo-${rangeCounter}.pdf`,
                         pdf: newPdf
                     });
                     rangeCounter++;
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
                 const partNum = Math.floor(i / size) + 1;
                 const newPdf = await createDocFromIndices(pageIndices);
                 outputs.push({
-                    name: `part-${partNum}.pdf`,
+                    name: `archivo-${partNum}.pdf`,
                     pdf: newPdf
                 });
             }

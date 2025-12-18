@@ -170,7 +170,7 @@ export default function RotatePdfPage() {
                           ]}
                         />
 
-                        <div className="py-4 border-t border-zinc-200 dark:border-zinc-800">
+                        <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
                           <Button
                             variant="hero"
                             className="w-full py-6 font-medium"
@@ -201,6 +201,7 @@ export default function RotatePdfPage() {
           )}
         </div>
       </div>
+
       <SuccessDialog
         open={isSuccessDialogOpen}
         onOpenChange={setIsSuccessDialogOpen}

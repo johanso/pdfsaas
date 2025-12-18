@@ -89,8 +89,9 @@ export function SplitGrid({
                 {/* Visual Line */}
                 <div className={cn(
                   "absolute h-full w-0.5 z-10 -right-[.55rem] top-0 transition-colors",
-                  isSplit ? "bg-red-500" : "bg-zinc-200 group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700"
-                )} />
+                  isSplit
+                    ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
+                    : "bg-zinc-200 group-hover:bg-zinc-400")} />
 
                 {/* Scissor Button */}
                 <div className="absolute -right-5 top-1/2 -translate-y-1/2 z-10">
