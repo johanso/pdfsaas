@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ArrowDownToLine } from "lucide-react";
+import { ArrowDownToLine, Loader2 } from "lucide-react";
 import { PdfToolbar } from "@/components/pdf-toolbar";
 import { SaveDialog } from "@/components/save-dialog";
 import { Dropzone } from "@/components/ui/dropzone";
@@ -163,26 +163,32 @@ export default function DeletePagesPage() {
                         onSelectAll: selectAll,
                         onDeselectAll: deselectAll,
                         onInvertSelection: invertSelection,
-                        onDeleteSelected: handleDeleteSelected,
                       }}
                     />
                   </section>
 
                   <section className="bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-2 md:p-6 min-h-[500px]">
-                    <PdfGrid
-                      items={pages}
-                      config={PDF_CARD_PRESETS.delete}
-                      selectedIds={selectedIds}
-                      extractCardData={(p) => ({
-                        id: p.id,
-                        file: p.file,
-                        pageNumber: p.originalIndex,
-                        rotation: p.rotation,
-                        isBlank: p.isBlank
-                      })}
-                      onReorder={reorderPages}
-                      onToggle={handleToggle}
-                    />
+
+                    {pages.length === 0 ? (
+                      <div className="flex items-center justify-center h-full">
+                        <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+                      </div>
+                    ) : (
+                      <PdfGrid
+                        items={pages}
+                        config={PDF_CARD_PRESETS.delete}
+                        selectedIds={selectedIds}
+                        extractCardData={(p) => ({
+                          id: p.id,
+                          file: p.file,
+                          pageNumber: p.originalIndex,
+                          rotation: p.rotation,
+                          isBlank: p.isBlank
+                        })}
+                        onReorder={reorderPages}
+                        onToggle={handleToggle}
+                      />
+                    )}
                   </section>
                 </div>
 

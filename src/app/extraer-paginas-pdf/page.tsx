@@ -1,30 +1,36 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
+import { FileOutput, ArrowDownToLine, Loader2, CheckCircle2, Circle } from "lucide-react";
+// Components
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Download, FileOutput } from "lucide-react";
-import { toast } from "sonner";
 import { HeadingPage } from "@/components/ui/heading-page";
 import { Dropzone } from "@/components/ui/dropzone";
 import { PdfToolbar } from "@/components/pdf-toolbar";
 import { SaveDialog } from "@/components/save-dialog";
-import { usePdfLoader } from "@/hooks/usePdfLoader";
-import { usePdfProcessing } from "@/hooks/usePdfProcessing";
-import { usePageSelection } from "@/hooks/usePageSelection";
 import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
+import { GlobalToolbar } from "@/components/globalToolbar";
+import { SummaryList } from "@/components/summaryList";
+import { SuccessDialog } from "@/components/success-dialog";
+// Hooks
+import { useIsMobile } from "@/hooks/useMobile";
+import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { usePageSelection } from "@/hooks/usePageSelection";
+import { usePdfPages } from "@/hooks/usePdfPages";
+import { cn } from "@/lib/utils";
 
 export default function ExtractPdfPage() {
-  // File State
   const [file, setFile] = useState<File | null>(null);
-
-  // Mode State
-  // extractMode: 'separate' = zip with individual pages, 'merge' = single new pdf
   const [extractMode, setExtractMode] = useState<"separate" | "merge">("separate");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
 
-  const { numPages, isLoading } = usePdfLoader(file);
+  const { pages } = usePdfPages(file);
+  const numPages = pages.length;
+
   const {
     selectedPages,
     togglePage,
@@ -34,6 +40,8 @@ export default function ExtractPdfPage() {
     reset: resetSelection
   } = usePageSelection(numPages);
   const { isProcessing, processAndDownload } = usePdfProcessing();
+  const isMobile = useIsMobile();
+
 
   const handleSubmit = async (fileName: string) => {
     if (!file) return;
@@ -51,13 +59,17 @@ export default function ExtractPdfPage() {
     await processAndDownload(fileName, formData, {
       endpoint: "/api/split-pdf",
       successMessage: "¡Páginas extraídas correctamente!",
-      onSuccess: () => setShowSaveDialog(false)
+      onSuccess: () => {
+        setShowSaveDialog(false);
+        setIsSuccessDialogOpen(true);
+      }
     });
   };
 
   const handleReset = () => {
     setFile(null);
     resetSelection();
+    setIsSuccessDialogOpen(false);
   };
 
   const handleFilesSelected = (files: File[]) => {
@@ -84,111 +96,159 @@ export default function ExtractPdfPage() {
   return (
     <div className="container mx-auto py-10 px-4 max-w-6xl pb-32">
       <div className="space-y-6">
+
         <HeadingPage
           titlePage="Extraer Páginas PDF"
           descriptionPage="Selecciona las páginas que quieres conservar y crea un nuevo PDF o descárgalas por separado."
         />
 
-        {!file ? (
-          <Dropzone
-            onFilesSelected={handleFilesSelected}
-            multiple={false}
-            className="h-80 bg-zinc-50/50 dark:bg-zinc-900/50"
-          />
-        ) : (
-          // Editor State
-          <div className="space-y-6">
-            <PdfToolbar
-              title={file.name}
-              subtitle={`${numPages} páginas | ${(file.size / 1024 / 1024).toFixed(2)} MB total`}
-              onReset={handleReset}
-              showAddButton={false}
-              onSelectAll={selectAll}
-              onDeselectAll={deselectAll}
-              onInvertSelection={invertSelection}
+        <div className="w-full">
+          {!file ? (
+            <Dropzone
+              onFilesSelected={handleFilesSelected}
+              multiple={false}
+              className="h-80 bg-zinc-50/50 dark:bg-zinc-900/50"
             />
+          ) : (
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <div className="lg:col-span-3 space-y-2">
+                  {isMobile && (
+                    <PdfToolbar onReset={handleReset} />
+                  )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              {/* Left Panel: Controls */}
-              <div className="lg:col-span-1 space-y-6">
-                <Card className="sticky top-24">
-                  <CardContent className="space-y-6 pt-4">
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-medium mb-2 flex items-center gap-2">
-                          <FileOutput className="w-4 h-4 text-primary" />
-                          Opciones de Salida
-                        </h3>
-                        <p className="text-sm text-zinc-500 mb-4">
-                          Elige cómo quieres recibir tus páginas extraídas.
-                        </p>
+                  <section className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2">
+                    <GlobalToolbar
+                      features={{
+                        selection: true,
+                      }}
+                      actions={{
+                        onSelectAll: selectAll,
+                        onDeselectAll: deselectAll,
+                        onInvertSelection: invertSelection,
+                      }}
+                    />
+                  </section>
 
-                        <div className="flex flex-col gap-2">
-                          <Button
-                            variant={extractMode === "separate" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setExtractMode("separate")}
-                            className="cursor-pointer"
-                          >
-                            Separar páginas (ZIP)
-                          </Button>
-                          <Button
-                            variant={extractMode === "merge" ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setExtractMode("merge")}
-                            className="cursor-pointer"
-                          >
-                            Fusionar en un nuevo PDF
-                          </Button>
-                        </div>
+                  <section className="bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-2 md:p-6 min-h-[500px]">
+                    {pages.length === 0 ? (
+                      <div className="flex items-center justify-center h-full">
+                        <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
                       </div>
-
-                      <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs space-y-1">
-                        <div className="flex justify-between">
-                          <span>Páginas a extraer:</span>
-                          <span className="font-bold">{selectedPages.length}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>De un total de:</span>
-                          <span className="font-bold">{numPages}</span>
-                        </div>
-                      </div>
-
-                      <div className="text-xs">
-                        {
-                          extractMode === "separate" ? (
-                            <p>
-                              {selectedPages.length === 1
-                                ? "Se descargará un archivo PDF con la página seleccionada."
-                                : "Se descargará un archivo .zip con las páginas seleccionadas de forma independiente."
-                              }
-                            </p>
-                          ) : (
-                            <p>Se creará un único documento PDF con las <strong>{selectedPages.length}</strong> páginas seleccionadas.</p>
-                          )
+                    ) : (
+                      <PdfGrid
+                        items={pages}
+                        config={PDF_CARD_PRESETS.extract}
+                        extractCardData={(p) => ({
+                          id: p.id,
+                          file: p.file,
+                          pageNumber: p.originalIndex,
+                          rotation: p.rotation,
+                          isBlank: p.isBlank
+                        })}
+                        selectedIds={pages
+                          .filter(p => selectedPages.includes(p.originalIndex))
+                          .map(p => p.id)
                         }
-                      </div>
-                    </div>
+                        onToggle={(id) => {
+                          const page = pages.find(p => p.id === id);
+                          if (page) togglePage(page.originalIndex);
+                        }}
+                      />
+                    )}
+                  </section>
+                </div>
 
-                    <div className="py-4 border-t border-zinc-200 dark:border-zinc-800">
-                      <Button
-                        className="w-full bg-red-500 hover:bg-red-600 cursor-pointer disabled:bg-red-600 disabled:hover:bg-red-600 disabled:cursor-not-allowed"
-                        size="lg"
-                        onClick={handlePreSubmit}
-                        disabled={isProcessing || selectedPages.length === 0}
-                      >
-                        {isProcessing ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Download className="w-4 h-4" />
-                        )}
-                        {isProcessing ? "Procesando..." : extractMode === "separate" && selectedPages.length > 1 ? "Descargar ZIP" : "Descargar PDF"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="lg:col-span-1">
+                  <div className="fixed bottom-0 lg:sticky lg:top-4 space-y-6 z-9 w-[calc(100svw-2rem)] lg:w-auto">
+                    {!isMobile && (
+                      <PdfToolbar onReset={handleReset} />
+                    )}
+
+                    <Card>
+                      <CardContent className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <div>
+                            <h3 className="text-base mb-2 flex items-center gap-2">
+                              ¿Cómo quieres descargar?
+                            </h3>
+
+                            <p className="text-sm text-zinc-500 mb-4">
+                              Descarga cada página por separado o créalas en un solo PDF
+                            </p>
+
+                            <div className="flex flex-col gap-2">
+                              <button
+                                className={cn(
+                                  "relative px-3 py-2 rounded-lg border-2 transition-all text-left",
+                                  extractMode === "separate"
+                                    ? "border-primary bg-primary/5"
+                                    : "border-zinc-100 hover:border-zinc-300"
+                                )}
+                                onClick={() => setExtractMode("separate")}
+                              >
+                                <div className="flex items-start gap-2">
+                                  <div className="mt-0.5">
+                                    {extractMode === "separate" ? (
+                                      <CheckCircle2 className="w-5 h-5 text-primary" />
+                                    ) : (
+                                      <Circle className="w-5 h-5 text-zinc-300" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Páginas separadas</p>
+                                    <p className="text-xs text-zinc-500 mt-0.5 mb-1">
+                                      {selectedPages.length} archivos PDF en un .zip
+                                    </p>
+                                  </div>
+                                </div>
+                              </button>
+                              <button
+                                className={cn(
+                                  "relative px-3 py-2 rounded-lg border-2 transition-all text-left",
+                                  extractMode === "merge"
+                                    ? "border-primary bg-primary/5"
+                                    : "border-zinc-100 hover:border-zinc-200"
+                                )}
+                                onClick={() => setExtractMode("merge")}
+                              >
+                                <div className="flex items-start gap-2">
+                                  <div className="mt-0.5">
+                                    {extractMode === "merge" ? (
+                                      <CheckCircle2 className="w-5 h-5 text-primary" />
+                                    ) : (
+                                      <Circle className="w-5 h-5 text-zinc-300" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Fusionar en un PDF</p>
+                                    <p className="text-xs text-zinc-500 mt-0.5 mb-1">
+                                      1 archivo PDF con {selectedPages.length} página{selectedPages.length !== 1 ? 's' : ''}
+                                    </p>
+                                  </div>
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                          <Button
+                            variant="hero"
+                            className="w-full py-6 font-medium"
+                            size="lg"
+                            onClick={handlePreSubmit}
+                            disabled={isProcessing || selectedPages.length === 0}
+                          >
+                            {isProcessing ? "Procesando..." : extractMode === "separate" && selectedPages.length > 1 ? "Descargar ZIP" : "Descargar PDF"}
+                            <ArrowDownToLine className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
               </div>
-
               <SaveDialog
                 open={showSaveDialog}
                 onOpenChange={setShowSaveDialog}
@@ -202,28 +262,16 @@ export default function ExtractPdfPage() {
                 }
                 extension={extractMode === "separate" ? "zip" : "pdf"}
               />
-
-              {/* Right Panel: Preview Grid */}
-              <div className="lg:col-span-3 bg-zinc-50/50 dark:bg-zinc-900/20 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 min-h-[500px]">
-                <PdfGrid
-                  items={Array.from({ length: numPages }, (_, i) => ({
-                    id: String(i + 1),
-                    pageNum: i + 1
-                  }))}
-                  config={PDF_CARD_PRESETS.extract}
-                  extractCardData={(item) => ({
-                    id: item.id,
-                    file: file,
-                    pageNumber: item.pageNum
-                  })}
-                  selectedIds={selectedPages.map(String)}
-                  onToggle={(id) => togglePage(Number(id))}
-                />
-              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+      <SuccessDialog
+        open={isSuccessDialogOpen}
+        onOpenChange={setIsSuccessDialogOpen}
+        onContinue={() => setIsSuccessDialogOpen(false)}
+        onStartNew={handleReset}
+      />
     </div>
   );
 }

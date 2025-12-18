@@ -5,9 +5,15 @@ import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { GripVertical, X, RotateCw, RotateCcw, InfoIcon, Copy, StickyNote } from "lucide-react";
+import { GripVertical, X, Check, RotateCw, RotateCcw, InfoIcon, Copy, StickyNote } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+
+// Mapeo de iconos para selección
+const ICONS = {
+  check: Check,
+  x: X,
+};
 
 const PdfThumbnail = dynamic(() => import("../pdf-thumbnail").then((mod) => mod.PdfThumbnail), {
   ssr: false,
@@ -48,7 +54,8 @@ export interface PdfCardConfig {
   showRotationBadge?: boolean;
 
   // Estilos personalizados
-  selectedClassName?: string;
+  selectedColorName?: string;
+  iconSelectedName?: "check" | "x";
   aspectRatio?: "3/4" | "square" | "16/9";
 }
 
@@ -90,7 +97,8 @@ export const PDF_CARD_PRESETS = {
     removable: false,
     showPageNumber: true,
     showRotationBadge: true,
-    selectedClassName: "ring-2 ring-red-500 border-red-500 bg-red-50 dark:bg-red-950/20",
+    selectedColorName: "red",
+    iconSelectedName: "x",
   } as PdfCardConfig,
 
   // Para Rotar PDF (sin selección)
@@ -113,7 +121,8 @@ export const PDF_CARD_PRESETS = {
     rotatable: false,
     removable: false,
     showPageNumber: true,
-    selectedClassName: "ring-2 ring-green-500 border-green-500 bg-green-50 dark:bg-green-950/20",
+    selectedColorName: "green",
+    iconSelectedName: "check",
   } as PdfCardConfig,
 
   // Para Dividir PDF (sin drag, sin selección, visual)
@@ -172,7 +181,8 @@ export function PdfCard({
     showPageNumber = false,
     showFileInfo = false,
     showRotationBadge = true,
-    selectedClassName,
+    selectedColorName,
+    iconSelectedName,
     aspectRatio = "3/4",
   } = config;
 
@@ -227,8 +237,8 @@ export function PdfCard({
           aspectRatio === "square" && "aspect-square",
           aspectRatio === "16/9" && "aspect-video",
           isDragging && "shadow-xl ring-2 ring-primary/20 opacity-50",
-          isSelected && selectedClassName
-            ? selectedClassName
+          isSelected && selectedColorName
+            ? `ring-2 ring-${selectedColorName}-500 border-${selectedColorName}-500 bg-${selectedColorName}-50 dark:bg-${selectedColorName}-950/20`
             : isSelected
               ? "ring-2 ring-red-500 border-red-500 bg-red-50 dark:bg-red-950/20"
               : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:shadow-md"
@@ -239,8 +249,8 @@ export function PdfCard({
           <div
             className={cn(
               "h-8 border-b flex items-center justify-between px-2",
-              isSelected
-                ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900"
+              isSelected && selectedColorName
+                ? `bg-${selectedColorName}-50 dark:bg-${selectedColorName}-950/30 border-${selectedColorName}-200 dark:border-${selectedColorName}-900`
                 : "bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-800"
             )}
           >
@@ -255,7 +265,9 @@ export function PdfCard({
               {draggable && <GripVertical className="w-4 h-4 shrink-0 text-zinc-400" />}
               <span className={cn(
                 "text-xs font-medium truncate select-none",
-                isSelected ? "text-red-600 dark:text-red-400" : "text-zinc-500"
+                isSelected && selectedColorName
+                  ? `text-${selectedColorName}-600 dark:text-${selectedColorName}-400`
+                  : "text-zinc-500"
               )}>
                 {title}
               </span>
@@ -267,12 +279,7 @@ export function PdfCard({
                 <Checkbox
                   checked={isSelected}
                   onCheckedChange={onToggle}
-                  className={cn(
-                    "w-4 h-4 border cursor-pointer",
-                    isSelected
-                      ? "border-red-500 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
-                      : "border-zinc-300 dark:border-zinc-600"
-                  )}
+                  className={"w-4 h-4 border cursor-pointer"}
                 />
               )}
             </div>
@@ -289,7 +296,7 @@ export function PdfCard({
             <div
               className={cn(
                 "relative transition-all duration-300 ease-in-out origin-center flex flex-col items-center justify-center w-full h-full",
-                isSelected && "opacity-50"
+                isSelected && "opacity-30"
               )}
               style={{ transform: `rotate(${rotation}deg)` }}
             >
@@ -316,7 +323,13 @@ export function PdfCard({
             {/* Selection Overlay */}
             {isSelected && selectable && (
               <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-200 pointer-events-none">
-                <X className="w-8 h-8 text-red-600 drop-shadow-sm" />
+                {(() => {
+                  const IconComp = iconSelectedName ? ICONS[iconSelectedName] : (selectedColorName === "green" ? Check : X);
+                  return <IconComp className={cn(
+                    "w-8 h-8 animate-in zoom-in-50 duration-300",
+                    selectedColorName ? `text-${selectedColorName}-600` : "text-red-600"
+                  )} />;
+                })()}
               </div>
             )}
           </div>
