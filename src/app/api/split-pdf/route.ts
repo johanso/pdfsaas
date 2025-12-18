@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
             }
 
         } else if (mode === "extract") {
-            const selectedPages = (config.pages || []).map((p: number) => p - 1).sort((a: number, b: number) => a - b); // Convert 1-based to 0-based
+            const selectedPages = (config.pages || []).map((p: number) => p - 1); // Respect order from frontend
             const merge = config.merge;
 
             if (selectedPages.length === 0) {

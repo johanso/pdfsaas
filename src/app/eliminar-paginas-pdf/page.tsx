@@ -60,30 +60,13 @@ export default function DeletePagesPage() {
   };
 
   const handleRangeChange = (input: string) => {
-    // Solo permitir números, comas y guiones. Eliminar letras y el '0' si es el primer carácter o está después de una coma/guion
     const sanitized = input
-      .replace(/[^0-9,-]/g, "") // Solo números, comas y guiones
-      .replace(/^0+|(?<=[,-])0+/g, ""); // No permitir ceros a la izquierda o después de separadores
+      .replace(/[^0-9,-]/g, "")
+      .replace(/^0+|(?<=[,-])0+/g, "");
 
     selectByRange(sanitized);
   };
 
-  const handleDeleteSelected = () => {
-    if (selectedIds.length === 0) {
-      toast.error("No hay páginas seleccionadas para eliminar");
-      return;
-    }
-
-    if (selectedIds.length === pages.length) {
-      toast.error("No puedes eliminar todas las páginas");
-      return;
-    }
-
-    // Eliminar páginas seleccionadas
-    selectedIds.forEach(id => removePage(id));
-    resetSelection();
-    toast.success(`${selectedIds.length} página(s) eliminada(s)`);
-  };
 
   const handleReset = () => {
     setFile(null);

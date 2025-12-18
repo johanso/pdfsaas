@@ -116,7 +116,7 @@ export const PDF_CARD_PRESETS = {
 
   // Para Extraer Páginas (sin drag, con selección)
   extract: {
-    draggable: false,
+    draggable: true,
     selectable: true,
     rotatable: false,
     removable: false,
@@ -241,7 +241,7 @@ export function PdfCard({
             ? `ring-2 ring-${selectedColorName}-500 border-${selectedColorName}-500 bg-${selectedColorName}-50 dark:bg-${selectedColorName}-950/20`
             : isSelected
               ? "ring-2 ring-red-500 border-red-500 bg-red-50 dark:bg-red-950/20"
-              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:shadow-md"
+              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 hover:shadow-md"
         )}
       >
         <CardContent className="p-0 h-full flex flex-col">
@@ -251,7 +251,7 @@ export function PdfCard({
               "h-8 border-b flex items-center justify-between px-2",
               isSelected && selectedColorName
                 ? `bg-${selectedColorName}-50 dark:bg-${selectedColorName}-950/30 border-${selectedColorName}-200 dark:border-${selectedColorName}-900`
-                : "bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-800"
+                : "bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700"
             )}
           >
             <div
@@ -267,7 +267,7 @@ export function PdfCard({
                 "text-xs font-medium truncate select-none",
                 isSelected && selectedColorName
                   ? `text-${selectedColorName}-600 dark:text-${selectedColorName}-400`
-                  : "text-zinc-500"
+                  : "text-zinc-600 dark:text-zinc-400"
               )}>
                 {title}
               </span>
@@ -279,7 +279,12 @@ export function PdfCard({
                 <Checkbox
                   checked={isSelected}
                   onCheckedChange={onToggle}
-                  className={"w-4 h-4 border cursor-pointer"}
+                  className={cn(
+                    "w-4 h-4 border cursor-pointer",
+                    selectedColorName === "green" && "data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700",
+                    selectedColorName === "red" && "data-[state=checked]:border-red-600 data-[state=checked]:bg-red-600 data-[state=checked]:text-white dark:data-[state=checked]:border-red-700 dark:data-[state=checked]:bg-red-700",
+                    !selectedColorName && null
+                  )}
                 />
               )}
             </div>
@@ -288,7 +293,7 @@ export function PdfCard({
           {/* Preview Area */}
           <div
             className={cn(
-              "flex-1 relative flex items-center justify-center bg-zinc-100/50 dark:bg-zinc-900/50 overflow-hidden p-2",
+              "flex-1 relative flex items-center justify-center bg-zinc-100/50 dark:bg-zinc-900 overflow-hidden p-2",
               selectable && "cursor-pointer"
             )}
             onClick={handleCardClick}
@@ -296,7 +301,7 @@ export function PdfCard({
             <div
               className={cn(
                 "relative transition-all duration-300 ease-in-out origin-center flex flex-col items-center justify-center w-full h-full",
-                isSelected && "opacity-30"
+                isSelected && "opacity-20"
               )}
               style={{ transform: `rotate(${rotation}deg)` }}
             >
@@ -326,8 +331,10 @@ export function PdfCard({
                 {(() => {
                   const IconComp = iconSelectedName ? ICONS[iconSelectedName] : (selectedColorName === "green" ? Check : X);
                   return <IconComp className={cn(
-                    "w-8 h-8 animate-in zoom-in-50 duration-300",
-                    selectedColorName ? `text-${selectedColorName}-600` : "text-red-600"
+                    "w-8 h-8 animate-in zoom-in-50 duration-300 drop-shadow-sm",
+                    selectedColorName === "green" && "text-green-600",
+                    selectedColorName === "red" && "text-red-600",
+                    !selectedColorName && "text-red-600"
                   )} />;
                 })()}
               </div>

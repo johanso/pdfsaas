@@ -13,7 +13,6 @@ import { SaveDialog } from "@/components/save-dialog";
 import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { GlobalToolbar } from "@/components/globalToolbar";
-import { SummaryList } from "@/components/summaryList";
 import { SuccessDialog } from "@/components/success-dialog";
 // Hooks
 import { useIsMobile } from "@/hooks/useMobile";
@@ -27,8 +26,8 @@ export default function ExtractPdfPage() {
   const [extractMode, setExtractMode] = useState<"separate" | "merge">("separate");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+  const { pages, reorderPages } = usePdfPages(file);
 
-  const { pages } = usePdfPages(file);
   const numPages = pages.length;
 
   const {
@@ -50,8 +49,12 @@ export default function ExtractPdfPage() {
     formData.append("file", file);
     formData.append("mode", "extract");
 
+    const orderedSelectedPages = pages
+      .filter(p => selectedPages.includes(p.originalIndex))
+      .map(p => p.originalIndex);
+
     const config = {
-      pages: selectedPages,
+      pages: orderedSelectedPages,
       merge: extractMode === "merge"
     };
     formData.append("config", JSON.stringify(config));
@@ -154,6 +157,7 @@ export default function ExtractPdfPage() {
                           const page = pages.find(p => p.id === id);
                           if (page) togglePage(page.originalIndex);
                         }}
+                        onReorder={reorderPages}
                       />
                     )}
                   </section>
@@ -177,13 +181,13 @@ export default function ExtractPdfPage() {
                               Descarga cada página por separado o créalas en un solo PDF
                             </p>
 
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-4">
                               <button
                                 className={cn(
-                                  "relative px-3 py-2 rounded-lg border-2 transition-all text-left",
+                                  "relative px-3 py-2 rounded-lg border transition-all text-left",
                                   extractMode === "separate"
-                                    ? "border-primary bg-primary/5"
-                                    : "border-zinc-100 hover:border-zinc-300"
+                                    ? "border-primary dark:border-primary/40 bg-primary/5 dark:bg-primary/6"
+                                    : "border-zinc-100 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600"
                                 )}
                                 onClick={() => setExtractMode("separate")}
                               >
@@ -196,7 +200,7 @@ export default function ExtractPdfPage() {
                                     )}
                                   </div>
                                   <div>
-                                    <p className="font-medium">Páginas separadas</p>
+                                    <p className="text-sm mb-1">Páginas separadas</p>
                                     <p className="text-xs text-zinc-500 mt-0.5 mb-1">
                                       {selectedPages.length} archivos PDF en un .zip
                                     </p>
@@ -205,10 +209,10 @@ export default function ExtractPdfPage() {
                               </button>
                               <button
                                 className={cn(
-                                  "relative px-3 py-2 rounded-lg border-2 transition-all text-left",
+                                  "relative px-3 py-2 rounded-lg border transition-all text-left",
                                   extractMode === "merge"
                                     ? "border-primary bg-primary/5"
-                                    : "border-zinc-100 hover:border-zinc-200"
+                                    : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600"
                                 )}
                                 onClick={() => setExtractMode("merge")}
                               >
@@ -221,7 +225,7 @@ export default function ExtractPdfPage() {
                                     )}
                                   </div>
                                   <div>
-                                    <p className="font-medium">Fusionar en un PDF</p>
+                                    <p className="text-sm mb-1">Fusionar en un PDF</p>
                                     <p className="text-xs text-zinc-500 mt-0.5 mb-1">
                                       1 archivo PDF con {selectedPages.length} página{selectedPages.length !== 1 ? 's' : ''}
                                     </p>
