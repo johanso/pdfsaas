@@ -35,7 +35,6 @@ export interface GlobalToolbarProps {
     onRotateLefts?: () => void;
     onResetOrientation?: () => void;
     // Bulk Actions
-    onDownloadSelected?: () => void;
     onDuplicateSelected?: () => void;
     onDeleteSelected?: () => void;
   };
@@ -121,13 +120,6 @@ export function GlobalToolbar({
       />
 
       <Separator orientation="vertical" className="h-6 w-0.5 border-r mx-2" />
-
-      <TooltipButton
-        icon="download"
-        tooltip="Descargar archivos seleccionados"
-        disabled={!actions.onDownloadSelected || !state.hasSelection}
-        onClick={actions.onDownloadSelected}
-      />
 
       <TooltipButton
         icon="copy"
@@ -246,12 +238,6 @@ export function GlobalToolbar({
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-muted-foreground ml-1">Acciones</h4>
                 <div className="grid grid-cols-1 gap-2">
-                  <SheetClose asChild>
-                    <Button variant="outline" className="h-12 justify-start" disabled={!actions.onDownloadSelected || !state.hasSelection} onClick={actions.onDownloadSelected}>
-                      <BootstrapIcon name="download" size={20} />
-                      <span>Descargar archivos seleccionados</span>
-                    </Button>
-                  </SheetClose>
                   <SheetClose asChild>
                     <Button variant="outline" className="h-12 justify-start" disabled={!actions.onDuplicateSelected || !state.hasSelection} onClick={actions.onDuplicateSelected}>
                       <BootstrapIcon name="copy" size={20} />

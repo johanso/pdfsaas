@@ -151,7 +151,6 @@ export default function DeletePagesPage() {
                   </section>
 
                   <section className="bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-2 md:p-6 min-h-[500px]">
-
                     {pages.length === 0 ? (
                       <div className="flex items-center justify-center h-full">
                         <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />

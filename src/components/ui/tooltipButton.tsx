@@ -29,7 +29,7 @@ export function TooltipButton({
         <Button
           size="icon"
           variant="outline"
-          className="shadow-none disabled:opacity-20 disabled:bg-zinc-100"
+          className="shadow-none disabled:opacity-15 disabled:bg-zinc-100"
           disabled={disabled}
           onClick={onClick}
         >

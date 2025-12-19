@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { GripVertical, X, Check, RotateCw, RotateCcw, InfoIcon, Copy, StickyNote } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+import BootstrapIcon from "../bootstrapIcon";
 
 // Mapeo de iconos para selección
 const ICONS = {
@@ -121,7 +122,7 @@ export const PDF_CARD_PRESETS = {
     rotatable: false,
     removable: false,
     showPageNumber: true,
-    selectedColorName: "green",
+    selectedColorName: "amber",
     iconSelectedName: "check",
   } as PdfCardConfig,
 
@@ -138,15 +139,17 @@ export const PDF_CARD_PRESETS = {
   organize: {
     draggable: true,
     selectable: true,
-    rotatable: false,
+    rotatable: true,
     allowRotateLeft: true,
     allowRotateRight: true,
     allowDuplicate: true,
     allowInsertBlank: true,
     allowDelete: true, // Enable individual deletion too as it is useful in organize
-    removable: false,
+    removable: true,
     showPageNumber: true,
     showRotationBadge: true,
+    selectedColorName: "green",
+    iconSelectedName: "check",
   } as PdfCardConfig,
 };
 
@@ -280,10 +283,10 @@ export function PdfCard({
                   checked={isSelected}
                   onCheckedChange={onToggle}
                   className={cn(
-                    "w-4 h-4 border cursor-pointer",
+                    "w-5 h-5 border border-zinc-300 cursor-pointer bg-white shadow-none rounded-full",
                     selectedColorName === "green" && "data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700",
                     selectedColorName === "red" && "data-[state=checked]:border-red-600 data-[state=checked]:bg-red-600 data-[state=checked]:text-white dark:data-[state=checked]:border-red-700 dark:data-[state=checked]:bg-red-700",
-                    !selectedColorName && null
+                    !selectedColorName && 'data-[state=checked]:border-zinc-400 data-[state=checked]:bg-zinc-100 data-[state=checked]:text-white dark:data-[state=checked]:border-zinc-700 dark:data-[state=checked]:bg-zinc-700'
                   )}
                 />
               )}
@@ -320,7 +323,7 @@ export function PdfCard({
 
             {/* Rotation Badge */}
             {showRotationBadge && ((rotation % 360) !== 0) && (
-              <div className="absolute top-1 right-1 text-[10px] leading-none font-medium dark:bg-white bg-zinc-800/70 dark:text-primary text-white px-1.5 py-1 rounded-full h-8 w-8 flex items-center justify-center">
+              <div className="absolute top-1 right-1 text-[10px] leading-none font-medium bg-zinc-800/70 dark:bg-zinc-900/70 text-white px-1.5 py-1 rounded-full h-8 w-8 flex items-center justify-center">
                 {((rotation % 360) + 360) % 360}°
               </div>
             )}
@@ -390,7 +393,7 @@ export function PdfCard({
                   }}
                   title="Insertar hoja en blanco"
                 >
-                  <StickyNote className="w-3.5 h-3.5" />
+                  <BootstrapIcon name="file-plus" size={20} />
                 </Button>
               )}
 
