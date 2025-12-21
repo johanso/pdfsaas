@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { FileUp, Trash2, LayoutGrid, ArrowRight } from "lucide-react";
+import { FileUp, Trash2, LayoutGrid, ArrowRight, Image as ImageIcon } from "lucide-react";
 
 export default function Home() {
   return (
@@ -49,6 +49,24 @@ export default function Home() {
                 </p>
               </div>
               <div className="mt-6 flex items-center text-red-500 font-medium">
+                Comenzar <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </Link>
+
+          {/* PDF a Imagen Card */}
+          <Link href="/pdf-a-imagen" className="group">
+            <div className="h-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-8 hover:shadow-xl transition-all hover:scale-[1.02] hover:border-primary/50 text-left flex flex-col justify-between">
+              <div>
+                <div className="mb-4 bg-purple-500/10 w-12 h-12 rounded-xl flex items-center justify-center text-purple-500 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                  <ImageIcon className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">PDF a Imagen</h3>
+                <p className="text-zinc-500 dark:text-zinc-400">
+                  Convierte páginas de tu PDF a imágenes de alta calidad (JPG, PNG, WebP) de forma fácil.
+                </p>
+              </div>
+              <div className="mt-6 flex items-center text-purple-500 font-medium">
                 Comenzar <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>

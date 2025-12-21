@@ -16,29 +16,17 @@ export const SummaryList: React.FC<SummaryListProps> = ({
   title = 'Resumen',
   items,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false)
 
   if (items.length === 0) return null
 
   return (
     <div className="space-y-2">
       <div
-        className="flex items-center justify-between gap-2 cursor-pointer lg:cursor-auto group"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
+        className="flex items-center justify-between gap-2 cursor-pointer lg:cursor-auto group">
         <h3 className="text-md font-bold">{title}:</h3>
-        <ChevronDown
-          className={cn(
-            "w-4 h-4 text-zinc-500 transition-transform lg:hidden size-6!",
-            isExpanded && "rotate-180"
-          )}
-        />
       </div>
 
-      <ul className={cn(
-        "px-3 py-2 divide-y divide-gray-200/50 border-zinc-200 dark:border-zinc-600 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-lg text-xs",
-        isExpanded ? "block" : "hidden lg:block"
-      )}>
+      <ul className="block px-3 py-2 divide-y divide-gray-200/50 border-zinc-200 dark:border-zinc-600 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-lg text-sm lg:text-xs">
         {items.map((item, index) => (
           <li
             key={index}

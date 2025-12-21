@@ -50,7 +50,7 @@ export function Navbar() {
 
     return (
         <nav className="h-16 border-b bg-background px-6 flex items-center">
-            <div className="container flex items-center justify-between mx-auto py-10 md:px-4 max-w-6xl">
+            <div className="container flex items-center justify-between mx-auto py-10 md:px-4 max-w-7xl">
                 {/* LADO IZQUIERDO: Logo */}
                 <Link href="/" className="flex items-center gap-1 font-bold text-lg">
                     <div className="bg-primary text-primary-foreground px-2 rounded">

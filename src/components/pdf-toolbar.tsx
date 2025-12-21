@@ -22,7 +22,7 @@ export function PdfToolbar({
 }: PdfToolbarProps) {
 
   return (
-    <div className={cn("flex flex-col lg:flex-row lg:items-center gap-4 mb-4", className)}>
+    <div className={cn("flex flex-col lg:flex-row lg:items-center gap-4 mb-2 lg:mb-4", className)}>
       <div className="flex lg:flex-col items-center justify-end gap-2 lg:w-full">
         {onAdd && (
           <Button variant="default" onClick={onAdd} size="lg" className="cursor-pointer w-auto lg:w-full flex-1 lg:flex-none">

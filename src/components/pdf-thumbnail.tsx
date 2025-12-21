@@ -114,7 +114,7 @@ export const PdfThumbnail = memo(function PdfThumbnail({ file, className, pageNu
                 <img
                     src={imageUrl}
                     alt="PDF Thumbnail"
-                    className="rounded-md w-full h-full object-fill pointer-events-none shadow-sm"
+                    className="rounded-md w-full h-full object-contain pointer-events-none shadow-sm"
                 />
             )}
         </div>

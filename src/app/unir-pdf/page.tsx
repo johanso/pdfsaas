@@ -4,7 +4,7 @@ import { toast } from "sonner";
 // components
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowDownToLine } from "lucide-react";
+import { ArrowDownToLine, Loader2 } from "lucide-react";
 import { HeadingPage } from "@/components/ui/heading-page";
 import { PdfToolbar } from "@/components/pdf-toolbar";
 import { Dropzone } from "@/components/ui/dropzone";
@@ -18,10 +18,14 @@ import { SuccessDialog } from "@/components/success-dialog";
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
 import { usePdfFiles } from "@/hooks/usePdfFiles";
 import { useIsMobile } from "@/hooks/useMobile";
+import { ButtonDownload } from "@/components/buttonDownload";
+import { cn } from "@/lib/utils";
+import BootstrapIcon from "@/components/bootstrapIcon";
 
 export default function UnirPdfPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
 
@@ -65,9 +69,8 @@ export default function UnirPdfPage() {
   };
 
   return (
-    <div className="container mx-auto py-10 px-4 max-w-6xl pb-32">
+    <div className="container mx-auto py-10 px-4 max-w-7xl pb-24">
       <div className="space-y-6">
-
         <HeadingPage
           titlePage={"Unir PDF"}
           descriptionPage="Combina múltiples archivos PDF en un solo documento ordenado."
@@ -78,13 +81,12 @@ export default function UnirPdfPage() {
             <Dropzone
               onFilesSelected={handleFiles}
               multiple={true}
-              className="bg-zinc-50/50 dark:bg-zinc-900/50 h-80"
+              className="h-80 bg-zinc-50/50 dark:bg-zinc-900/50"
             />
           ) : (
             <div className="space-y-2">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <div className="lg:col-span-3 space-y-2">
-
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                <div className="lg:col-span-3 space-y-2 relative">
                   {isMobile && (
                     <PdfToolbar
                       onAdd={() => fileInputRef.current?.click()}
@@ -92,38 +94,59 @@ export default function UnirPdfPage() {
                     />
                   )}
 
-                  <section className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2">
-                    <GlobalToolbar
-                      features={{
-                        sorting: true,
-                      }}
-                      actions={{
-                        onSortAZ: sortAZ,
-                        onSortZA: sortZA,
-                      }}
-                    />
-                  </section>
+                  {!isMobile && (
+                    <section className="sticky m-0 top-0 py-2 lg:py-0 lg:top-2 z-10 bg-white dark:bg-zinc-900">
+                      <GlobalToolbar
+                        features={{
+                          sorting: true,
+                        }}
+                        actions={{
+                          onSortAZ: sortAZ,
+                          onSortZA: sortZA,
+                        }}
+                      />
+                    </section>
+                  )}
 
-                  <section className="bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-2 md:p-6 min-h-[500px]">
-                    <PdfGrid
-                      items={files}
-                      config={PDF_CARD_PRESETS.merge}
-                      extractCardData={(f) => ({
-                        id: f.id,
-                        file: f.file,
-                        name: f.name,
-                        size: f.file.size,
-                        pageCount: f.pageCount,
-                        rotation: f.rotation
-                      })}
-                      onReorder={reorderFiles}
-                      onRemove={removeFile}
-                    />
+                  <section className="lg:ml-12 bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-4 md:p-6 min-h-[500px]">
+                    {files.length === 0 ? (
+                      <div className="flex items-center justify-center h-full">
+                        <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+                      </div>
+                    ) : (
+                      <PdfGrid
+                        items={files}
+                        config={PDF_CARD_PRESETS.merge}
+                        extractCardData={(f) => ({
+                          id: f.id,
+                          file: f.file,
+                          name: f.name,
+                          size: f.file.size,
+                          pageCount: f.pageCount,
+                          rotation: f.rotation
+                        })}
+                        onReorder={reorderFiles}
+                        onRemove={removeFile}
+                      />
+                    )}
                   </section>
                 </div>
 
                 <div className="lg:col-span-1">
-                  <div className="fixed bottom-0 lg:sticky lg:top-4 space-y-6 z-9 w-[calc(100svw-2rem)] lg:w-auto">
+                  {isMobile && isOptionsOpen && (
+                    <div
+                      className="fixed inset-0 bg-black/10 z-40 dark:bg-white/20 transition-opacity"
+                      onClick={() => setIsOptionsOpen(false)}
+                    />
+                  )}
+
+                  <div className={cn(
+                    "z-50 transition-transform duration-300 ease-in-out space-y-6",
+                    isMobile
+                      ? "fixed bottom-0 left-0 right-0 rounded-t-3xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)] dark:border-zinc-800"
+                      : "sticky top-4 block",
+                    isMobile && (isOptionsOpen ? "translate-y-0" : "translate-y-full")
+                  )}>
 
                     {!isMobile && (
                       <PdfToolbar
@@ -132,8 +155,37 @@ export default function UnirPdfPage() {
                       />
                     )}
 
+                    {isMobile && (
+                      <div
+                        className={cn(
+                          "w-12 h-12 absolute -top-14 right-4 flex items-center justify-center p-3 rounded-full z-10 bg-white dark:bg-zinc-900 shadow-md cursor-pointer hover:scale-110 active:scale-95 transition-transform",
+                          isOptionsOpen ? "" : "hidden"
+                        )}
+                        onClick={() => setIsOptionsOpen(!isOptionsOpen)}>
+                        <BootstrapIcon name="gear" size={26} animated="rotate" />
+                      </div>
+                    )}
+
                     <Card>
                       <CardContent className="space-y-4 py-4">
+
+                        {isMobile && (
+                          <GlobalToolbar
+                            features={{
+                              sorting: true,
+                            }}
+                            actions={{
+                              onSortAZ: () => {
+                                sortAZ();
+                                setIsOptionsOpen(false);
+                              },
+                              onSortZA: () => {
+                                sortZA();
+                                setIsOptionsOpen(false);
+                              },
+                            }}
+                          />
+                        )}
 
                         <SummaryList
                           title="Resumen"
@@ -153,21 +205,37 @@ export default function UnirPdfPage() {
                           ]}
                         />
 
-                        <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
-                          <Button
-                            variant="hero"
-                            className="w-full py-6 font-medium"
-                            size="lg"
-                            onClick={() => setIsDialogOpen(true)}
-                            disabled={files.length < 2 || isProcessing}
-                          >
-                            {isProcessing ? "Procesando..." : "Unir y Descargar PDF"}
-                            <ArrowDownToLine className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        <ButtonDownload
+                          handleOpenSaveDialog={() => setIsDialogOpen(true)}
+                          buttonText={isProcessing ? "Procesando..." : "Unir y Descargar PDF"}
+                          disabled={files.length < 2 || isProcessing}
+                        />
                       </CardContent>
                     </Card>
                   </div>
+
+                  {isMobile && (
+                    <div
+                      className={cn(
+                        "fixed bottom-24 right-4 p-3 rounded-full z-10 bg-white dark:bg-zinc-900 shadow-md cursor-pointer hover:scale-110 active:scale-95 transition-transform",
+                        !isOptionsOpen ? "" : "hidden"
+                      )}
+                      onClick={() => setIsOptionsOpen(!isOptionsOpen)}
+                    >
+                      <BootstrapIcon name={isOptionsOpen ? "x-lg" : "gear"} size={26} animated={isOptionsOpen ? "" : "rotate"} />
+                    </div>
+                  )}
+
+                  {isMobile && !isOptionsOpen && (
+                    <div className="p-4 fixed bottom-1 z-9 w-[calc(100svw-2rem)] bg-white dark:bg-zinc-900 rounded-md shadow-md">
+                      <ButtonDownload
+                        handleOpenSaveDialog={() => setIsDialogOpen(true)}
+                        buttonText={isProcessing ? "Procesando..." : "Unir y Descargar PDF"}
+                        disabled={files.length < 2 || isProcessing}
+                      />
+                    </div>
+                  )}
+
                 </div>
               </div>
             </div>

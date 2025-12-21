@@ -67,7 +67,7 @@ export function PdfGrid<T extends { id: string }>({
   onRemove,
   renderCardActions,
   extractCardData,
-  className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-4"
+  className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
 }: PdfGridProps<T>) {
   const draggable = config?.draggable !== false;
 

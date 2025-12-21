@@ -19,7 +19,7 @@ export function TooltipButton({
   icon,
   tooltip,
   iconSize = 16,
-  side = "top",
+  side = "left",
   disabled = false,
   onClick,
 }: TooltipButtonProps) {
@@ -28,8 +28,8 @@ export function TooltipButton({
       <TooltipTrigger asChild>
         <Button
           size="icon"
-          variant="outline"
-          className="shadow-none disabled:opacity-15 disabled:bg-zinc-100"
+          variant="ghost"
+          className={`shadow-none disabled:opacity-15 disabled:bg-zinc-100 ${disabled ? "hidden" : ""}`}
           disabled={disabled}
           onClick={onClick}
         >

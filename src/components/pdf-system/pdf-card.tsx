@@ -5,7 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { GripVertical, X, Check, RotateCw, RotateCcw, InfoIcon, Copy, StickyNote } from "lucide-react";
+import { GripVertical, X, Check, RotateCw, RotateCcw, InfoIcon, Copy } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import BootstrapIcon from "../bootstrapIcon";
@@ -122,7 +122,7 @@ export const PDF_CARD_PRESETS = {
     rotatable: false,
     removable: false,
     showPageNumber: true,
-    selectedColorName: "amber",
+    selectedColorName: "green",
     iconSelectedName: "check",
   } as PdfCardConfig,
 
@@ -220,8 +220,7 @@ export function PdfCard({
 
   // Subtítulo (info del archivo)
   const subtitle = showFileInfo && data.size
-    ? `${(data.size / 1024 / 1024).toFixed(2)} MB${data.pageCount != null ? ` / ${data.pageCount} págs` : ""
-    }`
+    ? `${(data.size / 1024 / 1024).toFixed(2)} MB${data.pageCount != null ? ` / ${data.pageCount} págs` : ""}`
     : undefined;
 
   // Click handler para selección
