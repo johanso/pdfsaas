@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, memo } from "react";
+import { useEffect, useState, memo, useRef } from "react";
 import { pdfjs } from "react-pdf";
 import { Loader2, FileX2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { canvasToOptimizedDataURL } from "@/lib/canvas-utils";
 
 // Configure worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -22,22 +23,60 @@ export const PdfThumbnail = memo(function PdfThumbnail({ file, className, pageNu
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(false);
+    const [isInView, setIsInView] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Intersection Observer to detect when the thumbnail enters the viewport
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsInView(true);
+                    observer.disconnect();
+                }
+            },
+            {
+                rootMargin: "200px", // Load a bit before it enters the viewport
+                threshold: 0.1
+            }
+        );
+
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, []);
 
     useEffect(() => {
+        if (!isInView) return;
+
         let active = true;
         let loadingTask: any = null;
+        let objectUrl: string | null = null;
+        let pdfDoc: any = null;
 
         const loadThumbnail = async () => {
             try {
                 setIsLoading(true);
                 setError(false);
 
-                // Convert File to ArrayBuffer to avoid detached buffer issues or use ObjectURL
-                const objectUrl = URL.createObjectURL(file);
+                // Convert File to ObjectURL for efficiency
+                objectUrl = URL.createObjectURL(file);
 
-                loadingTask = pdfjs.getDocument(objectUrl);
+                loadingTask = pdfjs.getDocument({
+                    url: objectUrl,
+                    // Optimization: Disable some features not needed for thumbnails
+                    disableFontFace: true,
+                    isEvalSupported: false,
+                });
+
                 const pdf = await loadingTask.promise;
+                pdfDoc = pdf;
+                if (!active) return;
+
                 const page = await pdf.getPage(pageNumber);
+                if (!active) return;
 
                 const viewport = page.getViewport({ scale: 1.0 });
                 // Calculate scale to fit a reasonable thumbnail size (e.g. width 300px)
@@ -54,26 +93,32 @@ export const PdfThumbnail = memo(function PdfThumbnail({ file, className, pageNu
                 await page.render({
                     canvasContext: context,
                     viewport: scaledViewport,
+                    // Optimization: High-speed rendering for thumbnails
+                    intent: 'display'
                 }).promise;
 
                 if (active) {
-                    setImageUrl(canvas.toDataURL("image/png"));
+                    setImageUrl(canvasToOptimizedDataURL(canvas));
                     setIsLoading(false);
                 }
 
-                // Cleanup
-                URL.revokeObjectURL(objectUrl);
-                // We can destroy the pdf document to free memory
-                pdf.destroy();
+                // Cleanup document
+                if (pdfDoc) {
+                    await pdfDoc.destroy();
+                    pdfDoc = null;
+                }
 
             } catch (err: any) {
                 // Ignore "Worker was destroyed" error as it is expected when cancelling/cleaning up
-                if (err?.message !== "Worker was destroyed") {
+                if (err?.message !== "Worker was destroyed" && active) {
                     console.error("Error generating thumbnail:", err);
-                    if (active) {
-                        setError(true);
-                        setIsLoading(false);
-                    }
+                    setError(true);
+                    setIsLoading(false);
+                }
+            } finally {
+                if (objectUrl) {
+                    URL.revokeObjectURL(objectUrl);
+                    objectUrl = null;
                 }
             }
         };
@@ -82,16 +127,19 @@ export const PdfThumbnail = memo(function PdfThumbnail({ file, className, pageNu
 
         return () => {
             active = false;
-            // logic to cancel rendering if possible, but pdf.js cancellation makes things complicated.
-            // basic flag check is usually enough.
-            if (loadingTask) {
-                loadingTask.destroy().catch(() => { });
+            loadingTask?.destroy().catch(() => { });
+            pdfDoc?.destroy().catch(() => { });
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
             }
         };
-    }, [file, pageNumber]);
+    }, [file, pageNumber, isInView]);
 
     return (
-        <div className={cn("relative w-full h-full flex items-center justify-center overflow-hidden bg-white dark:bg-zinc-900 select-none", className)}>
+        <div
+            ref={containerRef}
+            className={cn("relative w-full h-full flex items-center justify-center overflow-hidden bg-white dark:bg-zinc-900 select-none min-h-[100px]", className)}
+        >
             {/* Loading State */}
             {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 z-10">
@@ -113,10 +161,11 @@ export const PdfThumbnail = memo(function PdfThumbnail({ file, className, pageNu
             {imageUrl && !isLoading && !error && (
                 <img
                     src={imageUrl}
-                    alt="PDF Thumbnail"
+                    alt={`Página ${pageNumber}`}
                     className="rounded-md w-full h-full object-contain pointer-events-none shadow-sm"
                 />
             )}
         </div>
     );
 });
+

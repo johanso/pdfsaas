@@ -35,9 +35,10 @@ export function usePdfMultiLoader() {
           continue;
         }
 
+        let objectUrl: string | null = null;
         try {
-          const arrayBuffer = await file.arrayBuffer();
-          const loadingTask = pdfjs.getDocument(arrayBuffer);
+          objectUrl = URL.createObjectURL(file);
+          const loadingTask = pdfjs.getDocument(objectUrl);
           const pdf = await loadingTask.promise;
 
           for (let i = 1; i <= pdf.numPages; i++) {
@@ -50,11 +51,15 @@ export function usePdfMultiLoader() {
             });
           }
 
-          // Cleanup
+          // Cleanup document
           await pdf.destroy();
         } catch (error) {
           console.error(`Error loading ${file.name}:`, error);
           toast.error(`Error al cargar ${file.name}`);
+        } finally {
+          if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+          }
         }
       }
 

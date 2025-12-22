@@ -12,12 +12,13 @@ export function usePdfPages(file: File | null) {
     }
 
     const loadPages = async () => {
+      let objectUrl: string | null = null;
       try {
         const { pdfjs } = await import("react-pdf");
         pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-        const buffer = await file.arrayBuffer();
-        const pdf = await pdfjs.getDocument(buffer).promise;
+        objectUrl = URL.createObjectURL(file);
+        const pdf = await pdfjs.getDocument(objectUrl).promise;
 
         const newPages: PageData[] = [];
         for (let i = 1; i <= pdf.numPages; i++) {
@@ -30,10 +31,17 @@ export function usePdfPages(file: File | null) {
           });
         }
         setPages(newPages);
+
+        // Cleanup document
+        await pdf.destroy();
       } catch (error) {
         console.error(error);
         toast.error("Error al leer el PDF.");
         setPages([]);
+      } finally {
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+        }
       }
     };
 

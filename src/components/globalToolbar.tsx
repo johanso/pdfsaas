@@ -223,14 +223,16 @@ export function GlobalToolbar({
       {features.bulkActions && (
         <div className="space-y-2">
           <div className="grid grid-cols-1 gap-2">
-            <Button variant="outline" className="h-8 p-0! justify-start" disabled={!actions.onDuplicateSelected || !state.hasSelection} onClick={actions.onDuplicateSelected}>
-              <BootstrapIcon name="copy" size={20} />
+            <Button variant="ghost" className="h-8 p-0! justify-start" disabled={!actions.onDuplicateSelected || !state.hasSelection} onClick={actions.onDuplicateSelected}>
+              <BootstrapIcon name="copy" size={22} />
               <span className="text-sm font-normal ml-1">Duplicar archivos seleccionados</span>
             </Button>
-            <Button variant="outline" className="h-8 p-0! justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200 dark:border-red-900" disabled={!actions.onDeleteSelected || !state.hasSelection} onClick={actions.onDeleteSelected}>
-              <BootstrapIcon name="x-lg" color="red" size={20} />
+            <Button variant="ghost" className="h-8 p-0! justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200 dark:border-red-900" disabled={!actions.onDeleteSelected || !state.hasSelection} onClick={actions.onDeleteSelected}>
+              <BootstrapIcon name="x-lg" color="red" size={22} />
               <span className="text-sm font-normal ml-1">Eliminar archivos seleccionados</span>
             </Button>
+
+            <Separator className="my-2" />
           </div>
         </div>
       )}

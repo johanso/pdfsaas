@@ -1,10 +1,9 @@
 "use client";
-
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import dynamic from "next/dynamic";
 import { getSplitGroupColor } from "@/lib/split-colors";
 
 const PdfThumbnail = dynamic(() => import("@/components/pdf-thumbnail").then(mod => mod.PdfThumbnail), {
