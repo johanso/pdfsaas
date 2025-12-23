@@ -265,7 +265,6 @@ export function PdfToolLayout({
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-hero z-[-1] h-max" />
       {/* Floating elements */}
-      <div className="absolute top-10 left-10 w-100 min-h-100 bg-primary/16 rounded-full blur-3xl animate-pulse z-[-1]" />
       <div className="absolute bottom-10 right-10 w-100 min-h-100 bg-primary/8 rounded-full blur-3xl animate-pulse z-[-1]" style={{ animationDelay: '1s' }} />
     </div>
   );
