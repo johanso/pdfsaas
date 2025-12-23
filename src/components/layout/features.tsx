@@ -63,35 +63,33 @@ const Features = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
           {features.map((feature, index) => (
             <Card
               key={index}
               className={`group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-border ${feature.featured ? 'ring-2 ring-primary/20 bg-accent/50' : 'bg-card'
                 }`}
             >
-              <CardContent className="p-6">
-                <div className={`w-12 h-12 ${feature.color} rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110`}>
-                  <feature.icon className="w-6 h-6 text-primary-foreground" />
+              <CardContent className="p-6 md:p-5">
+
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 ${feature.color} rounded-full flex items-center justify-center mb-4 transition-transform group-hover:scale-110`}>
+                    <feature.icon className="w-5 h-5 text-primary-foreground" />
+                  </div>
+
+                  <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
+                    {feature.title}
+                    {/* {feature.featured && (
+                      <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                        Popular
+                      </span>
+                    )} */}
+                  </h3>
                 </div>
 
-                <h3 className="text-xl font-semibold text-foreground mb-2 flex items-center gap-2">
-                  {feature.title}
-                  {feature.featured && (
-                    <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                      Popular
-                    </span>
-                  )}
-                </h3>
-
-                <p className="text-muted-foreground mb-4">
+                <p className="text-sm text-muted-foreground">
                   {feature.description}
                 </p>
-
-                <Button variant="ghost" className="p-0 h-auto text-primary hover:text-primary/80 group/btn">
-                  Usar herramienta
-                  <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover/btn:translate-x-1" />
-                </Button>
               </CardContent>
             </Card>
           ))}

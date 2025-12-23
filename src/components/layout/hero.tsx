@@ -17,7 +17,7 @@ const Hero = () => {
             <span className="text-xs text-muted-foreground">Procesamiento 100% en tu navegador</span>
           </div>
 
-          <h1 className="text-2xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
+          <h1 className="text-2xl md:text-5xl font-extrabold text-foreground mb-4 leading-tight">
             Todas las herramientas PDF
             <span className="block text-3xl md:text-5xl text-primary font-extrabold">Que necesitas</span>
           </h1>
