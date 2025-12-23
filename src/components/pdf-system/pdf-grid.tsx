@@ -4,7 +4,8 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -72,7 +73,20 @@ export function PdfGrid<T extends { id: string }>({
   const draggable = config?.draggable !== false;
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(MouseSensor, {
+      // Activation constraint for mouse: 5px movement
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      // Activation constraint for touch: 250ms press to start dragging
+      // This allows the user to scroll without accidentally dragging
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })

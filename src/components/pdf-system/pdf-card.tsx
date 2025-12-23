@@ -261,6 +261,7 @@ export function PdfCard({
                 "flex items-center gap-2 flex-1 min-w-0",
                 draggable && "cursor-grab active:cursor-grabbing"
               )}
+              style={draggable ? { touchAction: "none" } : undefined}
               {...(draggable ? attributes : {})}
               {...(draggable ? listeners : {})}
             >
