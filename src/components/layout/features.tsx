@@ -1,61 +1,27 @@
-import {
-  Layers,
-  RotateCw,
-  Trash2,
-  Scissors,
-  FileOutput,
-  GripVertical,
-  ArrowRight
-} from "lucide-react";
+'use client';
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { TOOL_CATEGORIES } from "@/lib/tools-categories";
+import { TOOLS } from "@/lib/tools-data";
+import { Badge } from "../ui/badge";
+import * as Icons from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const features = [
-  {
-    icon: Layers,
-    title: "Unir PDF",
-    description: "Combina múltiples documentos PDF en un solo archivo de manera rápida y sencilla.",
-    color: "bg-orange-500",
-  },
-  {
-    icon: RotateCw,
-    title: "Rotar PDF",
-    description: "Gira páginas individuales o documentos completos en cualquier dirección.",
-    color: "bg-blue-500",
-  },
-  {
-    icon: Trash2,
-    title: "Eliminar Páginas",
-    description: "Remueve páginas específicas de un documento de forma visual e intuitiva.",
-    color: "bg-red-500",
-  },
-  {
-    icon: Scissors,
-    title: "Dividir PDF",
-    description: "Separa un PDF en múltiples archivos por rangos de páginas o páginas individuales.",
-    color: "bg-green-500",
-  },
-  {
-    icon: FileOutput,
-    title: "Extraer Páginas",
-    description: "Selecciona páginas específicas para crear un nuevo documento personalizado.",
-    color: "bg-purple-500",
-  },
-  {
-    icon: GripVertical,
-    title: "Organizar PDF",
-    description: "Reordena, duplica, rota e inserta páginas en blanco. La herramienta más completa.",
-    color: "bg-primary",
-    featured: true,
-  },
-];
+const categoryColorMap: Record<string, { bg: string; text: string }> = {
+  blue: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400" },
+  purple: { bg: "bg-purple-500/10", text: "text-purple-600 dark:text-purple-400" },
+  green: { bg: "bg-green-500/10", text: "text-green-600 dark:text-green-400" },
+  orange: { bg: "bg-orange-500/10", text: "text-orange-600 dark:text-orange-400" },
+  red: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400" },
+  yellow: { bg: "bg-yellow-500/10", text: "text-yellow-600 dark:text-yellow-400" },
+};
 
 const Features = () => {
   return (
-    <section id="features" className="py-16 bg-card">
+    <section id="features" className="py-24 bg-background">
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
             Herramientas Poderosas
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -63,36 +29,68 @@ const Features = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
-          {features.map((feature, index) => (
-            <Card
-              key={index}
-              className={`group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-border ${feature.featured ? 'ring-2 ring-primary/20 bg-accent/50' : 'bg-card'
-                }`}
-            >
-              <CardContent className="p-6 md:p-5">
+        <div className="flex flex-col gap-16 max-w-6xl mx-auto">
+          {Object.values(TOOL_CATEGORIES).map((category) => {
+            const categoryTools = category.tools
+              .map(toolId => TOOLS[toolId])
+              .filter(Boolean);
 
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 ${feature.color} rounded-full flex items-center justify-center mb-4 transition-transform group-hover:scale-110`}>
-                    <feature.icon className="w-5 h-5 text-primary-foreground" />
+            if (categoryTools.length === 0) return null;
+
+            const colors = categoryColorMap[category.color] || { bg: "bg-primary/10", text: "text-primary" };
+
+            return (
+              <section key={category.id}>
+                <div className="flex items-center gap-3 mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold">{category.name}</h2>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                      {category.description}
+                    </p>
                   </div>
-
-                  <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
-                    {feature.title}
-                    {/* {feature.featured && (
-                      <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                        Popular
-                      </span>
-                    )} */}
-                  </h3>
                 </div>
 
-                <p className="text-sm text-muted-foreground">
-                  {feature.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {categoryTools.map((tool) => {
+                    const ToolIcon = Icons[tool.icon as keyof typeof Icons] as any;
+
+                    return (
+                      <Link
+                        key={tool.id}
+                        href={tool.isAvailable ? tool.path : '#'}
+                        className={!tool.isAvailable ? 'pointer-events-none' : ''}
+                      >
+                        <Card className={cn(
+                          `group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-border bg-card`,
+                          !tool.isAvailable && 'opacity-30 pointer-events-none'
+                        )}
+                        >
+                          <CardContent className="p-6 md:p-5">
+                            <div className="flex items-start justify-start gap-3">
+                              {ToolIcon && (
+                                <div className={cn("p-2 rounded-full flex-shrink-0", colors.bg)}>
+                                  <ToolIcon className={cn("w-5 h-5", colors.text)} />
+                                </div>
+                              )}
+                              <div>
+                                <h3 className="text-md font-bold text-foreground flex items-center gap-2">{tool.name}</h3>
+                                {tool.isPremium && (
+                                  <Badge variant="default" className="text-xs">
+                                    Premium
+                                  </Badge>
+                                )}
+                                <p className="text-sm text-muted-foreground">{tool.description}</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -7,7 +7,7 @@ const Hero = () => {
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-hero" />
       {/* Floating elements */}
-      <div className="absolute top-10 left-10 w-100 h-100 bg-primary/16 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute top-10 left-10 lg:w-100 lg:h-100 w-50 h-50 bg-primary/16 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-10 right-10 w-100 h-100 bg-primary/8 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
 
       <div className="container mx-auto py-16 px-4 relative z-10">

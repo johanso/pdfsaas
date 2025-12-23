@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Grip, FileText, Zap } from "lucide-react";
+import { LayoutGrid, Grip, FileText, Zap, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -18,39 +18,20 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import merge from "@/images/merge.png";
 import { ThemeToggle } from "../theme-toggle";
+import { TOOL_CATEGORIES } from "@/lib/tools-categories";
+import { TOOLS } from "@/lib/tools-data";
 
-// Definimos los datos aquí para tenerlos a mano
-const toolsMenu = [
-  {
-    category: "Organizar PDF",
-    icon: LayoutGrid,
-    items: [
-      { name: "Organizar PDF", href: "/organizar-pdf", image: merge, disabled: false },
-      { name: "Unir PDF", href: "/unir-pdf", image: merge, disabled: false },
-      { name: "Eliminar", href: "/eliminar-paginas-pdf", image: merge, disabled: false },
-      { name: "Dividir PDF", href: "/dividir-pdf", image: merge, disabled: false },
-      { name: "Extraer PDF", href: "/extraer-paginas-pdf", image: merge, disabled: false },
-      { name: "Rotar PDF", href: "/rotar-pdf", image: merge, disabled: false },
-    ],
-  },
-  {
-    category: "Convertir desde PDF",
-    icon: LayoutGrid,
-    items: [
-      { name: "PDF a Imagen", href: "/pdf-a-imagen", image: merge, disabled: false },
-    ],
-  },
-  {
-    category: "Optimizar",
-    icon: Zap,
-    items: [],
-  },
-  {
-    category: "Convertir",
-    icon: FileText,
-    items: [],
-  },
-];
+import * as Icons from "lucide-react";
+
+// Mapeo de colores para las categorías
+const categoryColorMap: Record<string, { bg: string; text: string }> = {
+  blue: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400" },
+  purple: { bg: "bg-purple-500/10", text: "text-purple-600 dark:text-purple-400" },
+  green: { bg: "bg-green-500/10", text: "text-green-600 dark:text-green-400" },
+  orange: { bg: "bg-orange-500/10", text: "text-orange-600 dark:text-orange-400" },
+  red: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400" },
+  yellow: { bg: "bg-yellow-500/10", text: "text-yellow-600 dark:text-yellow-400" },
+};
 
 export function Navbar() {
   const pathname = usePathname();
@@ -77,48 +58,61 @@ export function Navbar() {
               </Button>
             </SheetTrigger>
 
-            <SheetContent side="right" className="w-[300px] sm:w-[400px] overflow-y-auto">
+            <SheetContent side="right" className="w-80 overflow-y-auto">
               <SheetHeader>
-                <SheetTitle>Herramientas PDF</SheetTitle>
+                <SheetTitle>Herramientas</SheetTitle>
                 <SheetDescription>
-                  Selecciona una herramienta para comenzar.
+                  Selecciona una herramienta para comenzar
                 </SheetDescription>
               </SheetHeader>
+              <div className="mt-2 space-y-8">
+                {Object.values(TOOL_CATEGORIES).map(category => {
+                  const categoryTools = category.tools
+                    .map(toolId => TOOLS[toolId])
+                    .filter(Boolean);
 
-              <div className="mt-8 flex flex-col gap-6">
-                {toolsMenu.map((group, idx) => (
-                  <div key={idx} className="px-4">
-                    <div className="flex items-center gap-2 mb-4 text-md font-semibold">
-                      <group.icon className="h-4 w-4" />
-                      {group.category}
+                  if (categoryTools.length === 0) return null;
+
+                  const colors = categoryColorMap[category.color] || { bg: "bg-primary/10", text: "text-primary" };
+
+                  return (
+                    <div key={category.id} className="space-y-3 px-4">
+                      <div className="flex items-center gap-2 px-1">
+                        <h3 className="text-lg font-bold">
+                          {category.name}
+                        </h3>
+                      </div>
+                      <div className="grid">
+                        {categoryTools.map(tool => {
+                          const ToolIcon = (Icons as any)[tool.icon];
+
+                          return (
+                            <SheetClose asChild key={tool.id}>
+                              <Link
+                                href={tool.isAvailable ? tool.path : '#'}
+                                className={cn(
+                                  "group flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
+                                  tool.isAvailable
+                                    ? "hover:bg-accent hover:text-accent-foreground"
+                                    : "opacity-30 cursor-not-allowed",
+                                  pathname === tool.path && "bg-accent text-accent-foreground font-medium"
+                                )}
+                              >
+                                {ToolIcon && (
+                                  <div className={cn("p-1.5 rounded-md shrink-0 transition-colors",
+                                    pathname === tool.path ? colors.bg : "bg-muted group-hover:" + colors.bg)}>
+                                    <ToolIcon className={cn("w-4 h-4", colors.text)} />
+                                  </div>
+                                )}
+                                <span>{tool.name}</span>
+                              </Link>
+                            </SheetClose>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {group.items.map((item) => (
-                        <SheetClose asChild key={item.href}>
-                          <Link
-                            href={item.disabled ? "#" : item.href}
-                            className={cn(
-                              "flex flex-col items-center justify-center w-[31.8%] h-[80px] p-2 border rounded-md text-sm leading-4 text-center transition-colors",
-                              item.disabled
-                                ? "opacity-50 cursor-not-allowed bg-muted/50"
-                                : "hover:bg-muted",
-                              pathname === item.href && "border-2 border-neutral-900 text-primary font-medium"
-                            )}
-                          >
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              width={20}
-                              height={20}
-                            />
-                            <span className="mt-2">{item.name}</span>
-                          </Link>
-                        </SheetClose>
-                      ))}
-                    </div>
-                    {idx < toolsMenu.length - 1 && <Separator className="mt-4" />}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </SheetContent>
           </Sheet>
