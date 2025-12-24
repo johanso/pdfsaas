@@ -116,6 +116,7 @@ export default function OrganizePdfPage() {
 
   return (
     <PdfToolLayout
+      toolId="organize-pdf"
       title="Organizar PDF"
       description="Ordena, añade, gira y elimina páginas de múltiples archivos PDF."
       hasFiles={pages.length > 0}

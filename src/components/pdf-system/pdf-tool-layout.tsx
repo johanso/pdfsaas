@@ -25,8 +25,10 @@ import BootstrapIcon from "@/components/bootstrapIcon";
 
 // Hooks
 import { useIsMobile } from "@/hooks/useMobile";
+import { ToolBreadcrumb } from "../tool-breadcrumb";
 
 interface PdfToolLayoutProps {
+  toolId: string;
   title: string;
   description: string;
   hasFiles: boolean;
@@ -70,6 +72,7 @@ interface PdfToolLayoutProps {
 }
 
 export function PdfToolLayout({
+  toolId,
   title,
   description,
   hasFiles,
@@ -95,8 +98,9 @@ export function PdfToolLayout({
   const isProcessing = saveDialogProps.isProcessing;
 
   return (
-    <div className="container mx-auto py-10 px-4 max-w-7xl pb-24">
+    <div className="container mx-auto py-8 px-4 max-w-7xl pb-24">
       <div className="space-y-6">
+        <ToolBreadcrumb toolId={toolId} />
         <HeadingPage titlePage={title} descriptionPage={description} />
 
         <div className="w-full">
@@ -124,7 +128,7 @@ export function PdfToolLayout({
                     </section>
                   )}
 
-                  <section className="lg:ml-12 bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-4 md:p-6 min-h-[500px]">
+                  <section className="lg:ml-12 bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-4 md:p-6 min-h-[320px] lg:min-h-[500px]">
                     {children}
                   </section>
                 </div>

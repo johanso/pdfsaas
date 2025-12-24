@@ -89,6 +89,7 @@ export default function ExtractPdfPage() {
 
   return (
     <PdfToolLayout
+      toolId="extract-pages"
       title="Extraer Páginas PDF"
       description="Selecciona las páginas que quieres conservar y crea un nuevo PDF o descárgalas por separado."
       hasFiles={!!file}

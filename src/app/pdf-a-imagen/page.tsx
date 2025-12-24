@@ -115,6 +115,7 @@ export default function PdfToImagePage() {
 
   return (
     <PdfToolLayout
+      toolId="pdf-to-image"
       title="Convertir PDF a Imagen"
       description="Convierte páginas de tu PDF a imágenes de alta calidad (JPG, PNG, WebP)."
       hasFiles={!!file}

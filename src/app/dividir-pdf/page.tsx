@@ -130,6 +130,7 @@ export default function SplitPdfPage() {
 
   return (
     <PdfToolLayout
+      toolId="split-pdf"
       title="Dividir PDF"
       description="Herramienta profesional para separar, extraer y organizar tus documentos."
       hasFiles={!!file}

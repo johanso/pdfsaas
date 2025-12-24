@@ -73,6 +73,7 @@ export default function RotatePdfPage() {
 
   return (
     <PdfToolLayout
+      toolId="rotate-pdf"
       title="Rotar PDF"
       description="Corrige la orientación de tus documentos. Rota páginas sueltas o el archivo completo en segundos."
       hasFiles={!!file}

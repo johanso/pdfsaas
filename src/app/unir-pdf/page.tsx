@@ -58,6 +58,7 @@ export default function UnirPdfPage() {
 
   return (
     <PdfToolLayout
+      toolId="merge-pdf"
       title="Unir PDF"
       description="Combina múltiples archivos PDF en un solo documento ordenado."
       hasFiles={files.length > 0}
