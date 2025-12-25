@@ -1,142 +1,117 @@
-# Documentación del Proyecto PDF SaaS
+# 📄 Documentación Integral del Proyecto PDF SaaS
 
-Este documento proporciona una visión completa y detallada de la arquitectura, componentes y flujo de datos del proyecto PDF SaaS. Está diseñado para que cualquier desarrollador pueda entender rápidamente cómo funciona el sistema.
+Este documento es la referencia técnica definitiva para entender la arquitectura, el sistema de componentes, la lógica de estado y los flujos de procesamiento de la plataforma PDF SaaS.
 
-## 1. Descripción General
-Es una aplicación web SaaS moderna para la manipulación y procesamiento de archivos PDF. Permite realizar operaciones complejas de manera sencilla en el navegador, delegando el procesamiento pesado al servidor mediante una arquitectura sin estado (stateless).
+---
 
-**Capacidades principales:**
-*   **Unir PDF:** Combinar múltiples documentos en uno solo.
-*   **Rotar PDF:** Girar páginas individuales o documentos completos.
-*   **Eliminar Páginas:** Remover páginas específicas de un documento de forma visual.
-*   **Dividir PDF:** Separar un PDF en múltiples archivos por rangos o páginas fijas.
-*   **Extraer Páginas:** Seleccionar páginas específicas para crear un nuevo documento.
-*   **PDF a Imagen:** Convierte páginas de PDF a formatos JPG, PNG o WebP.
-*   **Organizar PDF:** La herramienta más potente. Permite reordenar páginas (D&D), rotar, duplicar, insertar hojas en blanco y gestionar la estructura de uno o varios documentos simultáneamente.
+## 🏗️ 1. Arquitectura de Procesamiento (Híbrida)
 
-## 2. Tecnologías Clave
+El proyecto utiliza un modelo de procesamiento híbrido distribuido en tres capas para optimizar el rendimiento, la privacidad y la fiabilidad.
 
-### Frontend
-*   **Framework:** [Next.js 15+](https://nextjs.org/) (App Router).
-*   **Estilos:** [Tailwind CSS 4](https://tailwindcss.com/) (Modern CSS engines).
-*   **UI Components:** [Shadcn UI](https://ui.shadcn.com/) (basado en Radix UI).
-*   **Iconos:** `lucide-react` y `Bootstrap Icons`.
-*   **Drag & Drop:** `@dnd-kit` (Sortable) para la gestión de tarjetas.
-*   **Visualización PDF:** `react-pdf` (`pdfjs-dist`) para la generación de miniaturas.
-*   **Animaciones:** `tw-animate-css` y transiciones nativas de Tailwind.
+### A. Procesamiento en el Cliente (Navegador) - *UI & Metadata*
+*   **Tecnología:** `pdfjs-dist` ejecutándose en Web Workers.
+*   **Responsabilidades:**
+    *   Generación de miniaturas de alta fidelidad (`PdfThumbnail`).
+    *   Extracción de metadatos y conteo de páginas.
+    *   Carga asíncrona de páginas desde múltiples archivos (`usePdfMultiLoader`).
+    *   Gestión de estados visuales (selección, orden, rotación visual).
+    *   Estimación de páginas para archivos Office (`office-utils.ts`).
 
-### Backend (Server-Side)
-*   **Procesamiento PDF:** `pdf-lib`. Se utiliza en API Routes para la manipulación de archivos (unir, rotar, eliminar, extraer).
-*   **Archivado:** `jszip` para devolver múltiples archivos en un solo paquete ZIP.
+### B. Procesamiento en el Servidor Local (Next.js API) - *Estructura PDF*
+*   **Tecnología:** `pdf-lib`.
+*   **Rutas:** `src/app/api/[tool]/route.ts`.
+*   **Responsabilidades:**
+    *   Operaciones estructurales: Unir, dividir, eliminar y rotar páginas.
+    *   Generación de archivos ZIP (`jszip`) cuando la salida es múltiple.
+    *   Estas tareas son rápidas y mantienen los datos cerca del usuario.
 
-## 3. Arquitectura de Carpetas
+### C. Procesamiento en Servidor Externo (VPS/Worker) - *Conversiones Pesadas*
+*   **Tecnología:** ImageMagick, LibreOffice, y utilidades de bajo nivel.
+*   **Cliente:** `pdf-worker-client.ts`.
+*   **Responsabilidades:**
+    *   Conversiones de Office a PDF (Word, Excel, PPT).
+    *   Conversiones de PDF a formatos editables.
+    *   Compresión avanzada de PDF.
+    *   Conversión masiva de PDF a imagen con alta densidad (DPI).
+
+---
+
+## 🧱 2. Registro de Componentes Principales
+
+### 📦 Sistema Núcleo PDF (`src/components/pdf-system/`)
+*   **`PdfToolLayout`**: El esqueleto de todas las herramientas. Gestiona la zona de carga (Dropzone), la barra lateral de resumen, los controles de descarga y la adaptación automática para móviles.
+*   **`PdfGrid`**: Grid interactivo que implementa `@dnd-kit`. Soporta reordenamiento por arrastre y soltado con animaciones fluidas.
+*   **`PdfCard`**: Componente polimórfico que cambia su comportamiento mediante **Presets** (`merge`, `delete`, `rotate`, etc.). Renderiza miniaturas o iconos de Office.
+
+### 🛠️ Herramientas y Barras (`src/components/`)
+*   **`GlobalToolbar`**: Centro de comandos inteligente. En mobile se transforma automáticamente en un menú táctil optimizado.
+*   **`PdfToolbar`**: Controles rápidos para añadir archivos o reiniciar el proceso.
+*   **`SaveDialog`**: Modal interactivo para que el usuario nombre su archivo procesado.
+*   **`ProcessingScreen`**: Pantalla de bloqueo global que usa progreso real por XHR. Incluye un sistema de `tips` y `funFacts` para mejorar la percepción del tiempo de espera.
+
+### 🖼️ Visualización y UI
+*   **`PdfThumbnail`**: Renderizador optimizado que usa canvas para mostrar páginas de PDF sin procesar todo el archivo.
+*   **`OfficeThumbnail`**: Iconografía SVG temática para archivos DOCX, XLSX y PPTX.
+*   **`BootstrapIcon`**: Wrapper con soporte para animaciones (spin, pulse) y personalización de colores.
+*   **`SummaryList`**: Lista detallada de los archivos y cambios que se aplicarán antes de procesar.
+
+---
+
+## 🧠 3. Guía de Hooks Personalizados
+
+### 📁 Gestión de Archivos y Carga
+*   **`usePdfFiles`**: Gestiona la lista de archivos subidos. Incluye flags como `skipPdfValidation` para permitir archivos Office.
+*   **`usePdfMultiLoader`**: El "caballo de batalla" de la visualización. Convierte archivos subidos en una lista plana de páginas con IDs únicos.
+*   **`usePdfLoader`**: Maneja la carga individual de un PDF y su metadata básica.
+
+### ⚡ Procesamiento y Estado
+*   **`usePdfProcessing`**: Punto de entrada para todas las APIs. Implementa tracking de progreso real:
+    *   **0-50%**: Progreso de subida (Upload).
+    *   **50-100%**: Progreso de descarga (Download).
+    *   Gestiona el flujo post-descarga (re-descarga, editar otra vez, nuevo).
+*   **`usePdfPages`**: Mantiene el estado de las páginas manipuladas (rotación, orden, visibilidad).
+*   **`usepdftoimage`**: Lógica compleja para la exportación de páginas individuales como imágenes configurables.
+
+### 🖱️ Interacción Avanzada
+*   **`usePageSelection`**: Lógica de selección individual y por rango.
+*   **`useMultiSelect`**: Soporte para interacciones tipo "escritorio" (Shift+Click para rangos, Ctrl+Click para selección múltiple).
+
+---
+
+## 📁 4. Estructura de Proyecto Detallada
 
 ```
 src/
-├── app/                        # Next.js App Router (Rutas y API)
-│   ├── api/                    # Backend Logic (PDF processing/Conversion)
-│   ├── organizar-pdf/          # Herramienta de organización
-│   ├── unir-pdf/               # Herramienta de unión
-│   ├── pdf-a-imagen/           # Herramienta de conversión
-│   └── ...                     # Otras herramientas
-│
-├── components/                 # Componentes de React
-│   ├── pdf-system/             # SISTEMA NÚCLEO DE UI PDF
-│   │   ├── pdf-tool-layout.tsx # Layout estándar para todas las herramientas
-│   │   ├── pdf-card.tsx        # Tarjeta polimórfica (Presets)
-│   │   └── pdf-grid.tsx        # Grid reordenable con DnD Kit
-│   ├── ui/                     # Componentes Shadcn (botón, diálogo, etc.)
-│   ├── globalToolbar.tsx       # Barra de comandos inteligente (Mobile Ready)
-│   ├── pdf-toolbar.tsx         # Controles secundarios (Añadir/Reset)
-│   ├── save-dialog.tsx         # Interfaz para nombrar archivos
-│   ├── success-dialog.tsx      # Flujo post-descarga
-│   ├── pdf-thumbnail.tsx       # Renderizador de miniaturas de alta fidelidad
-│   └── bootstrapIcon.tsx       # Adaptador para Bootstrap Icons con animaciones
-│
-├── hooks/                      # Lógica de negocio y estado
-│   ├── usePdfFiles.ts          # Gestión de archivos completos (Lista)
-│   ├── usePdfPages.ts          # Gestión de páginas individuales
-│   ├── usePageSelection.ts     # Lógica de selección masiva
-│   ├── useMultiSelect.ts       # Soporte para clics con Shift/Ctrl
-│   ├── usePdfProcessing.ts     # Orquestador de API y Descargas
-│   ├── usePdfLoader.ts         # Cargador unitario de PDFs
-│   ├── usePdfMultiLoader.ts    # Cargador de páginas desde múltiples archivos
-│   ├── usepdftoimage.ts        # Hook especializado en conversión de imágenes
-│   └── useMobile.ts            # Adaptabilidad de UI (Mobile Detection)
-│
-└── lib/                        # Configuraciones y datos
-    ├── tools-data.ts           # Definición centralizada de herramientas
-    └── tools-categories.ts     # Categorización para la UI
+├── app/
+│   ├── api/                    # APIs locales (pdf-lib) y proxys al Worker
+│   ├── word-a-pdf/             # Rutas de herramientas individuales
+│   └── ...
+├── components/
+│   ├── pdf-system/             # Componentes base del entorno PDF
+│   ├── layout/                 # Navbar, Footer, Hero, CTA
+│   ├── ui/                     # Componentes atómicos (Radix/Shadcn)
+│   └── ...                     # Componentes de funcionalidad específica
+├── hooks/                      # Lógica de negocio (Cerebro)
+├── lib/                        # Utilidades y configuración central
+│   ├── pdf-worker-client.ts    # Cliente para el VPS externo
+│   ├── office-utils.ts         # Parsers y estimadores de Office
+│   ├── tools-data.ts           # Configuración única de herramientas
+│   └── tools-categories.ts     # Estructura del menú y categorías
 ```
 
-## 4. Componentes Principales del Sistema PDF
+---
 
-### `PdfToolLayout` (`src/components/pdf-system/pdf-tool-layout.tsx`)
-Es la base unificada de todas las páginas de herramientas. Encapsula:
-*   Encabezado de página (`HeadingPage`).
-*   Zona de carga (`Dropzone`).
-*   Barra de herramientas global y secundaria.
-*   Barra lateral de resumen y controles personalizados.
-*   Gestión de diálogos de guardado y éxito.
-*   Adaptación automática para móviles (Menú de opciones flotante).
+## 🔄 5. Flujo de Trabajo Técnico (Pipeline)
 
-### `PdfGrid` y `PdfCard` (Sistema Core)
-El núcleo visual para interactuar con los documentos.
-*   **`PdfGrid`**: Encapsula la lógica de `@dnd-kit` para permitir el reordenamiento suave mediante drag & drop.
-*   **`PdfCard`**: Altamente configurable mediante **Presets**.
-    *   **Presets Disponibles:** `merge`, `delete`, `rotate`, `extract`, `split`, `organize`.
-    *   **Capacidades:** Checkboxes, rotación individual, duplicación, inserción de páginas en blanco, eliminación individual.
-    *   **Renderizado:** Usa `PdfThumbnail` (cliente) con trabajadores web para procesar el renderizado sin bloquear el hilo principal.
-
-### `GlobalToolbar` (`src/components/globalToolbar.tsx`)
-El centro de mandos contextual.
-*   **Responsive:** En desktop es una barra fija o sticky. En mobile, se integra en un **Sheet** u opciones táctiles optimizadas.
-*   **Feature-Based:** Habilita dinámicamente secciones como Selección, Orden, Rotación y Acciones Masivas.
-
-## 5. Hooks: El Cerebro de la Aplicación
-
-### `usePdfProcessing`
-Abstracción para la comunicación con el servidor. Maneja el envío de `FormData`, el estado de carga y la descarga del resultado final (PDF o ZIP).
-
-### `usePageSelection` y `useMultiSelect`
-Trabajan en conjunto para gestionar la selección de páginas. `useMultiSelect` permite interacciones avanzadas como Shift+Click para seleccionar rangos visualmente en el grid.
-
-### `usePdfMultiLoader`
-Carga asíncrona de páginas desde múltiples archivos PDF, extrayendo metadatos y generando IDs únicos para mantener la integridad durante el reordenamiento.
-
-## 6. Estado de las Herramientas
-
-### Herramientas Implementadas (Disponibles)
-| Herramienta | Ruta | Estado |
-| :--- | :--- | :--- |
-| Unir PDF | `/unir-pdf` | ✅ Producción |
-| Dividir PDF | `/dividir-pdf` | ✅ Producción |
-| Eliminar Páginas | `/eliminar-paginas-pdf` | ✅ Producción |
-| Extraer Páginas | `/extraer-paginas-pdf` | ✅ Producción |
-| Organizar PDF | `/organizar-pdf` | ✅ Producción |
-| Rotar PDF | `/rotar-pdf` | ✅ Producción |
-| PDF a Imagen | `/pdf-a-imagen` | ✅ Producción |
-
-### Herramientas Pendientes (Coming Soon)
-A continuación se detallan las funcionalidades que están configuradas en el sistema pero aún no implementadas:
-
-*   **Conversión desde PDF:** PDF a Word, Excel, PowerPoint, Escala de grises.
-*   **Conversión a PDF:** JPG/PNG a PDF, Word a PDF, HTML a PDF.
-*   **Edición Avanzada:** Recortar PDF, Marca de agua, Números de página, Editar metadatos, Añadir texto/imágenes.
-*   **Seguridad:** Proteger con contraseña, Desbloquear PDF, Firmar PDF, Censurar información.
-*   **Optimización:** Comprimir PDF, Reducir tamaño, Quitar duplicados.
-
-## 7. Flujo de Datos (Workflow)
-
-1.  **Carga:** El usuario carga archivos. `usePdfMultiLoader` procesa los archivos y extrae las páginas.
-2.  **Visualización:** `PdfGrid` renderiza las `PdfCard` correspondientes según el preset de la herramienta.
-3.  **Manipulación:** El usuario interactúa (rota, mueve, borra). El estado se mantiene en `usePdfPages`.
-4.  **Procesamiento:**
-    *   `usePdfProcessing` recopila las instrucciones de transformación.
-    *   Se muestra `SaveDialog` para elegir nombre de archivo.
-    *   Se envía petición a `/api/[tool]`.
-5.  **Finalización:** Se descarga el archivo y `SuccessDialog` ofrece el siguiente paso.
+1.  **Ingesta:** Los archivos pasan por `usePdfFiles`.
+2.  **Preparación:** Si es PDF, `usePdfMultiLoader` genera miniaturas. Si es Office, `OfficeThumbnail` muestra el icono.
+3.  **Manipulación:** El usuario interactúa con `PdfGrid`. Las transformaciones se registran en el estado local.
+4.  **Ejecución:**
+    *   `processAndDownload` recopila datos.
+    *   Se abre `SaveDialog`.
+    *   `ProcessingScreen` se activa con tracking XHR.
+    *   La API (Local o Worker) procesa y devuelve el blob.
+5.  **Finalización:** Descarga automática y transición a opciones de éxito en el mismo componente de procesamiento.
 
 ---
-*Documentación actualizada el 23 de diciembre de 2024 para reflejar la migración a `PdfToolLayout` y la expansión del sistema de hooks.*
-
+*Última actualización: 25 de diciembre de 2025.*

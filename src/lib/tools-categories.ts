@@ -14,20 +14,6 @@ export const TOOL_CATEGORIES = {
       'organize-pdf'
     ]
   },
-  CONVERT_FROM_PDF: {
-    id: 'convert-from-pdf',
-    name: 'Convertir desde PDF',
-    description: 'Exporta PDFs a otros formatos',
-    icon: 'FileOutput',
-    color: 'purple',
-    tools: [
-      'pdf-to-image',
-      'pdf-to-word',
-      'pdf-to-excel',
-      'pdf-to-powerpoint',
-      'pdf-to-greyscale'
-    ]
-  },
   CONVERT_TO_PDF: {
     id: 'convert-to-pdf',
     name: 'Convertir a PDF',
@@ -40,6 +26,20 @@ export const TOOL_CATEGORIES = {
       'excel-to-pdf',
       'powerpoint-to-pdf',
       'html-to-pdf'
+    ]
+  },
+  CONVERT_FROM_PDF: {
+    id: 'convert-from-pdf',
+    name: 'Convertir desde PDF',
+    description: 'Exporta PDFs a otros formatos',
+    icon: 'FileOutput',
+    color: 'purple',
+    tools: [
+      'pdf-to-image',
+      'pdf-to-word',
+      'pdf-to-excel',
+      'pdf-to-powerpoint',
+      'pdf-to-greyscale'
     ]
   },
   EDIT: {
