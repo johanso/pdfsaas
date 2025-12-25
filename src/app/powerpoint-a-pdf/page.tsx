@@ -62,7 +62,7 @@ export default function PowerPointToPdfPage() {
     formData.append("file", files[0].file);
 
     await processAndDownload(fileName, formData, {
-      endpoint: "/api/worker/api/ppt-to-pdf",
+      endpoint: "/api/worker/ppt-to-pdf",
       extension: "pdf",
       operation: "Convirtiendo PowerPoint a PDF",
       successMessage: "¡Presentación convertida a PDF correctamente!",

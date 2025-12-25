@@ -198,8 +198,8 @@ export const TOOLS: Record<string, Tool> = {
     path: '/html-a-pdf',
     icon: 'Code',
     category: 'convert-to-pdf',
-    isAvailable: false,
-    comingSoon: true
+    isAvailable: true,
+    comingSoon: false
   },
 
   // --- EDIT ---

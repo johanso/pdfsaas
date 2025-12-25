@@ -41,7 +41,7 @@ export default function PdfToWordPage() {
         formData.append("file", files[0].file);
 
         await processAndDownload(fileName, formData, {
-            endpoint: "/api/worker/api/pdf-to-word",
+            endpoint: "/api/worker/word-to-pdf",
             extension: "docx",
             successMessage: "¡PDF convertido a Word correctamente!",
             onSuccess: () => {

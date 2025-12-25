@@ -1,26 +1,18 @@
+// app/html-a-pdf/page.tsx
 "use client";
 
 import { useState } from "react";
-
-// Components
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import ProcessingScreen from "@/components/processing-screen";
-
-// Hooks
 import { usePdfFiles } from "@/hooks/usePdfFiles";
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
 
-export default function ExcelToPdfPage() {
+export default function HtmlToPdfPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const {
-    files,
-    addFiles,
-    removeFile,
-    reset,
-  } = usePdfFiles(true); // Skip PDF validation for Excel files
+  const { files, addFiles, removeFile, reset } = usePdfFiles(true);
 
   const {
     isProcessing,
@@ -35,17 +27,15 @@ export default function ExcelToPdfPage() {
   } = usePdfProcessing();
 
   const handleFilesSelected = (newFiles: File[]) => {
-    // Validar extensión
-    const validExtensions = ['.xlsx', '.xls'];
+    const validExtensions = ['.html', '.htm'];
     const file = newFiles[0];
     const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
 
     if (!validExtensions.includes(fileExtension)) {
-      alert('Por favor, selecciona un archivo Excel válido (.xlsx o .xls)');
+      alert('Por favor, selecciona un archivo HTML válido (.html o .htm)');
       return;
     }
 
-    // Solo permitimos un archivo a la vez
     if (files.length > 0) {
       reset();
     }
@@ -55,39 +45,34 @@ export default function ExcelToPdfPage() {
   const handleSubmit = async (fileName: string) => {
     if (files.length === 0) return;
 
-    // Close dialog immediately
     setIsDialogOpen(false);
 
     const formData = new FormData();
     formData.append("file", files[0].file);
 
     await processAndDownload(fileName, formData, {
-      endpoint: "/api/worker/excel-to-pdf",
+      endpoint: "/api/worker/html-to-pdf",
       extension: "pdf",
-      operation: "Convirtiendo Excel a PDF",
-      successMessage: "¡Hoja de cálculo convertida a PDF correctamente!",
-      onContinueEditing: () => {
-        // Keep files, just close processing screen
-      }
+      operation: "Convirtiendo HTML a PDF",
+      successMessage: "¡Página HTML convertida a PDF correctamente!",
+      onContinueEditing: () => { }
     });
   };
 
   return (
     <>
       <PdfToolLayout
-        toolId="excel-to-pdf"
-        title="Convertir Excel a PDF"
-        description="Convierte hojas de cálculo de Microsoft Excel (XLSX, XLS) a PDF manteniendo el formato."
+        toolId="html-to-pdf"
+        title="Convertir HTML a PDF"
+        description="Convierte páginas web y archivos HTML a documentos PDF profesionales con estilos CSS preservados."
         hasFiles={files.length > 0}
         onFilesSelected={handleFilesSelected}
-        acceptedFileTypes=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        acceptedFileTypes=".html,.htm,text/html"
         onReset={reset}
         summaryItems={[
           {
             label: "Archivo",
-            value: files[0]
-              ? `${files[0].name}`
-              : "-"
+            value: files[0] ? `${files[0].name}` : "-"
           },
           {
             label: "Peso total",
@@ -103,7 +88,7 @@ export default function ExcelToPdfPage() {
         saveDialogProps={{
           isOpen: isDialogOpen,
           onOpenChange: setIsDialogOpen,
-          defaultName: files[0]?.name.replace(/\.(xlsx|xls)$/i, "") || "hoja-calculo",
+          defaultName: files[0]?.name.replace(/\.(html|htm)$/i, "") || "pagina-web",
           onSave: handleSubmit,
           isProcessing,
           title: "Guardar como PDF",
@@ -122,6 +107,7 @@ export default function ExcelToPdfPage() {
             ...PDF_CARD_PRESETS.merge,
             draggable: false,
             selectable: false,
+            removable: false,
           }}
           extractCardData={(f) => ({
             id: f.id,
@@ -134,7 +120,6 @@ export default function ExcelToPdfPage() {
         />
       </PdfToolLayout>
 
-      {/* Processing Screen */}
       {isProcessing && (
         <ProcessingScreen
           fileName={fileName}
