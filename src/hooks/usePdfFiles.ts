@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { getOfficePageCount } from "@/lib/office-utils";
+
 export interface PdfFile {
   id: string;
   file: File;
@@ -9,30 +11,45 @@ export interface PdfFile {
   pageCount?: number;
 }
 
-export function usePdfFiles() {
+export function usePdfFiles(skipPdfValidation: boolean = false) {
   const [files, setFiles] = useState<PdfFile[]>([]);
 
   const addFiles = async (newFiles: File[]) => {
-    const pdfFiles = newFiles.filter(f => f.type === "application/pdf");
+    // Si skipPdfValidation es true, aceptamos cualquier archivo
+    const validFiles = skipPdfValidation
+      ? newFiles
+      : newFiles.filter(f => f.type === "application/pdf");
 
-    if (pdfFiles.length < newFiles.length) {
+    if (!skipPdfValidation && validFiles.length < newFiles.length) {
       toast.error("Algunos archivos no eran PDF y fueron ignorados.");
     }
 
-    if (pdfFiles.length === 0) return;
+    if (validFiles.length === 0) return;
 
-    // Extract page counts for each PDF
-    const mappedFilesPromises = pdfFiles.map(async (f) => {
+    // Extract page counts for each PDF or Office file
+    const mappedFilesPromises = validFiles.map(async (f) => {
       let pageCount: number | undefined;
-      try {
-        const { pdfjs } = await import("react-pdf");
-        pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-        const buffer = await f.arrayBuffer();
-        const pdf = await pdfjs.getDocument(buffer).promise;
-        pageCount = pdf.numPages;
-      } catch (error) {
-        console.error("Error extracting page count:", error);
+      // Extract pages for PDF
+      if (f.type === "application/pdf") {
+        try {
+          const { pdfjs } = await import("react-pdf");
+          pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+          const buffer = await f.arrayBuffer();
+          const pdf = await pdfjs.getDocument(buffer).promise;
+          pageCount = pdf.numPages;
+        } catch (error) {
+          console.error("Error extracting PDF page count:", error);
+        }
+      }
+      // Estimate pages for Office files if skipPdfValidation is true
+      else if (skipPdfValidation) {
+        const ext = f.name.toLowerCase().split('.').pop();
+        const officeExtensions = ['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'];
+        if (ext && officeExtensions.includes(ext)) {
+          pageCount = await getOfficePageCount(f);
+        }
       }
 
       return {

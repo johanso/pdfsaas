@@ -10,7 +10,7 @@ export const TOOL_CATEGORIES = {
       'split-pdf',
       'extract-pages',
       'delete-pages',
-      'reorder-pages',
+      'rotate-pdf',
       'organize-pdf'
     ]
   },
@@ -49,7 +49,6 @@ export const TOOL_CATEGORIES = {
     icon: 'Edit',
     color: 'orange',
     tools: [
-      'rotate-pdf',
       'crop-pages',
       'add-watermark',
       'add-page-numbers',

@@ -68,7 +68,7 @@ const Features = () => {
                           <CardContent className="p-6 md:p-5">
                             <div className="flex items-start justify-start gap-3">
                               {ToolIcon && (
-                                <div className={cn("p-2 rounded-full flex-shrink-0", colors.bg)}>
+                                <div className={cn("p-2 rounded-full shrink-0", colors.bg)}>
                                   <ToolIcon className={cn("w-5 h-5", colors.text)} />
                                 </div>
                               )}

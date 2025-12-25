@@ -168,8 +168,8 @@ export const TOOLS: Record<string, Tool> = {
     path: '/word-a-pdf',
     icon: 'FileText',
     category: 'convert-to-pdf',
-    isAvailable: false,
-    comingSoon: true
+    isAvailable: true,
+    comingSoon: false
   },
   'excel-to-pdf': {
     id: 'excel-to-pdf',
@@ -178,8 +178,8 @@ export const TOOLS: Record<string, Tool> = {
     path: '/excel-a-pdf',
     icon: 'FileSpreadsheet',
     category: 'convert-to-pdf',
-    isAvailable: false,
-    comingSoon: true
+    isAvailable: true,
+    comingSoon: false
   },
   'powerpoint-to-pdf': {
     id: 'powerpoint-to-pdf',
@@ -188,8 +188,8 @@ export const TOOLS: Record<string, Tool> = {
     path: '/powerpoint-a-pdf',
     icon: 'Presentation',
     category: 'convert-to-pdf',
-    isAvailable: false,
-    comingSoon: true
+    isAvailable: true,
+    comingSoon: false
   },
   'html-to-pdf': {
     id: 'html-to-pdf',

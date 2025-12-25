@@ -50,7 +50,7 @@ export function SplitGrid({
   };
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pb-20 select-none">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 select-none">
       {pages.map((pageNumber) => {
         const isSplit = ranges.includes(pageNumber);
         const isLast = pageNumber === numPages;

@@ -34,6 +34,7 @@ interface PdfToolLayoutProps {
   hasFiles: boolean;
   onFilesSelected: (files: File[]) => void;
   dropzoneMultiple?: boolean;
+  acceptedFileTypes?: string;
   onReset: () => void;
   onAdd?: () => void;
 
@@ -78,6 +79,7 @@ export function PdfToolLayout({
   hasFiles,
   onFilesSelected,
   dropzoneMultiple = false,
+  acceptedFileTypes = "application/pdf",
   onReset,
   onAdd,
   features,
@@ -97,6 +99,8 @@ export function PdfToolLayout({
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const isProcessing = saveDialogProps.isProcessing;
 
+  const hasFeatures = features && Object.values(features).some(v => v === true);
+
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl pb-24">
       <div className="space-y-6">
@@ -108,6 +112,7 @@ export function PdfToolLayout({
             <Dropzone
               onFilesSelected={onFilesSelected}
               multiple={dropzoneMultiple}
+              accept={acceptedFileTypes}
               className="h-80 bg-white/60 dark:bg-zinc-900/50"
             />
           ) : (
@@ -118,7 +123,7 @@ export function PdfToolLayout({
                     <PdfToolbar onReset={onReset} onAdd={onAdd} />
                   )}
 
-                  {!isMobile && (
+                  {!isMobile && hasFeatures && (
                     <section className="sticky m-0 top-0 py-2 lg:py-0 lg:top-2 z-10 bg-white dark:bg-zinc-900">
                       <GlobalToolbar
                         features={features}
@@ -128,7 +133,10 @@ export function PdfToolLayout({
                     </section>
                   )}
 
-                  <section className="lg:ml-12 bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-4 md:p-6 min-h-[320px] lg:min-h-[500px]">
+                  <section className={cn(
+                    "bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-4 md:p-6 min-h-[320px]",
+                    hasFeatures && "lg:ml-12"
+                  )}>
                     {children}
                   </section>
                 </div>

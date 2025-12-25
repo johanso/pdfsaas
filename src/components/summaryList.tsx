@@ -30,10 +30,10 @@ export const SummaryList: React.FC<SummaryListProps> = ({
         {items.map((item, index) => (
           <li
             key={index}
-            className="flex justify-between items-center py-2"
+            className="flex justify-between gap-4 items-center py-2"
           >
             <span className="font-normal">{item.label}</span>
-            <span className="font-bold">{item.value}</span>
+            <span className="font-semibold overflow-hidden text-ellipsis whitespace-nowrap">{item.value}</span>
           </li>
         ))}
       </ul>

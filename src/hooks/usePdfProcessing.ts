@@ -15,7 +15,7 @@ export function usePdfProcessing() {
   const processAndDownload = async (
     fileName: string,
     formData: FormData,
-    options: ProcessOptions
+    options: ProcessOptions & { extension?: string }
   ) => {
     setIsProcessing(true);
 
@@ -37,7 +37,10 @@ export function usePdfProcessing() {
       a.href = url;
 
       // Determine file extension
-      const ext = blob.type === "application/zip" ? "zip" : "pdf";
+      let ext = options.extension;
+      if (!ext) {
+        ext = blob.type === "application/zip" ? "zip" : "pdf";
+      }
       a.download = `${fileName}.${ext}`;
 
       document.body.appendChild(a);

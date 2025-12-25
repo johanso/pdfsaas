@@ -9,6 +9,7 @@ import { GripVertical, X, Check, RotateCw, RotateCcw, InfoIcon, Copy } from "luc
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import BootstrapIcon from "../bootstrapIcon";
+import { OfficeThumbnail } from "../office-thumbnail";
 
 // Mapeo de iconos para selección
 const ICONS = {
@@ -192,6 +193,17 @@ export function PdfCard({
   const rotation = data.rotation || 0;
   const pageNumber = data.pageNumber || 1;
 
+  // Detectar si es un archivo de Office
+  const isOfficeFile = () => {
+    const fileName = data.file.name.toLowerCase();
+    return fileName.endsWith('.doc') ||
+      fileName.endsWith('.docx') ||
+      fileName.endsWith('.xls') ||
+      fileName.endsWith('.xlsx') ||
+      fileName.endsWith('.ppt') ||
+      fileName.endsWith('.pptx');
+  };
+
   // DnD Setup (solo si draggable)
   const {
     attributes,
@@ -250,7 +262,7 @@ export function PdfCard({
           {/* Header */}
           <div
             className={cn(
-              "h-8 border-b flex items-center justify-between px-2",
+              "h-8 border-b flex items-center justify-between px-3",
               isSelected && selectedColorName
                 ? `bg-${selectedColorName}-50 dark:bg-${selectedColorName}-950/30 border-${selectedColorName}-200 dark:border-${selectedColorName}-900`
                 : "bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700"
@@ -312,6 +324,11 @@ export function PdfCard({
                 <div className="w-full h-full bg-white dark:bg-zinc-800 border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded flex items-center justify-center text-zinc-400 text-xs">
                   Página en blanco
                 </div>
+              ) : isOfficeFile() ? (
+                <OfficeThumbnail
+                  file={data.file}
+                  className="w-full h-full rounded"
+                />
               ) : (
                 <PdfThumbnail
                   file={data.file}
