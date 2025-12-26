@@ -69,6 +69,8 @@ interface PdfToolLayoutProps {
 
   // Main Content
   isGridLoading?: boolean;
+  headerContent?: React.ReactNode;
+  customEmptyState?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -93,6 +95,8 @@ export function PdfToolLayout({
   saveDialogProps,
   successDialogProps,
   isGridLoading = false,
+  headerContent,
+  customEmptyState,
   children,
 }: PdfToolLayoutProps) {
   const isMobile = useIsMobile();
@@ -107,14 +111,22 @@ export function PdfToolLayout({
         <ToolBreadcrumb toolId={toolId} />
         <HeadingPage titlePage={title} descriptionPage={description} />
 
+        {headerContent && (
+          <div className="w-full flex justify-center lg:justify-start mb-6">
+            {headerContent}
+          </div>
+        )}
+
         <div className="w-full">
           {!hasFiles ? (
-            <Dropzone
-              onFilesSelected={onFilesSelected}
-              multiple={dropzoneMultiple}
-              accept={acceptedFileTypes}
-              className="h-80 bg-white/60 dark:bg-zinc-900/50"
-            />
+            customEmptyState || (
+              <Dropzone
+                onFilesSelected={onFilesSelected}
+                multiple={dropzoneMultiple}
+                accept={acceptedFileTypes}
+                className="h-80 bg-white/60 dark:bg-zinc-900/50"
+              />
+            )
           ) : (
             <div className="space-y-2">
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
