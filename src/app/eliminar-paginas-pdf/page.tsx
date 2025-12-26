@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
+import ProcessingScreen from "@/components/processing-screen";
 
 // Hooks
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
@@ -18,7 +19,6 @@ import { usePageSelection } from "@/hooks/usePageSelection";
 export default function DeletePagesPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
 
   // Hooks principales
   const { pages, reorderPages } = usePdfPages(file);
@@ -31,7 +31,17 @@ export default function DeletePagesPage() {
     selectByRange,
     reset: resetSelection
   } = usePageSelection(pages.length);
-  const { isProcessing, processAndDownload } = usePdfProcessing();
+  const {
+    isProcessing,
+    progress,
+    isComplete,
+    fileName,
+    operation,
+    processAndDownload,
+    handleDownloadAgain,
+    handleContinueEditing,
+    handleStartNew
+  } = usePdfProcessing();
 
   // Convertir selectedPages (números) a IDs para el PdfGrid
   const selectedIds = pages
@@ -60,7 +70,6 @@ export default function DeletePagesPage() {
   const handleReset = () => {
     setFile(null);
     resetSelection();
-    setIsSuccessDialogOpen(false);
   };
 
   const handleOpenSaveDialog = () => {
@@ -78,6 +87,9 @@ export default function DeletePagesPage() {
   const handleSave = async (outputName: string) => {
     if (!file || pages.length === 0) return;
 
+    // Close dialog immediately
+    setIsDialogOpen(false);
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -93,80 +105,98 @@ export default function DeletePagesPage() {
 
     await processAndDownload(outputName, formData, {
       endpoint: "/api/delete-pages",
+      extension: "pdf",
+      operation: "Eliminando páginas",
       successMessage: "¡PDF procesado correctamente!",
-      onSuccess: () => {
-        setIsDialogOpen(false);
-        setIsSuccessDialogOpen(true);
+      onContinueEditing: () => {
+        // Keep state
       }
     });
   };
 
   return (
-    <PdfToolLayout
-      toolId="delete-pages"
-      title="Eliminar Páginas PDF"
-      description="Selecciona, reordena y elimina las páginas que no necesites de tu documento."
-      hasFiles={!!file}
-      onFilesSelected={handleFilesSelected}
-      onReset={handleReset}
-      features={{ selection: true }}
-      actions={{
-        onSelectAll: selectAll,
-        onDeselectAll: deselectAll,
-        onInvertSelection: invertSelection,
-      }}
-      summaryItems={[
-        { label: "Total páginas cargadas", value: pages.length },
-        { label: "Páginas a eliminar", value: selectedPages.length },
-        { label: "Documento final", value: `${Math.max(0, pages.length - selectedPages.length)} páginas` },
-      ]}
-      downloadButtonText={isProcessing ? "Procesando..." : "Guardar Documento"}
-      isDownloadDisabled={isProcessing || selectedPages.length === 0}
-      onDownload={handleOpenSaveDialog}
-      isGridLoading={file !== null && pages.length === 0}
-      sidebarCustomControls={
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Selección por rango:</Label>
-          <Input
-            className="h-10 text-sm bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
-            placeholder="Ej: 1, 3-5, 8"
-            onChange={(e) => handleRangeChange(e.target.value)}
+    <>
+      <PdfToolLayout
+        toolId="delete-pages"
+        title="Eliminar Páginas PDF"
+        description="Selecciona, reordena y elimina las páginas que no necesites de tu documento."
+        hasFiles={!!file}
+        onFilesSelected={handleFilesSelected}
+        onReset={handleReset}
+        features={{ selection: true }}
+        actions={{
+          onSelectAll: selectAll,
+          onDeselectAll: deselectAll,
+          onInvertSelection: invertSelection,
+        }}
+        summaryItems={[
+          { label: "Total páginas cargadas", value: pages.length },
+          { label: "Páginas a eliminar", value: selectedPages.length },
+          { label: "Documento final", value: `${Math.max(0, pages.length - selectedPages.length)} páginas` },
+        ]}
+        downloadButtonText={isProcessing ? "Procesando..." : "Guardar Documento"}
+        isDownloadDisabled={isProcessing || selectedPages.length === 0}
+        onDownload={handleOpenSaveDialog}
+        isGridLoading={file !== null && pages.length === 0}
+        sidebarCustomControls={
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Selección por rango:</Label>
+            <Input
+              className="h-10 text-sm bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+              placeholder="Ej: 1, 3-5, 8"
+              onChange={(e) => handleRangeChange(e.target.value)}
+            />
+            <p className="text-[11px] text-zinc-500">
+              Usa comas y guiones para especificar páginas
+            </p>
+          </div>
+        }
+        saveDialogProps={{
+          isOpen: isDialogOpen,
+          onOpenChange: setIsDialogOpen,
+          defaultName: "documento-modificado",
+          onSave: handleSave,
+          isProcessing,
+          title: "Guardar documento",
+          description: "Asigna un nombre a tu documento PDF modificado.",
+        }}
+        successDialogProps={{
+          isOpen: false,
+          onOpenChange: () => { },
+          onContinue: () => { },
+        }}
+      >
+        <PdfGrid
+          items={pages}
+          config={PDF_CARD_PRESETS.delete}
+          selectedIds={selectedIds}
+          extractCardData={(p) => ({
+            id: p.id,
+            file: p.file,
+            pageNumber: p.originalIndex,
+            rotation: p.rotation,
+            isBlank: p.isBlank
+          })}
+          onReorder={reorderPages}
+          onToggle={handleToggle}
+        />
+      </PdfToolLayout>
+
+      {/* Processing Screen */}
+      {
+        isProcessing && (
+          <ProcessingScreen
+            fileName={fileName}
+            operation={operation}
+            progress={progress}
+            isComplete={isComplete}
+            onDownload={handleDownloadAgain}
+            onEditAgain={() => handleContinueEditing()}
+            onStartNew={() => handleStartNew(handleReset)}
           />
-          <p className="text-[11px] text-zinc-500">
-            Usa comas y guiones para especificar páginas
-          </p>
-        </div>
+        )
       }
-      saveDialogProps={{
-        isOpen: isDialogOpen,
-        onOpenChange: setIsDialogOpen,
-        defaultName: "documento-modificado",
-        onSave: handleSave,
-        isProcessing,
-        title: "Guardar documento",
-        description: "Asigna un nombre a tu documento PDF modificado.",
-      }}
-      successDialogProps={{
-        isOpen: isSuccessDialogOpen,
-        onOpenChange: setIsSuccessDialogOpen,
-        onContinue: () => setIsSuccessDialogOpen(false),
-      }}
-    >
-      <PdfGrid
-        items={pages}
-        config={PDF_CARD_PRESETS.delete}
-        selectedIds={selectedIds}
-        extractCardData={(p) => ({
-          id: p.id,
-          file: p.file,
-          pageNumber: p.originalIndex,
-          rotation: p.rotation,
-          isBlank: p.isBlank
-        })}
-        onReorder={reorderPages}
-        onToggle={handleToggle}
-      />
-    </PdfToolLayout>
+    </>
   );
 }
 
