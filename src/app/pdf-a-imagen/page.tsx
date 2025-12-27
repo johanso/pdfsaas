@@ -53,11 +53,11 @@ const FORMATS: {
   badge?: string;
   badgeColor?: string;
 }[] = [
-    { id: "jpg", label: "JPG", icon: Camera, badge: "Recomendado", badgeColor: "green" },
+    { id: "jpg", label: "JPG", icon: Camera, badgeColor: "green" },
     { id: "png", label: "PNG", icon: ImageIcon },
     { id: "webp", label: "WebP", icon: Globe },
-    { id: "tiff", label: "TIFF", icon: Printer, badge: "Servidor", badgeColor: "blue" },
-    { id: "bmp", label: "BMP", icon: FileImage, badge: "Servidor", badgeColor: "blue" },
+    { id: "tiff", label: "TIFF", icon: Printer, badgeColor: "blue" },
+    { id: "bmp", label: "BMP", icon: FileImage, badgeColor: "blue" },
   ];
 
 // Opciones de DPI
@@ -184,8 +184,8 @@ export default function PdfToImagePage() {
 
     const totalMB = selectedPages.length * baseSize * qualityFactor * dpiFactor;
 
-    if (totalMB < 1) return `~${Math.round(totalMB * 1024)} KB`;
-    return `~${totalMB.toFixed(1)} MB`;
+    if (totalMB < 1) return `~ ${Math.round(totalMB * 1024)} KB`;
+    return `~ ${totalMB.toFixed(1)} MB`;
   }, [selectedPages.length, format, quality, dpi]);
 
   return (
@@ -204,7 +204,7 @@ export default function PdfToImagePage() {
       }}
       summaryItems={[
         { label: "Páginas", value: `${selectedPages.length} de ${pages.length}` },
-        { label: "Formato", value: format.toUpperCase() },
+        { label: "Tamaño estimado", value: estimatedSize },
         { label: "Descarga", value: selectedPages.length > 1 ? "ZIP" : "Imagen" }
       ]}
       downloadButtonText={selectedPages.length > 1 ? "Descargar ZIP" : "Descargar Imagen"}
@@ -216,7 +216,7 @@ export default function PdfToImagePage() {
           {/* Formato de salida */}
           <div className="space-y-2">
             <Label className="text-sm font-medium mb-2 block">Formato de salida</Label>
-            <div className="flex flex-col gap-1.5">
+            <div className="grid grid-cols-3 lg:grid-cols-2 gap-1.5">
               {FORMATS.map((fmt) => {
                 const info = getFormatInfo(fmt.id);
                 return (
@@ -224,38 +224,26 @@ export default function PdfToImagePage() {
                     key={fmt.id}
                     onClick={() => setFormat(fmt.id)}
                     className={cn(
-                      "relative px-3 py-2 rounded-lg border transition-all text-left group hover:shadow-sm",
+                      "relative px-2 lg:px-3 py-2 rounded-lg border transition-all text-left group hover:shadow-sm",
                       format === fmt.id
                         ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/20"
                         : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900"
                     )}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 lg:gap-2">
                       <div className={cn(
                         "p-1 rounded-md transition-colors",
                         format === fmt.id
                           ? "bg-primary/10 text-primary"
                           : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300"
                       )}>
-                        <fmt.icon className="w-4 h-4" />
+                        <fmt.icon className="w-3 h-3 lg:w-4 lg:h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">{fmt.label}</span>
-                          {fmt.badge && (
-                            <Badge
-                              className={cn(
-                                "text-[9px] px-1.5 h-4 font-normal border-0",
-                                fmt.badgeColor === "green"
-                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                  : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                              )}
-                            >
-                              {fmt.badge}
-                            </Badge>
-                          )}
                         </div>
-                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                        <p className="hidden lg:block text-[10px] text-zinc-500 dark:text-zinc-400">
                           {info.description}
                         </p>
                       </div>
@@ -354,16 +342,6 @@ export default function PdfToImagePage() {
               </p>
             )}
           </div>
-
-          {/* Tamaño estimado */}
-          {estimatedSize && selectedPages.length > 0 && (
-            <div className="px-3 py-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-zinc-500">Tamaño estimado:</span>
-                <span className="font-medium">{estimatedSize}</span>
-              </div>
-            </div>
-          )}
 
           {/* Modal de progreso */}
           {isProcessing && progress.total > 0 && (

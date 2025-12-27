@@ -173,7 +173,7 @@ export function GlobalToolbar({
               <span className="text-sm font-normal ml-1">Invertir selección de documentos</span>
             </Button>
 
-            <Separator className="my-2" />
+            <Separator className="my-1 lg:my-2" />
           </div>
         </div>
       )}

@@ -187,7 +187,7 @@ export function PdfToolLayout({
                     )}
 
                     <Card className={cn(isMobile && "border-0 shadow-none p-0")}>
-                      <CardContent className={cn("space-y-4 py-4", isMobile && "p-0")}>
+                      <CardContent className={cn("space-y-3 lg:space-y-4 py-4", isMobile && "p-0")}>
                         {isMobile && features && (
                           <GlobalToolbar
                             features={features}

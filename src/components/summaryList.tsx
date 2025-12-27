@@ -26,7 +26,7 @@ export const SummaryList: React.FC<SummaryListProps> = ({
         <h3 className="text-md font-bold">{title}:</h3>
       </div>
 
-      <ul className="block px-3 py-2 divide-y divide-gray-200/50 border-zinc-200 dark:border-zinc-600 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-lg text-sm lg:text-xs">
+      <ul className="block px-3 lg:py-2 divide-y divide-gray-200/50 border-zinc-200 dark:border-zinc-600 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-lg text-sm lg:text-xs">
         {items.map((item, index) => (
           <li
             key={index}
