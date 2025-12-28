@@ -13,6 +13,7 @@ interface TooltipButtonProps {
   side?: "top" | "right" | "bottom" | "left";
   onClick?: () => void;
   disabled?: boolean;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
 }
 
 export function TooltipButton({
@@ -21,6 +22,7 @@ export function TooltipButton({
   iconSize = 16,
   side = "left",
   disabled = false,
+  variant = "ghost",
   onClick,
 }: TooltipButtonProps) {
   return (
@@ -28,12 +30,12 @@ export function TooltipButton({
       <TooltipTrigger asChild>
         <Button
           size="icon"
-          variant="ghost"
+          variant={variant}
           className={`shadow-none disabled:opacity-15 disabled:bg-zinc-100 ${disabled ? "hidden" : ""}`}
           disabled={disabled}
           onClick={onClick}
         >
-          <BootstrapIcon name={icon} size={iconSize} />
+          <BootstrapIcon name={icon} size={iconSize} color={variant === "destructive" ? "white" : "black"} />
         </Button>
       </TooltipTrigger>
       <TooltipContent side={side}>

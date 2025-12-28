@@ -142,6 +142,7 @@ export function GlobalToolbar({
 
           <TooltipButton
             icon="x-lg"
+            variant="destructive"
             tooltip="Eliminar archivos seleccionados"
             disabled={!actions.onDeleteSelected || !state.hasSelection}
             onClick={actions.onDeleteSelected}

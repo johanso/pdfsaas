@@ -35,6 +35,7 @@ export interface PdfCardData {
   size?: number;
   pageCount?: number;
   isBlank?: boolean;
+  previewUrl?: string; // URL de la imagen para vista previa directa (evita usar PdfThumbnail)
 }
 
 export interface PdfCardConfig {
@@ -152,6 +153,19 @@ export const PDF_CARD_PRESETS = {
     selectedColorName: "green",
     iconSelectedName: "check",
   } as PdfCardConfig,
+
+  imageToPdf: {
+    draggable: true,
+    selectable: true,
+    rotatable: false,
+    removable: false,
+    showFileName: true,
+    showPageNumber: false,
+    showRotationBadge: false,
+    selectedColorName: "green",
+    iconSelectedName: "check",
+  } as PdfCardConfig,
+
 };
 
 // ============================================
@@ -247,7 +261,7 @@ export function PdfCard({
       <Card
         className={cn(
           "w-full overflow-hidden transition-all duration-200 relative border",
-          aspectRatio === "3/4" && "aspect-[3/4]",
+          aspectRatio === "3/4" && "aspect-3/4",
           aspectRatio === "square" && "aspect-square",
           aspectRatio === "16/9" && "aspect-video",
           isDragging && "shadow-xl ring-2 ring-primary/20 opacity-50",
@@ -295,7 +309,7 @@ export function PdfCard({
                   checked={isSelected}
                   onCheckedChange={onToggle}
                   className={cn(
-                    "w-5 h-5 border border-zinc-300 cursor-pointer bg-white shadow-none rounded-full",
+                    "w-4 h-4 border border-zinc-300 cursor-pointer bg-white shadow-none rounded-full",
                     selectedColorName === "green" && "data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700",
                     selectedColorName === "red" && "data-[state=checked]:border-red-600 data-[state=checked]:bg-red-600 data-[state=checked]:text-white dark:data-[state=checked]:border-red-700 dark:data-[state=checked]:bg-red-700",
                     !selectedColorName && 'data-[state=checked]:border-zinc-400 data-[state=checked]:bg-zinc-100 data-[state=checked]:text-white dark:data-[state=checked]:border-zinc-700 dark:data-[state=checked]:bg-zinc-700'
@@ -328,6 +342,13 @@ export function PdfCard({
                 <OfficeThumbnail
                   file={data.file}
                   className="w-full h-full rounded"
+                />
+              ) : data.previewUrl ? (
+                <img
+                  src={data.previewUrl}
+                  alt={data.name || "Preview"}
+                  className="w-full h-full object-contain pointer-events-none rounded select-none"
+                  draggable={false}
                 />
               ) : (
                 <PdfThumbnail

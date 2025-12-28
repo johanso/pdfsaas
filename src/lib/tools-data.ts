@@ -158,8 +158,8 @@ export const TOOLS: Record<string, Tool> = {
     path: '/imagen-a-pdf',
     icon: 'Images',
     category: 'convert-to-pdf',
-    isAvailable: false,
-    comingSoon: true
+    isAvailable: true,
+    comingSoon: false
   },
   'word-to-pdf': {
     id: 'word-to-pdf',

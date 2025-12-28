@@ -22,7 +22,6 @@ import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Separator } from "@/components/ui/separator";
@@ -32,6 +31,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 // Hooks
 import { usePageSelection } from "@/hooks/usePageSelection";
@@ -141,6 +147,23 @@ export default function PdfToImagePage() {
     setIsSuccessDialogOpen(false);
   };
 
+  const handleDeleteSelected = () => {
+    if (selectedPages.length === 0) return;
+
+    // Obtener los IDs de las páginas seleccionadas
+    const idsToRemove = pages
+      .filter(p => selectedPages.includes(p.originalIndex))
+      .map(p => p.id);
+
+    // Eliminar las páginas
+    const newPages = pages.filter(p => !idsToRemove.includes(p.id));
+    reorderPages(newPages);
+
+    // Limpiar selección
+    deselectAll();
+    toast.success(`${idsToRemove.length} páginas eliminadas de la selección`);
+  };
+
   const handlePreSubmit = () => {
     if (!file) return;
     if (selectedPages.length === 0) {
@@ -196,16 +219,23 @@ export default function PdfToImagePage() {
       hasFiles={!!file}
       onFilesSelected={handleFilesSelected}
       onReset={handleReset}
-      features={{ selection: true }}
+      features={{
+        selection: true,
+        bulkActions: true,
+      }}
       actions={{
         onSelectAll: selectAll,
         onDeselectAll: deselectAll,
         onInvertSelection: invertSelection,
+        onDeleteSelected: handleDeleteSelected,
+      }}
+      state={{
+        hasSelection: selectedPages.length > 0,
+        isAllSelected: selectedPages.length === pages.length && pages.length > 0,
       }}
       summaryItems={[
         { label: "Páginas", value: `${selectedPages.length} de ${pages.length}` },
-        { label: "Tamaño estimado", value: estimatedSize },
-        { label: "Descarga", value: selectedPages.length > 1 ? "ZIP" : "Imagen" }
+        { label: "Descarga", value: selectedPages.length > 1 ? "Archivo ZIP" : `Imagen .${format}` }
       ]}
       downloadButtonText={selectedPages.length > 1 ? "Descargar ZIP" : "Descargar Imagen"}
       isDownloadDisabled={isProcessing || selectedPages.length === 0}
@@ -216,49 +246,42 @@ export default function PdfToImagePage() {
           {/* Formato de salida */}
           <div className="space-y-2">
             <Label className="text-sm font-medium mb-2 block">Formato de salida</Label>
-            <div className="grid grid-cols-3 lg:grid-cols-2 xl:grid-cols-1 gap-1.5">
-              {FORMATS.map((fmt) => {
-                const info = getFormatInfo(fmt.id);
-                return (
-                  <button
-                    key={fmt.id}
-                    onClick={() => setFormat(fmt.id)}
-                    className={cn(
-                      "relative px-2 xl:px-3 py-2 rounded-lg border transition-all text-left group hover:shadow-sm",
-                      format === fmt.id
-                        ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/20"
-                        : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900"
-                    )}
-                  >
-                    <div className="flex items-center gap-1 xl:gap-2">
-                      <div className={cn(
-                        "p-1 rounded-md transition-colors",
-                        format === fmt.id
-                          ? "bg-primary/10 text-primary"
-                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300"
-                      )}>
-                        <fmt.icon className="w-3 h-3 xl:w-4 lg:h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{fmt.label}</span>
+            <div className="grid gap-1.5">
+              <Select value={format} onValueChange={(v) => setFormat(v as ImageFormat)}>
+                <SelectTrigger className="w-full shadow-none">
+                  <SelectValue placeholder="Selecciona un formato" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FORMATS.map((fmt) => (
+                    <SelectItem key={fmt.id} value={fmt.id}>
+                      {fmt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {
+                FORMATS.map((fmt) => {
+                  const info = getFormatInfo(fmt.id);
+                  return fmt.id === format && (
+                    <div key={fmt.id} className="relative py-1 rounded-lg text-left">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded-md transition-colors bg-primary/10 text-primary">
+                          <fmt.icon className="w-3 h-3 xl:w-4 lg:h-4" />
                         </div>
-                        <p className="hidden xl:block text-[10px] text-zinc-500 dark:text-zinc-400">
-                          {info.description}
-                        </p>
+                        <div className="flex-1 min-w-0">
+                          <p className="xl:block text-xs text-zinc-500 dark:text-zinc-400">
+                            {info.description}
+                          </p>
+                        </div>
                       </div>
-                      {format === fmt.id
-                        ? <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                        : <Circle className="w-4 h-4 text-zinc-300 dark:text-zinc-700 shrink-0" />
-                      }
                     </div>
-                  </button>
-                );
-              })}
+                  )
+                })
+              }
             </div>
           </div>
 
-          <Separator />
 
           {/* Control de calidad */}
           {showQualityControl && (
@@ -294,28 +317,24 @@ export default function PdfToImagePage() {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-
-              <p className="text-[10px] text-zinc-500 text-center">
+              <p className="text-xs text-zinc-500 text-left">
                 {DPI_OPTIONS.find(o => o.value === dpi)?.description}
               </p>
             </div>
-            <ButtonGroup className="w-full">
-              {DPI_OPTIONS.map((option) => (
-                <Button
-                  key={option.value}
-                  variant={dpi === option.value ? "default" : "outline"}
-                  size="sm"
-                  className="flex-1 h-8 text-xs font-medium px-0"
-                  onClick={() => setDpi(option.value)}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </ButtonGroup>
 
+            <Select value={dpi.toString()} onValueChange={(v) => setDpi(Number(v) as DpiOption)}>
+              <SelectTrigger className="w-full shadow-none">
+                <SelectValue placeholder="Selecciona un DPI" />
+              </SelectTrigger>
+              <SelectContent>
+                {DPI_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value.toString()}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-
-          <Separator />
 
           {/* Indicador de procesamiento */}
           {serverInfo.useServer && serverInfo.reason && (
@@ -331,6 +350,8 @@ export default function PdfToImagePage() {
               </div>
             </div>
           )}
+
+          <Separator />
 
           {/* Modal de progreso */}
           {isProcessing && progress.total > 0 && (
