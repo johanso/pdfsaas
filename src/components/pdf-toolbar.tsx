@@ -17,6 +17,7 @@ import { PdfToolbarProps } from "@/types";
 
 export function PdfToolbar({
   onAdd,
+  textAdd,
   onReset,
   className,
 }: PdfToolbarProps) {
@@ -26,7 +27,7 @@ export function PdfToolbar({
       <div className="flex lg:flex-col items-center justify-end gap-2 lg:w-full">
         {onAdd && (
           <Button variant="black" onClick={onAdd} size="lg" className="cursor-pointer w-auto lg:w-full flex-1 lg:flex-none">
-            <span className="font-medium">Añadir PDF</span>
+            <span className="font-medium">{textAdd}</span>
             <Plus className="h-4 w-4" />
           </Button>
         )}

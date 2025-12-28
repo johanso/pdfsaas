@@ -82,6 +82,7 @@ export default function UnirPdfPage() {
         dropzoneMultiple={true}
         onReset={reset}
         onAdd={() => fileInputRef.current?.click()}
+        textAdd="Añadir PDF"
         features={{ sorting: true }}
         actions={{
           onSortAZ: sortAZ,

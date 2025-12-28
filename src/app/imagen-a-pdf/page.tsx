@@ -226,6 +226,7 @@ export default function ImageToPdfPage() {
       onFilesSelected={handleFilesSelected}
       onReset={handleReset}
       onAdd={() => fileInputRef.current?.click()}
+      textAdd="Añadir Imagen"
       acceptedFileTypes=".jpg,.jpeg,.png,.webp,.gif,.bmp"
       dropzoneMultiple={true}
       features={{

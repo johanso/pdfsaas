@@ -36,6 +36,7 @@ interface PdfToolLayoutProps {
   dropzoneMultiple?: boolean;
   acceptedFileTypes?: string;
   onReset: () => void;
+  textAdd?: string;
   onAdd?: () => void;
 
   // Global Toolbar
@@ -83,6 +84,7 @@ export function PdfToolLayout({
   dropzoneMultiple = false,
   acceptedFileTypes = "application/pdf",
   onReset,
+  textAdd = "Añadir PDF",
   onAdd,
   features,
   actions,
@@ -131,7 +133,7 @@ export function PdfToolLayout({
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                 <div className="lg:col-span-3 space-y-2 relative">
                   {isMobile && (
-                    <PdfToolbar onReset={onReset} onAdd={onAdd} />
+                    <PdfToolbar onReset={onReset} onAdd={onAdd} textAdd={textAdd} />
                   )}
 
                   {!isMobile && hasFeatures && (
@@ -170,7 +172,7 @@ export function PdfToolLayout({
                     )}
                   >
                     {!isMobile && (
-                      <PdfToolbar onReset={onReset} onAdd={onAdd} />
+                      <PdfToolbar onReset={onReset} onAdd={onAdd} textAdd={textAdd} />
                     )}
 
                     {isMobile && (
