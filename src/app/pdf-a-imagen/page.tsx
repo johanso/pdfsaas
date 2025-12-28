@@ -192,7 +192,7 @@ export default function PdfToImagePage() {
     <PdfToolLayout
       toolId="pdf-to-image"
       title="Convertir PDF a Imagen"
-      description="Convierte páginas de tu PDF a imágenes de alta calidad."
+      description="Convierte páginas de tu PDF a imágenes de alta calidad (JPG, PNG, WebP, TIFF, BMP)."
       hasFiles={!!file}
       onFilesSelected={handleFilesSelected}
       onReset={handleReset}
@@ -216,7 +216,7 @@ export default function PdfToImagePage() {
           {/* Formato de salida */}
           <div className="space-y-2">
             <Label className="text-sm font-medium mb-2 block">Formato de salida</Label>
-            <div className="grid grid-cols-3 lg:grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-3 lg:grid-cols-2 xl:grid-cols-1 gap-1.5">
               {FORMATS.map((fmt) => {
                 const info = getFormatInfo(fmt.id);
                 return (
@@ -224,26 +224,26 @@ export default function PdfToImagePage() {
                     key={fmt.id}
                     onClick={() => setFormat(fmt.id)}
                     className={cn(
-                      "relative px-2 lg:px-3 py-2 rounded-lg border transition-all text-left group hover:shadow-sm",
+                      "relative px-2 xl:px-3 py-2 rounded-lg border transition-all text-left group hover:shadow-sm",
                       format === fmt.id
                         ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/20"
                         : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900"
                     )}
                   >
-                    <div className="flex items-center gap-1 lg:gap-2">
+                    <div className="flex items-center gap-1 xl:gap-2">
                       <div className={cn(
                         "p-1 rounded-md transition-colors",
                         format === fmt.id
                           ? "bg-primary/10 text-primary"
                           : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300"
                       )}>
-                        <fmt.icon className="w-3 h-3 lg:w-4 lg:h-4" />
+                        <fmt.icon className="w-3 h-3 xl:w-4 lg:h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">{fmt.label}</span>
                         </div>
-                        <p className="hidden lg:block text-[10px] text-zinc-500 dark:text-zinc-400">
+                        <p className="hidden xl:block text-[10px] text-zinc-500 dark:text-zinc-400">
                           {info.description}
                         </p>
                       </div>
@@ -318,30 +318,19 @@ export default function PdfToImagePage() {
           <Separator />
 
           {/* Indicador de procesamiento */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs">
-              {serverInfo.useServer ? (
-                <>
-                  <Server className="w-3.5 h-3.5 text-blue-500" />
-                  <span className="text-zinc-600 dark:text-zinc-400">
-                    Procesamiento en servidor
+          {serverInfo.useServer && serverInfo.reason && (
+            <div className="hidden lg:block">
+              <div className="flex items-center gap-2 text-xs">
+                <Server className="w-3.5 h-3.5 text-blue-500" />
+                <p className="text-zinc-600 dark:text-zinc-400">
+                  Procesamiento en servidor
+                  <span className="text-[10px] block text-zinc-400">
+                    {serverInfo.reason}
                   </span>
-                </>
-              ) : (
-                <>
-                  <Monitor className="w-3.5 h-3.5 text-green-500" />
-                  <span className="text-zinc-600 dark:text-zinc-400">
-                    Procesamiento local
-                  </span>
-                </>
-              )}
+                </p>
+              </div>
             </div>
-            {serverInfo.reason && (
-              <p className="text-[10px] text-zinc-400 pl-5">
-                {serverInfo.reason}
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Modal de progreso */}
           {isProcessing && progress.total > 0 && (

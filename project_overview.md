@@ -32,6 +32,7 @@ El proyecto utiliza un modelo de procesamiento híbrido distribuido en tres capa
     *   Conversiones de Office a PDF (Word, Excel, PPT).
     *   Conversiones de PDF a formatos editables.
     *   Compresión avanzada de PDF.
+    *   Conversión de PDF a imagen con formatos avanzados (TIFF, BMP) o alta densidad (DPI > 300).
     *   Conversión masiva de PDF a imagen con alta densidad (DPI).
 
 ---
@@ -53,7 +54,13 @@ El proyecto utiliza un modelo de procesamiento híbrido distribuido en tres capa
 *   **`PdfThumbnail`**: Renderizador optimizado que usa canvas para mostrar páginas de PDF sin procesar todo el archivo.
 *   **`OfficeThumbnail`**: Iconografía SVG temática para archivos DOCX, XLSX y PPTX.
 *   **`BootstrapIcon`**: Wrapper con soporte para animaciones (spin, pulse) y personalización de colores.
-*   **`SummaryList`**: Lista detallada de los archivos y cambios que se aplicarán antes de procesar.
+*   **`SummaryList`**: Lista detallada de los archivos y cambios, optimizada con diseño responsivo (Grid adaptatible).
+*   **`ButtonGroup`**: Componente de selección mutualmente excluyente (usado en selector de DPI).
+
+### 📱 Adaptabilidad Móvil (Responsive)
+*   **`GlobalToolbar`**: Ajuste automático de espaciado y separadores en vistas móviles.
+*   **`PdfToolLayout`**: Cards con padding condicional para maximizar el espacio en pantallas pequeñas.
+
 
 ---
 
@@ -114,4 +121,4 @@ src/
 5.  **Finalización:** Descarga automática y transición a opciones de éxito en el mismo componente de procesamiento.
 
 ---
-*Última actualización: 25 de diciembre de 2025.*
+*Última actualización: 26 de diciembre de 2025.*
