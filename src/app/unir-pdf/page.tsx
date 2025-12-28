@@ -12,6 +12,7 @@ import ProcessingScreen from "@/components/processing-screen";
 // Hooks
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
 import { usePdfFiles } from "@/hooks/usePdfFiles";
+import { Separator } from "@/components/ui/separator";
 
 export default function UnirPdfPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);

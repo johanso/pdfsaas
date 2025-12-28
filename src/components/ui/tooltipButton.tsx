@@ -19,7 +19,7 @@ interface TooltipButtonProps {
 export function TooltipButton({
   icon,
   tooltip,
-  iconSize = 16,
+  iconSize = 18,
   side = "left",
   disabled = false,
   variant = "ghost",
@@ -35,7 +35,7 @@ export function TooltipButton({
           disabled={disabled}
           onClick={onClick}
         >
-          <BootstrapIcon name={icon} size={iconSize} color={variant === "destructive" ? "white" : "black"} />
+          <BootstrapIcon name={icon} size={iconSize} color={variant === "destructive" ? "#fff" : "var(--accent-foreground)"} />
         </Button>
       </TooltipTrigger>
       <TooltipContent side={side}>

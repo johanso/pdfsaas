@@ -49,6 +49,7 @@ import {
 } from "@/hooks/useImageToPdf";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
+import { Separator } from "@/components/ui/separator";
 
 // Tipos
 interface ImageItem {
@@ -164,15 +165,6 @@ export default function ImageToPdfPage() {
     toast.success(`${selectedIds.length} imágenes eliminadas`);
   }, [selectedIds, deselectAll]);
 
-  // Ordenar por nombre
-  const handleSortByName = useCallback(() => {
-    setImages(prev => {
-      const sorted = [...prev].sort((a, b) => a.file.name.localeCompare(b.file.name));
-      return sorted;
-    });
-    toast.success("Imágenes ordenadas por nombre");
-  }, []);
-
   // Reordenar (DnD)
   const handleReorder = useCallback((newItems: any[]) => {
     // Reconstruimos el array basado en los IDs devueltos por PdfGrid
@@ -237,12 +229,10 @@ export default function ImageToPdfPage() {
       acceptedFileTypes=".jpg,.jpeg,.png,.webp,.gif,.bmp"
       dropzoneMultiple={true}
       features={{
-        sorting: true,
         selection: true,
         bulkActions: true,
       }}
       actions={{
-        onSortAZ: handleSortByName,
         onSelectAll: selectAll,
         onDeselectAll: deselectAll,
         onInvertSelection: invertSelection,
@@ -260,160 +250,162 @@ export default function ImageToPdfPage() {
       isDownloadDisabled={isProcessing || images.length === 0}
       onDownload={handlePreSubmit}
       sidebarCustomControls={
-        <div className="space-y-4">
-          {/* Tamaño de página */}
-          <div className="space-y-2">
-            <Label className="block text-sm font-medium">Tamaño de página</Label>
-            <div className="grid gap-1.5">
-              <Select value={pageSize}>
-                <SelectTrigger className="w-full shadow-none">
-                  <SelectValue placeholder="Selecciona un tamaño" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAGE_SIZES.map((size) => (
-                    <SelectItem key={size.id} value={size.id}>
-                      {size.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Orientación */}
-          {pageSize !== "fit" && (
+        <>
+          <div className="space-y-4">
+            {/* Tamaño de página */}
             <div className="space-y-2">
-              <Label className="block text-sm font-medium">Orientación</Label>
+              <Label className="block text-sm font-medium">Tamaño de página</Label>
               <div className="grid gap-1.5">
-
-                <Select value={orientation}>
+                <Select value={pageSize}>
                   <SelectTrigger className="w-full shadow-none">
-                    <SelectValue placeholder="Selecciona una orientación" />
+                    <SelectValue placeholder="Selecciona un tamaño" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ORIENTATIONS.map((ori) => (
-                      <SelectItem key={ori.id} value={ori.id}>
-                        {ori.label}
+                    {PAGE_SIZES.map((size) => (
+                      <SelectItem key={size.id} value={size.id}>
+                        {size.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-
               </div>
             </div>
-          )}
 
-          {/* Márgenes */}
-          <div className="space-y-2">
-            <Label className="block text-sm font-medium">Márgenes</Label>
-            <div className="grid gap-1.5">
-              <Select value={margin}>
-                <SelectTrigger className="w-full shadow-none">
-                  <SelectValue placeholder="Selecciona un margen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MARGINS.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+            {/* Orientación */}
+            {pageSize !== "fit" && (
+              <div className="space-y-2">
+                <Label className="block text-sm font-medium">Orientación</Label>
+                <div className="grid gap-1.5">
 
-          {/* Calidad */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm font-medium">Calidad</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="w-3.5 h-3.5 text-zinc-400" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[200px]">
-                    <p className="text-xs">
-                      Original mantiene la calidad. Comprimida reduce el tamaño del PDF.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {QUALITIES.map((q) => (
-                <button
-                  key={q.id}
-                  onClick={() => setQuality(q.id)}
-                  className={cn(
-                    "flex flex-col justify-between p-2 rounded-lg border text-sm transition-all",
-                    quality === q.id
-                      ? "border-primary bg-primary/5"
-                      : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300"
-                  )}
-                >
-                  <div className="flex gap-2">
-                    {quality === q.id ? (
-                      <CheckCircle2 className="w-4 h-4 text-primary" />
-                    ) : (
-                      <Circle className="w-4 h-4 text-zinc-300" />
-                    )}
-                    <span className={`text-xs ${quality === q.id ? "font-medium text-primary" : ""}`}>
-                      {q.label}
-                    </span>
-                  </div>
-                  <span className="block pl-1 text-[10px] text-zinc-500">{q.description}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+                  <Select value={orientation}>
+                    <SelectTrigger className="w-full shadow-none">
+                      <SelectValue placeholder="Selecciona una orientación" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ORIENTATIONS.map((ori) => (
+                        <SelectItem key={ori.id} value={ori.id}>
+                          {ori.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-          {/* Indicador de procesamiento */}
-
-          {serverInfo.useServer && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs">
-                <Server className="w-3.5 h-3.5 text-blue-500" />
-                <span className="text-zinc-600 dark:text-zinc-400">
-                  Procesamiento en servidor
-                </span>
-              </div>
-            </div>
-          )}
-
-
-          {/* Advertencia si cerca del límite */}
-          {images.length >= CLIENT_LIMIT * 0.8 && images.length < CLIENT_LIMIT && (
-            <div className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-[10px] text-amber-700 dark:text-amber-400">
-                Con {CLIENT_LIMIT}+ imágenes se procesará en servidor
-              </p>
-            </div>
-          )}
-
-          {/* Modal de progreso */}
-          {isProcessing && progress.total > 0 && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <Card className="p-6 space-y-4 w-80 mx-4">
-                <div className="flex items-center justify-center gap-2">
-                  {processingMode === "server" ? (
-                    <Server className="w-5 h-5 text-blue-500 animate-pulse" />
-                  ) : (
-                    <Monitor className="w-5 h-5 text-green-500 animate-pulse" />
-                  )}
-                  <p className="text-sm font-medium">Creando PDF...</p>
                 </div>
-                <Progress
-                  value={(progress.current / progress.total) * 100}
-                  className="h-2"
-                />
-                <p className="text-xs text-zinc-500 text-center font-mono">
-                  {progress.current} de {progress.total} imágenes
-                </p>
-              </Card>
+              </div>
+            )}
+
+            {/* Márgenes */}
+            <div className="space-y-2">
+              <Label className="block text-sm font-medium">Márgenes</Label>
+              <div className="grid gap-1.5">
+                <Select value={margin}>
+                  <SelectTrigger className="w-full shadow-none">
+                    <SelectValue placeholder="Selecciona un margen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MARGINS.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Calidad */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium">Calidad</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="w-3.5 h-3.5 text-zinc-400" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px]">
+                      <p className="text-xs">
+                        Original mantiene la calidad. Comprimida reduce el tamaño del PDF.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {QUALITIES.map((q) => (
+                  <button
+                    key={q.id}
+                    onClick={() => setQuality(q.id)}
+                    className={cn(
+                      "flex flex-col justify-between p-2 rounded-lg border text-sm transition-all",
+                      quality === q.id
+                        ? "border-primary bg-primary/5"
+                        : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300"
+                    )}
+                  >
+                    <div className="flex gap-2">
+                      {quality === q.id ? (
+                        <CheckCircle2 className="w-4 h-4 text-primary" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-zinc-300" />
+                      )}
+                      <span className={`text-xs ${quality === q.id ? "font-medium text-primary" : ""}`}>
+                        {q.label}
+                      </span>
+                    </div>
+                    <span className="block pl-1 text-[10px] text-zinc-500">{q.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Indicador de procesamiento */}
+
+            {serverInfo.useServer && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs">
+                  <Server className="w-3.5 h-3.5 text-blue-500" />
+                  <span className="text-zinc-600 dark:text-zinc-400">
+                    Procesamiento en servidor
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Advertencia si cerca del límite */}
+            {images.length >= CLIENT_LIMIT * 0.8 && images.length < CLIENT_LIMIT && (
+              <div className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                  Con {CLIENT_LIMIT}+ imágenes se procesará en servidor
+                </p>
+              </div>
+            )}
+
+            {/* Modal de progreso */}
+            {isProcessing && progress.total > 0 && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <Card className="p-6 space-y-4 w-80 mx-4">
+                  <div className="flex items-center justify-center gap-2">
+                    {processingMode === "server" ? (
+                      <Server className="w-5 h-5 text-blue-500 animate-pulse" />
+                    ) : (
+                      <Monitor className="w-5 h-5 text-green-500 animate-pulse" />
+                    )}
+                    <p className="text-sm font-medium">Creando PDF...</p>
+                  </div>
+                  <Progress
+                    value={(progress.current / progress.total) * 100}
+                    className="h-2"
+                  />
+                  <p className="text-xs text-zinc-500 text-center font-mono">
+                    {progress.current} de {progress.total} imágenes
+                  </p>
+                </Card>
+              </div>
+            )}
+          </div>
+          <Separator className="my-4" />
+        </>
       }
       saveDialogProps={{
         isOpen: isDialogOpen,

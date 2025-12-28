@@ -41,7 +41,7 @@ export default function OrganizePdfPage() {
   const handleAddFiles = async (files: File[]) => {
     const newPages = await loadPdfPages(files);
     if (newPages.length > 0) {
-      setPages(prev => [...prev, ...newPages]);
+      setPages(prev => [...newPages, ...prev]);
       toast.success(`${newPages.length} página(s) añadida(s)`);
     } else if (files.length > 0) {
       toast.error("No se pudieron cargar archivos PDF");

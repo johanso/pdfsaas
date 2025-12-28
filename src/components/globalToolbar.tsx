@@ -2,17 +2,7 @@
 
 import { Separator } from "./ui/separator";
 import { TooltipButton } from "./ui/tooltipButton";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetClose,
-} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Settings2 } from "lucide-react";
 import BootstrapIcon from "@/components/bootstrapIcon";
 
 export interface GlobalToolbarProps {
@@ -57,13 +47,15 @@ export function GlobalToolbar({
 
   // Desktop implementation
   const DesktopToolbar = () => (
-    <div className="hidden lg:absolute top-0 left-0 lg:flex lg:flex-col lg:pb-1 justify-end items-center gap-2 overflow-x-auto">
+    <div className="hidden lg:flex justify-end items-center gap-2 overflow-x-auto">
 
       {/* Grupo Selección */}
       {features.selection && (
         <>
           <TooltipButton
             icon="check-square"
+            variant="secondary"
+            side="top"
             disabled={!actions.onSelectAll}
             tooltip="Seleccionar todos"
             onClick={actions.onSelectAll}
@@ -71,6 +63,8 @@ export function GlobalToolbar({
 
           <TooltipButton
             icon="square"
+            variant="secondary"
+            side="top"
             disabled={!actions.onDeselectAll}
             tooltip="Deseleccionar todos"
             onClick={actions.onDeselectAll}
@@ -78,6 +72,8 @@ export function GlobalToolbar({
 
           <TooltipButton
             icon="arrow-left-right"
+            variant="secondary"
+            side="top"
             disabled={!actions.onInvertSelection}
             tooltip="Invertir selección"
             onClick={actions.onInvertSelection}
@@ -90,6 +86,8 @@ export function GlobalToolbar({
         <>
           <TooltipButton
             icon="sort-alpha-down"
+            variant="secondary"
+            side="top"
             disabled={!actions.onSortAZ}
             tooltip="Ordenar alfabéticamente (A-Z)"
             onClick={actions.onSortAZ}
@@ -97,6 +95,8 @@ export function GlobalToolbar({
 
           <TooltipButton
             icon="sort-alpha-down-alt"
+            variant="secondary"
+            side="top"
             disabled={!actions.onSortZA}
             tooltip="Ordenar alfabéticamente (Z-A)"
             onClick={actions.onSortZA}
@@ -109,6 +109,8 @@ export function GlobalToolbar({
         <>
           <TooltipButton
             icon="arrow-clockwise"
+            variant="secondary"
+            side="top"
             tooltip="Girar documentos 90° a la derecha"
             disabled={!actions.onRotateRights}
             onClick={actions.onRotateRights}
@@ -116,6 +118,8 @@ export function GlobalToolbar({
 
           <TooltipButton
             icon="arrow-counterclockwise"
+            variant="secondary"
+            side="top"
             tooltip="Girar documentos 90° a la izquierda"
             disabled={!actions.onRotateLefts}
             onClick={actions.onRotateLefts}
@@ -123,6 +127,8 @@ export function GlobalToolbar({
 
           <TooltipButton
             icon="arrow-repeat"
+            variant="secondary"
+            side="top"
             tooltip="Restablecer orientación"
             disabled={!actions.onResetOrientation}
             onClick={actions.onResetOrientation}
@@ -135,6 +141,8 @@ export function GlobalToolbar({
         <>
           <TooltipButton
             icon="copy"
+            variant="secondary"
+            side="top"
             tooltip="Duplicar archivos seleccionados"
             disabled={!actions.onDuplicateSelected || !state.hasSelection}
             onClick={actions.onDuplicateSelected}
@@ -143,6 +151,7 @@ export function GlobalToolbar({
           <TooltipButton
             icon="x-lg"
             variant="destructive"
+            side="top"
             tooltip="Eliminar archivos seleccionados"
             disabled={!actions.onDeleteSelected || !state.hasSelection}
             onClick={actions.onDeleteSelected}
@@ -154,7 +163,7 @@ export function GlobalToolbar({
 
   // Mobile implementation (Sheet)
   const MobileToolbar = () => (
-    <div className="lg:hidden w-full">
+    <div className="lg:hidden w-full space-y-2">
       {/* Grupo Selección */}
       {features.selection && (
         <div className="space-y-2">
@@ -173,8 +182,6 @@ export function GlobalToolbar({
               <BootstrapIcon name="arrow-left-right" size={22} />
               <span className="text-sm font-normal ml-1">Invertir selección de documentos</span>
             </Button>
-
-            <Separator className="my-1 lg:my-2" />
           </div>
         </div>
       )}
@@ -183,15 +190,23 @@ export function GlobalToolbar({
       {features.sorting && (
         <div className="space-y-2">
           <div className="grid grid-cols-1 gap-2">
-            <Button variant="ghost" className="h-8 p-0! justify-start" disabled={!actions.onSortAZ} onClick={actions.onSortAZ}>
-              <BootstrapIcon name="sort-alpha-down" size={22} />
-              <span className="text-sm font-normal ml-1">Ordenar alfabéticamente (A-Z)</span>
-            </Button>
+            {
+              actions.onSortAZ && (
+                <Button variant="ghost" className="h-8 p-0! justify-start" disabled={!actions.onSortAZ} onClick={actions.onSortAZ}>
+                  <BootstrapIcon name="sort-alpha-down" size={22} />
+                  <span className="text-sm font-normal ml-1">Ordenar alfabéticamente (A-Z)</span>
+                </Button>
+              )
+            }
 
-            <Button variant="ghost" className="h-8 p-0! justify-start" disabled={!actions.onSortZA} onClick={actions.onSortZA}>
-              <BootstrapIcon name="sort-alpha-down-alt" size={22} />
-              <span className="text-sm font-normal ml-1">Ordenar alfabéticamente (Z-A)</span>
-            </Button>
+            {
+              actions.onSortZA && (
+                <Button variant="ghost" className="h-8 p-0! justify-start" disabled={!actions.onSortZA} onClick={actions.onSortZA}>
+                  <BootstrapIcon name="sort-alpha-down-alt" size={22} />
+                  <span className="text-sm font-normal ml-1">Ordenar alfabéticamente (Z-A)</span>
+                </Button>
+              )
+            }
           </div>
         </div>
       )}
@@ -214,8 +229,6 @@ export function GlobalToolbar({
               <BootstrapIcon name="arrow-repeat" size={22} />
               <span className="text-sm font-normal ml-1">Restablecer Orientación</span>
             </Button>
-
-            <Separator className="my-2" />
           </div>
         </div>
       )}
@@ -224,19 +237,31 @@ export function GlobalToolbar({
       {features.bulkActions && (
         <div className="space-y-2">
           <div className="grid grid-cols-1 gap-2">
-            <Button variant="ghost" className="h-8 p-0! justify-start" disabled={!actions.onDuplicateSelected || !state.hasSelection} onClick={actions.onDuplicateSelected}>
-              <BootstrapIcon name="copy" size={22} />
-              <span className="text-sm font-normal ml-1">Duplicar archivos seleccionados</span>
-            </Button>
-            <Button variant="ghost" className="h-8 p-0! justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200 dark:border-red-900" disabled={!actions.onDeleteSelected || !state.hasSelection} onClick={actions.onDeleteSelected}>
-              <BootstrapIcon name="x-lg" color="red" size={22} />
-              <span className="text-sm font-normal ml-1">Eliminar archivos seleccionados</span>
-            </Button>
-
-            <Separator className="my-2" />
+            {
+              actions.onDuplicateSelected && (
+                <Button variant="ghost" className="h-8 p-0! justify-start" disabled={!actions.onDuplicateSelected || !state.hasSelection} onClick={actions.onDuplicateSelected}>
+                  <BootstrapIcon name="copy" size={22} />
+                  <span className="text-sm font-normal ml-1">Duplicar archivos seleccionados</span>
+                </Button>
+              )
+            }
+            {
+              actions.onDeleteSelected && (
+                <Button variant="ghost" className="h-8 p-0! justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200 dark:border-red-900" disabled={!actions.onDeleteSelected || !state.hasSelection} onClick={actions.onDeleteSelected}>
+                  <BootstrapIcon name="x-lg" color="red" size={22} />
+                  <span className="text-sm font-normal ml-1">Eliminar archivos seleccionados</span>
+                </Button>
+              )
+            }
           </div>
         </div>
       )}
+
+      {
+        (features.selection || features.sorting || features.rotation || features.bulkActions) && (
+          <Separator className="my-4" />
+        )
+      }
     </div>
   );
 

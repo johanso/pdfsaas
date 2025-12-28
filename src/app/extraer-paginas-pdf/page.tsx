@@ -15,6 +15,7 @@ import { usePageSelection } from "@/hooks/usePageSelection";
 import { usePdfPages } from "@/hooks/usePdfPages";
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 export default function ExtractPdfPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -122,50 +123,53 @@ export default function ExtractPdfPage() {
         onDownload={handlePreSubmit}
         isGridLoading={file !== null && pages.length === 0}
         sidebarCustomControls={
-          <div className="space-y-4 pt-2">
-            <p className="text-sm font-medium">¿Cómo quieres descargar?</p>
-            <div className="flex flex-col gap-3">
-              <button
-                className={cn(
-                  "relative flex items-start gap-3 px-3 py-3 rounded-lg border transition-all text-left",
-                  extractMode === "separate"
-                    ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/20"
-                    : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900"
-                )}
-                onClick={() => setExtractMode("separate")}
-              >
-                <div className="mt-0.5">
-                  {extractMode === "separate" ? <CheckCircle2 className="w-5 h-5 text-primary" /> : <Circle className="w-5 h-5 text-zinc-300 dark:text-zinc-700" />}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Páginas separadas</p>
-                  <p className="text-[11px] text-zinc-500 mt-0.5 leading-relaxed">
-                    Genera un archivo ZIP con {selectedPages.length} PDF{selectedPages.length !== 1 ? 's' : ''} individuales.
-                  </p>
-                </div>
-              </button>
+          <>
+            <div className="space-y-4 pt-2">
+              <p className="text-sm font-medium">¿Cómo quieres descargar?</p>
+              <div className="flex flex-col gap-3">
+                <button
+                  className={cn(
+                    "relative flex items-start gap-3 px-3 py-3 rounded-lg border transition-all text-left",
+                    extractMode === "separate"
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/20"
+                      : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900"
+                  )}
+                  onClick={() => setExtractMode("separate")}
+                >
+                  <div className="mt-0.5">
+                    {extractMode === "separate" ? <CheckCircle2 className="w-5 h-5 text-primary" /> : <Circle className="w-5 h-5 text-zinc-300 dark:text-zinc-700" />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Páginas separadas</p>
+                    <p className="text-[11px] text-zinc-500 mt-0.5 leading-relaxed">
+                      Genera un archivo ZIP con {selectedPages.length} PDF{selectedPages.length !== 1 ? 's' : ''} individuales.
+                    </p>
+                  </div>
+                </button>
 
-              <button
-                className={cn(
-                  "relative flex items-start gap-3 px-3 py-3 rounded-lg border transition-all text-left",
-                  extractMode === "merge"
-                    ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/20"
-                    : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900"
-                )}
-                onClick={() => setExtractMode("merge")}
-              >
-                <div className="mt-0.5">
-                  {extractMode === "merge" ? <CheckCircle2 className="w-5 h-5 text-primary" /> : <Circle className="w-5 h-5 text-zinc-300 dark:text-zinc-700" />}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Fusionar en un PDF</p>
-                  <p className="text-[11px] text-zinc-500 mt-0.5 leading-relaxed">
-                    Crea un único documento con las {selectedPages.length} página{selectedPages.length !== 1 ? 's' : ''} seleccionadas.
-                  </p>
-                </div>
-              </button>
+                <button
+                  className={cn(
+                    "relative flex items-start gap-3 px-3 py-3 rounded-lg border transition-all text-left",
+                    extractMode === "merge"
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/20"
+                      : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900"
+                  )}
+                  onClick={() => setExtractMode("merge")}
+                >
+                  <div className="mt-0.5">
+                    {extractMode === "merge" ? <CheckCircle2 className="w-5 h-5 text-primary" /> : <Circle className="w-5 h-5 text-zinc-300 dark:text-zinc-700" />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Fusionar en un PDF</p>
+                    <p className="text-[11px] text-zinc-500 mt-0.5 leading-relaxed">
+                      Crea un único documento con las {selectedPages.length} página{selectedPages.length !== 1 ? 's' : ''} seleccionadas.
+                    </p>
+                  </div>
+                </button>
+              </div>
             </div>
-          </div>
+            <Separator className="my-4" />
+          </>
         }
         saveDialogProps={{
           isOpen: showSaveDialog,

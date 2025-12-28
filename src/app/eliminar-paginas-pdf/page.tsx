@@ -15,6 +15,7 @@ import ProcessingScreen from "@/components/processing-screen";
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
 import { usePdfPages } from "@/hooks/usePdfPages";
 import { usePageSelection } from "@/hooks/usePageSelection";
+import { Separator } from "@/components/ui/separator";
 
 export default function DeletePagesPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -139,17 +140,20 @@ export default function DeletePagesPage() {
         onDownload={handleOpenSaveDialog}
         isGridLoading={file !== null && pages.length === 0}
         sidebarCustomControls={
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Selección por rango:</Label>
-            <Input
-              className="h-10 text-sm bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
-              placeholder="Ej: 1, 3-5, 8"
-              onChange={(e) => handleRangeChange(e.target.value)}
-            />
-            <p className="text-[11px] text-zinc-500">
-              Usa comas y guiones para especificar páginas
-            </p>
-          </div>
+          <>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Selección por rango:</Label>
+              <Input
+                className="h-10 text-sm bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                placeholder="Ej: 1, 3-5, 8"
+                onChange={(e) => handleRangeChange(e.target.value)}
+              />
+              <p className="text-[11px] text-zinc-500">
+                Usa comas y guiones para especificar páginas
+              </p>
+            </div>
+            <Separator className="my-4" />
+          </>
         }
         saveDialogProps={{
           isOpen: isDialogOpen,

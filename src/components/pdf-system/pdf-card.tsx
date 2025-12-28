@@ -293,7 +293,7 @@ export function PdfCard({
             >
               {draggable && <GripVertical className="w-4 h-4 shrink-0 text-zinc-400" />}
               <span className={cn(
-                "text-xs font-medium truncate select-none",
+                "text-xs font-medium truncate select-none pr-1",
                 isSelected && selectedColorName
                   ? `text-${selectedColorName}-600 dark:text-${selectedColorName}-400`
                   : "text-zinc-600 dark:text-zinc-400"

@@ -101,7 +101,6 @@ export function PdfToolLayout({
 }: PdfToolLayoutProps) {
   const isMobile = useIsMobile();
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
-  const isProcessing = saveDialogProps.isProcessing;
 
   const hasFeatures = features && Object.values(features).some(v => v === true);
 
@@ -136,7 +135,7 @@ export function PdfToolLayout({
                   )}
 
                   {!isMobile && hasFeatures && (
-                    <section className="sticky m-0 top-0 py-2 lg:py-0 lg:top-2 z-10 bg-white dark:bg-zinc-900">
+                    <section className="py-0">
                       <GlobalToolbar
                         features={features}
                         actions={actions}
@@ -147,7 +146,7 @@ export function PdfToolLayout({
 
                   <section className={cn(
                     "bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-4 md:p-6 min-h-[320px]",
-                    hasFeatures && "lg:ml-12"
+                    hasFeatures && ""
                   )}>
                     {children}
                   </section>
@@ -186,7 +185,7 @@ export function PdfToolLayout({
                       </div>
                     )}
 
-                    <Card className={cn(isMobile && "border-0 shadow-none p-0")}>
+                    <Card className={cn(isMobile && "border-0 shadow-none p-0 max-h-[calc(100vh-7rem)] overflow-y-auto")}>
                       <CardContent className={cn("space-y-3 lg:space-y-4 py-4", isMobile && "p-0")}>
                         {isMobile && features && (
                           <GlobalToolbar

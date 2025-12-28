@@ -115,7 +115,6 @@ export function PdfGrid<T extends { id: string }>({
     <div className={className}>
       {items.map((item) => {
         const cardData = getCardData(item);
-
         return (
           <PdfCard
             key={item.id}
