@@ -8,8 +8,11 @@ export async function POST(req: NextRequest) {
         const rotationsJson = formData.get("rotations") as string;
 
         if (!files || files.length === 0) {
+            console.error("Merge PDF: No files received");
             return NextResponse.json({ error: "No se recibieron archivos" }, { status: 400 });
         }
+
+        console.log(`Merging ${files.length} files`);
 
         let rotations: number[] = [];
         try {
@@ -26,6 +29,13 @@ export async function POST(req: NextRequest) {
             const file = files[i];
             const rotation = rotations[i] || 0;
 
+            console.log(`Processing file ${i}: ${file.name} (${file.size} bytes)`);
+
+            if (file.size === 0) {
+                console.warn(`File ${file.name} is empty, skipping`);
+                continue;
+            }
+
             const fileBuffer = await file.arrayBuffer();
 
             try {
@@ -38,12 +48,16 @@ export async function POST(req: NextRequest) {
                     mergedPdf.addPage(page);
                 });
             } catch (error) {
-                console.error(`Error loading PDF file ${i}:`, error);
+                console.error(`Error loading PDF file ${i} (${file.name}):`, error);
                 return NextResponse.json(
                     { error: `El archivo "${file.name}" no es un PDF válido o está corrupto.` },
                     { status: 400 }
                 );
             }
+        }
+
+        if (mergedPdf.getPageCount() === 0) {
+            return NextResponse.json({ error: "No se pudo generar el PDF fusionado (sin páginas)" }, { status: 400 });
         }
 
         const pdfBytes = await mergedPdf.save();
@@ -58,7 +72,7 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.error("Error merging PDFs:", error);
         return NextResponse.json(
-            { error: "Internal server error" },
+            { error: error instanceof Error ? error.message : "Internal server error" },
             { status: 500 }
         );
     }

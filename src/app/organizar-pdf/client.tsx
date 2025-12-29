@@ -120,7 +120,7 @@ export default function OrganizePdfClient() {
     formData.append("instructions", JSON.stringify(instructions));
 
     await processAndDownload(outputName, formData, {
-      endpoint: "/api/organize-pdf",
+      endpoint: "/api/worker/organize-pdf",
       extension: "pdf",
       operation: "Organizando PDF",
       successMessage: "¡PDF organizado correctamente!",

@@ -71,12 +71,21 @@ export function usePdfProcessing() {
             setState(prev => ({ ...prev, progress: 100 }));
             resolve(xhr.response);
           } else {
-            try {
-              const errorData = JSON.parse(xhr.responseText);
-              reject(new Error(errorData.error || options.errorMessage || "Error al procesar el archivo"));
-            } catch {
-              reject(new Error(options.errorMessage || "Error al procesar el archivo"));
-            }
+            // Try to extract error message from response
+            const reader = new FileReader();
+            reader.onload = () => {
+              const text = reader.result as string;
+              try {
+                const errorData = JSON.parse(text);
+                reject(new Error(errorData.error || options.errorMessage || `Error ${xhr.status}: Falló el procesamiento`));
+              } catch {
+                reject(new Error(text || options.errorMessage || `Error ${xhr.status}: Falló el procesamiento`));
+              }
+            };
+            reader.onerror = () => {
+              reject(new Error(options.errorMessage || `Error ${xhr.status}: Falló el procesamiento`));
+            };
+            reader.readAsText(xhr.response);
           }
         });
 

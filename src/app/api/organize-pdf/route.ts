@@ -7,6 +7,7 @@ export async function POST(req: NextRequest) {
         const instructionsJson = formData.get("instructions") as string;
 
         if (!instructionsJson) {
+            console.error("Organize PDF: No instructions provided");
             return NextResponse.json(
                 { error: "No se proporcionaron instrucciones de organización" },
                 { status: 400 }
@@ -14,17 +15,16 @@ export async function POST(req: NextRequest) {
         }
 
         const instructions = JSON.parse(instructionsJson);
+        console.log(`Organizing PDF with ${instructions.length} instructions`);
 
         // Load all uploaded files into a map for easy access
-        // We expect files to be appended with keys like "file-0", "file-1", etc.
         const filesMap = new Map<number, ArrayBuffer>();
 
-        // Also support "file" key if only one file or array (though we prefer indexed for multi-file logic hygiene)
-        // Let's iterate over formData keys to find files
         for (const [key, value] of formData.entries()) {
             if (key.startsWith("file-") && value instanceof File) {
                 const index = parseInt(key.replace("file-", ""));
                 if (!isNaN(index)) {
+                    console.log(`Loading file index ${index}: ${value.name} (${value.size} bytes)`);
                     const buffer = await value.arrayBuffer();
                     filesMap.set(index, buffer);
                 }
@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
             // Fallback: check "file" key
             const files = formData.getAll("file");
             if (files.length > 0) {
+                console.log(`Loading ${files.length} files from fallback 'file' key`);
                 for (let i = 0; i < files.length; i++) {
                     const f = files[i];
                     if (f instanceof File) {
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (filesMap.size === 0) {
+            console.error("Organize PDF: No files found in FormData");
             return NextResponse.json(
                 { error: "No se proporcionaron archivos PDF" },
                 { status: 400 }
@@ -57,10 +59,10 @@ export async function POST(req: NextRequest) {
         // Cache loaded PDFDocs to avoid reparsing the same file multiple times
         const loadedPdfs = new Map<number, PDFDocument>();
 
-        for (const inst of instructions) {
+        for (let i = 0; i < instructions.length; i++) {
+            const inst = instructions[i];
             if (inst.isBlank) {
-                // Add a blank page. Default size standard A4 or letter? 
-                // PDF-lib addPage() defaults to A4 size if no arguments.
+                console.log(`Instruction ${i}: Adding blank page`);
                 newPdf.addPage();
             } else {
                 const fileIndex = inst.fileIndex ?? 0;
@@ -72,26 +74,30 @@ export async function POST(req: NextRequest) {
                 if (!srcDoc) {
                     const buffer = filesMap.get(fileIndex);
                     if (!buffer) {
-                        console.warn(`File index ${fileIndex} not found, skipping page.`);
+                        console.warn(`File index ${fileIndex} not found, skipping page instruction ${i}.`);
                         continue;
                     }
-                    srcDoc = await PDFDocument.load(buffer);
+                    srcDoc = await PDFDocument.load(buffer, { ignoreEncryption: true });
                     loadedPdfs.set(fileIndex, srcDoc);
                 }
 
                 // Copy the page
-                // Note: copyPages returns an array
                 if (pageIndex >= 0 && pageIndex < srcDoc.getPageCount()) {
                     const [copiedPage] = await newPdf.copyPages(srcDoc, [pageIndex]);
 
                     // Apply rotation
-                    // We need to respect existing rotation + new rotation
                     const existingRotation = copiedPage.getRotation().angle;
-                    copiedPage.setRotation(degrees(existingRotation + rotation));
+                    copiedPage.setRotation(degrees((existingRotation + rotation) % 360));
 
                     newPdf.addPage(copiedPage);
+                } else {
+                    console.warn(`Page index ${pageIndex} out of bounds for file ${fileIndex}.`);
                 }
             }
+        }
+
+        if (newPdf.getPageCount() === 0) {
+            return NextResponse.json({ error: "El documento resultante no tiene páginas" }, { status: 400 });
         }
 
         const pdfBytes = await newPdf.save();
@@ -105,7 +111,7 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.error("Error organizing PDF:", error);
         return NextResponse.json(
-            { error: "Error al procesar el archivo PDF" },
+            { error: error instanceof Error ? error.message : "Error al procesar el archivo PDF" },
             { status: 500 }
         );
     }

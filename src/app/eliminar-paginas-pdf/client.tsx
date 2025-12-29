@@ -105,7 +105,7 @@ export default function DeletePagesClient() {
     formData.append("pageInstructions", JSON.stringify(pageInstructions));
 
     await processAndDownload(outputName, formData, {
-      endpoint: "/api/delete-pages",
+      endpoint: "/api/worker/delete-pages",
       extension: "pdf",
       operation: "Eliminando páginas",
       successMessage: "¡PDF procesado correctamente!",

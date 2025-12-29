@@ -129,7 +129,7 @@ export default function SplitPdfClient() {
     formData.append("config", JSON.stringify(config));
 
     await processAndDownload(fileName, formData, {
-      endpoint: "/api/split-pdf",
+      endpoint: "/api/worker/split-pdf",
       extension: getIsZip() ? "zip" : "pdf",
       operation: "Dividiendo PDF",
       successMessage: "¡Archivo procesado correctamente!",

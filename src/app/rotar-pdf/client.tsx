@@ -70,7 +70,7 @@ export default function RotatePdfClient() {
     formData.append("pageInstructions", JSON.stringify(pageInstructions));
 
     await processAndDownload(outputName, formData, {
-      endpoint: "/api/rotate-pdf",
+      endpoint: "/api/worker/rotate-pdf",
       extension: "pdf",
       operation: "Rotando PDF",
       successMessage: "¡PDF rotado correctamente!",

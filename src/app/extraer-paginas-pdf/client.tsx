@@ -88,7 +88,7 @@ export default function ExtractPdfClient() {
     formData.append("config", JSON.stringify(config));
 
     await processAndDownload(fileName, formData, {
-      endpoint: "/api/split-pdf",
+      endpoint: "/api/worker/split-pdf",
       extension: extractMode === "separate" && selectedPages.length > 1 ? "zip" : "pdf",
       operation: "Extrayendo páginas",
       successMessage: "¡Páginas extraídas correctamente!",

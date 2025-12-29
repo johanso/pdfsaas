@@ -60,7 +60,7 @@ export default function UnirPdfClient() {
     });
 
     await processAndDownload(outputName, formData, {
-      endpoint: "/api/merge-pdf",
+      endpoint: "/api/worker/merge-pdf",
       extension: "pdf",
       operation: "Uniendo PDFs",
       successMessage: "¡PDF unido correctamente!",

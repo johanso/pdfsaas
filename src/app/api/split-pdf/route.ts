@@ -10,12 +10,15 @@ export async function POST(req: NextRequest) {
         const configStr = formData.get("config") as string;
 
         if (!file || !mode) {
+            console.error("Split PDF: Missing file or mode");
             return NextResponse.json({ error: "Faltan datos requeridos (archivo o modo)" }, { status: 400 });
         }
 
+        console.log(`Splitting PDF: ${file.name} (${file.size} bytes), mode: ${mode}`);
+
         const config = JSON.parse(configStr || "{}");
         const fileBuffer = await file.arrayBuffer();
-        const sourcePdf = await PDFDocument.load(fileBuffer);
+        const sourcePdf = await PDFDocument.load(fileBuffer, { ignoreEncryption: true });
         const totalPages = sourcePdf.getPageCount();
 
         // Outputs: Array of { name: string, pdf: PDFDocument }
@@ -31,6 +34,7 @@ export async function POST(req: NextRequest) {
 
         if (mode === "ranges") {
             const ranges = (config.ranges || []).sort((a: number, b: number) => a - b);
+            console.log(`Split mode 'ranges' with points: ${ranges.join(", ")}`);
 
             // Validate ranges
             if (ranges.length === 0) {
