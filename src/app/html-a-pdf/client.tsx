@@ -21,6 +21,8 @@ type InputMode = "file" | "url";
 type ViewportKey = "mobile" | "tablet" | "desktop" | "desktopLarge";
 type MarginPreset = "none" | "narrow" | "normal" | "wide" | "custom";
 
+const API_URL = process.env.NEXT_PUBLIC_PDF_WORKER_URL || '/api/worker';
+
 const VIEWPORT_CONFIG: Record<ViewportKey, { width: number; height: number; label: string }> = {
   mobile: { width: 375, height: 667, label: "Móvil" },
   tablet: { width: 768, height: 1024, label: "Tablet" },
@@ -166,7 +168,7 @@ export default function HtmlToPdfClient() {
 
       formData.append("viewport", JSON.stringify(buildViewportPayload(targetViewport)));
 
-      const response = await fetch("/api/worker/html-to-pdf/preview", {
+      const response = await fetch(`${API_URL}/html-to-pdf/preview`, {
         method: "POST",
         body: formData
       });

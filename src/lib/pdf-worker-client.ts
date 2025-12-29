@@ -1,5 +1,5 @@
 export class PdfWorkerClient {
-  private baseUrl = '/api/worker';
+  private baseUrl = process.env.NEXT_PUBLIC_PDF_WORKER_URL || '/api/worker';
 
   // ===== WORD =====
   async wordToPdf(file: File): Promise<Blob> {

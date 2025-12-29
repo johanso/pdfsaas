@@ -13,6 +13,8 @@ interface ProcessOptions {
   onStartNew?: () => void;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_PDF_WORKER_URL || '/api/worker';
+
 interface ProcessingState {
   isProcessing: boolean;
   progress: number;
@@ -93,7 +95,12 @@ export function usePdfProcessing() {
           reject(new Error("Error de red al procesar el archivo"));
         });
 
-        xhr.open("POST", options.endpoint);
+        // Resolve endpoint: if starts with /api/worker, replace with API_URL
+        const fullEndpoint = options.endpoint.startsWith("/api/worker")
+          ? options.endpoint.replace("/api/worker", API_URL)
+          : options.endpoint.startsWith("/") ? `${API_URL}${options.endpoint}` : `${API_URL}/${options.endpoint}`;
+
+        xhr.open("POST", fullEndpoint);
         xhr.responseType = "blob";
         xhr.send(formData);
       });

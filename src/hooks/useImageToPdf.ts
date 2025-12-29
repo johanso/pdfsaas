@@ -11,6 +11,8 @@ export type ImageQuality = "original" | "compressed";
 // Límites
 const CLIENT_LIMIT = 50;
 
+const API_URL = process.env.NEXT_PUBLIC_PDF_WORKER_URL || '/api/worker';
+
 // Dimensiones de página en puntos (72 DPI)
 const PAGE_SIZES = {
   a4: { width: 595.28, height: 841.89 },
@@ -277,7 +279,7 @@ export function useImageToPdf() {
         formData.append("margin", margin);
         formData.append("quality", quality);
 
-        const response = await fetch("/api/worker/image-to-pdf", {
+        const response = await fetch(`${API_URL}/image-to-pdf`, {
           method: "POST",
           body: formData,
         });
