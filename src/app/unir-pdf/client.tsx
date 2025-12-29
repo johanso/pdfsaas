@@ -32,6 +32,7 @@ export default function UnirPdfClient() {
     isComplete,
     fileName,
     operation,
+    phase,
     processAndDownload,
     handleDownloadAgain,
     handleContinueEditing,
@@ -69,6 +70,8 @@ export default function UnirPdfClient() {
       }
     });
   };
+
+  console.log(phase);
 
   return (
     <>
@@ -148,6 +151,7 @@ export default function UnirPdfClient() {
           operation={operation}
           progress={progress}
           isComplete={isComplete}
+          phase={phase}
           onDownload={handleDownloadAgain}
           onEditAgain={() => handleContinueEditing()}
           onStartNew={() => handleStartNew(reset)}

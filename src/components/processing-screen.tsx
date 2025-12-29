@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileText, Sparkles, Zap, Shield, Clock, CheckCircle2, Download } from "lucide-react";
+import { FileText, Sparkles, Zap, Shield, Clock, CheckCircle2, Download, Upload, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "./ui/button";
 
@@ -8,6 +8,7 @@ interface ProcessingScreenProps {
   operation?: string;
   progress?: number;
   isComplete?: boolean;
+  phase?: "idle" | "uploading" | "processing" | "ready";
   onDownload?: () => void;
   onEditAgain?: () => void;
   onStartNew?: () => void;
@@ -26,7 +27,7 @@ const funFacts = [
 
 const tips = [
   { icon: Zap, text: "Arrastra y suelta múltiples archivos para procesarlos en lote." },
-  { icon: Shield, text: "Tus archivos se procesan localmente y nunca salen de tu navegador." },
+  { icon: Shield, text: "Tus archivos se procesan de forma segura en nuestros servidores." },
   { icon: Clock, text: "El tiempo de procesamiento depende del tamaño y complejidad del PDF." },
   { icon: Sparkles, text: "Usa 'Organizar PDF' para reordenar páginas de forma visual." },
 ];
@@ -36,6 +37,7 @@ const ProcessingScreen = ({
   operation = "Procesando",
   progress = 0,
   isComplete = false,
+  phase = "uploading",
   onDownload,
   onEditAgain,
   onStartNew
@@ -43,6 +45,8 @@ const ProcessingScreen = ({
   const [currentFact, setCurrentFact] = useState(0);
   const [currentTip, setCurrentTip] = useState(0);
   const [dots, setDots] = useState("");
+
+  console.log("phase", phase);
 
   // Rotate fun facts
   useEffect(() => {
@@ -70,6 +74,48 @@ const ProcessingScreen = ({
 
   const CurrentTipIcon = tips[currentTip].icon;
 
+  // Determinar icono y color según la fase
+  const getPhaseIcon = () => {
+    if (isComplete) {
+      return <CheckCircle2 className="h-12 w-12 text-green-500" />;
+    }
+    switch (phase) {
+      case "uploading":
+        return <Upload className="h-12 w-12 text-primary animate-pulse" />;
+      case "processing":
+        return <Loader2 className="h-12 w-12 text-primary animate-spin" />;
+      case "ready":
+        return <Download className="h-12 w-12 text-green-500 animate-bounce" />;
+      default:
+        return <FileText className="h-12 w-12 text-primary animate-pulse" />;
+    }
+  };
+
+  // Texto descriptivo según la fase
+  const getPhaseDescription = () => {
+    if (isComplete) {
+      return "Tu archivo se ha descargado exitosamente";
+    }
+    switch (phase) {
+      case "uploading":
+        return `Subiendo ${fileName}...`;
+      case "processing":
+        return "Procesando en el servidor...";
+      case "ready":
+        return "¡Listo! Iniciando descarga...";
+      default:
+        return fileName;
+    }
+  };
+
+  // Color del fondo del icono según fase
+  const getIconBgClass = () => {
+    if (isComplete || phase === "ready") {
+      return "bg-green-500/20";
+    }
+    return "bg-primary/10";
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-xs">
       <div className="w-full max-w-lg px-6">
@@ -85,27 +131,23 @@ const ProcessingScreen = ({
             {/* Icon Animation */}
             <div className="mb-8 flex justify-center">
               <div className="relative">
-                {/* Outer ring */}
-                {!isComplete && (
+                {/* Outer ring - solo durante upload/processing */}
+                {!isComplete && phase !== "ready" && (
                   <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-primary" style={{ animationDuration: "3s" }} />
                 )}
 
                 {/* Middle ring */}
-                {!isComplete && (
+                {!isComplete && phase !== "ready" && (
                   <div className="absolute inset-2 animate-spin rounded-full border-4 border-transparent border-b-accent" style={{ animationDuration: "2s", animationDirection: "reverse" }} />
                 )}
 
                 {/* Inner circle with icon */}
-                <div className={`flex h-24 w-24 items-center justify-center rounded-full ${isComplete ? 'bg-green-500/20' : 'bg-primary/10'} transition-colors duration-500`}>
-                  {isComplete ? (
-                    <CheckCircle2 className="h-12 w-12 text-green-500 animate-scale-in" />
-                  ) : (
-                    <FileText className="h-12 w-12 text-primary animate-pulse" />
-                  )}
+                <div className={`flex h-24 w-24 items-center justify-center rounded-full ${getIconBgClass()} transition-colors duration-500`}>
+                  {getPhaseIcon()}
                 </div>
 
-                {/* Floating particles */}
-                {!isComplete && (
+                {/* Floating particles - solo durante upload */}
+                {phase === "uploading" && !isComplete && (
                   <>
                     <div className="absolute -right-2 top-4 h-2 w-2 animate-bounce rounded-full bg-primary" style={{ animationDelay: "0.1s" }} />
                     <div className="absolute -left-1 top-8 h-1.5 w-1.5 animate-bounce rounded-full bg-accent" style={{ animationDelay: "0.3s" }} />
@@ -121,7 +163,7 @@ const ProcessingScreen = ({
                 {isComplete ? "¡Completado!" : `${operation}${dots}`}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {isComplete ? "Tu archivo ha descargado exitosamente" : fileName}
+                {getPhaseDescription()}
               </p>
             </div>
 
@@ -129,7 +171,9 @@ const ProcessingScreen = ({
             {!isComplete && (
               <div className="mb-8">
                 <div className="mb-2 flex justify-between text-sm">
-                  <span className="text-muted-foreground">Progreso</span>
+                  <span className="text-muted-foreground">
+                    {phase === "uploading" ? "Subiendo" : phase === "processing" ? "Procesando" : "Preparando"}
+                  </span>
                   <span className="font-medium text-primary">{Math.round(progress)}%</span>
                 </div>
                 <Progress value={progress} className="h-2" />
@@ -189,16 +233,21 @@ const ProcessingScreen = ({
               </div>
             )}
 
-            {/* Processing Steps */}
+            {/* Processing Steps - Visual indicator */}
             {!isComplete && (
-              <div className="mt-6 flex justify-center gap-1">
-                {[...Array(4)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`h-1.5 w-8 rounded-full transition-colors duration-300 ${progress > (i + 1) * 25 ? 'bg-primary' : 'bg-muted'
-                      }`}
-                  />
-                ))}
+              <div className="mt-6 flex justify-center gap-2">
+                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${phase === "uploading" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
+                  <Upload className="h-3 w-3" />
+                  <span>Subir</span>
+                </div>
+                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${phase === "processing" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
+                  <Loader2 className={`h-3 w-3 ${phase === "processing" ? "animate-spin" : ""}`} />
+                  <span>Procesar</span>
+                </div>
+                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${phase === "ready" || isComplete ? "bg-green-500/20 text-green-600" : "bg-muted text-muted-foreground"}`}>
+                  <Download className="h-3 w-3" />
+                  <span>Descargar</span>
+                </div>
               </div>
             )}
           </div>
