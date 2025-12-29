@@ -116,12 +116,6 @@ export default function PdfToImageClient() {
     return shouldUseServer(file, pages.length, selectedPages.length, format, dpi);
   }, [file, pages.length, selectedPages.length, format, dpi]);
 
-  useEffect(() => {
-    return () => {
-      if (isProcessing) toast.info("Conversión cancelada");
-    };
-  }, [isProcessing]);
-
   // Cuando cambia el formato, ajustar DPI si es necesario
   useEffect(() => {
     if (currentFormatInfo.requiresServer && dpi < 150) {
