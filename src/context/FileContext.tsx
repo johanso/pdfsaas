@@ -61,7 +61,9 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
 
     if (validFiles.length === 0) return;
 
-    const mappedFilesPromises = validFiles.map(async (f) => {
+    let protectedCount = 0;
+
+    const mappedFilesPromises = validFiles.map(async (f): Promise<PdfFile | null> => {
       let pageCount: number | undefined;
 
       if (f.type === "application/pdf") {
@@ -72,7 +74,11 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
           const buffer = await f.arrayBuffer();
           const pdf = await pdfjs.getDocument(buffer).promise;
           pageCount = pdf.numPages;
-        } catch (error) {
+        } catch (error: any) {
+          if (error.name === "PasswordException") {
+            protectedCount++;
+            return null;
+          }
           console.error("Error extracting PDF page count:", error);
         }
       } else if (skipPdfValidation) {
@@ -93,8 +99,26 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
       };
     });
 
-    const mappedFiles = await Promise.all(mappedFilesPromises);
-    setFiles(prev => [...mappedFiles, ...prev]); // Append to existing
+    const resolvedFiles = await Promise.all(mappedFilesPromises);
+    const mappedFiles = resolvedFiles.filter((f): f is PdfFile => f !== null);
+
+    if (protectedCount > 0) {
+      toast.error(
+        `${protectedCount} archivo${protectedCount > 1 ? 's' : ''} protegido${protectedCount > 1 ? 's' : ''} detectado${protectedCount > 1 ? 's' : ''} y descartado${protectedCount > 1 ? 's' : ''}.`,
+        {
+          description: "Por favor, desbloquéalos primero.",
+          action: {
+            label: "Desbloquear PDF",
+            onClick: () => window.location.href = "/desbloquear-pdf"
+          },
+          duration: 6000
+        }
+      );
+    }
+
+    if (mappedFiles.length > 0) {
+      setFiles(prev => [...mappedFiles, ...prev]);
+    }
   };
 
   const rotateFile = (id: string, degrees: number = 90) => {

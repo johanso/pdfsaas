@@ -34,9 +34,19 @@ export function usePdfPages(file: File | null) {
 
         // Cleanup document
         await pdf.destroy();
-      } catch (error) {
+      } catch (error: any) {
         console.error(error);
-        toast.error("Error al leer el PDF.");
+        if (error.name === "PasswordException") {
+          toast.error("Este PDF está protegido. Usa 'Desbloquear PDF' primero.", {
+            action: {
+              label: "Desbloquear",
+              onClick: () => window.location.href = "/desbloquear-pdf"
+            },
+            duration: 6000
+          });
+        } else {
+          toast.error("Error al leer el PDF.");
+        }
         setPages([]);
       } finally {
         if (objectUrl) {

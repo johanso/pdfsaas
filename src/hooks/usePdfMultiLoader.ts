@@ -53,9 +53,20 @@ export function usePdfMultiLoader() {
 
           // Cleanup document
           await pdf.destroy();
-        } catch (error) {
+        } catch (error: any) {
           console.error(`Error loading ${file.name}:`, error);
-          toast.error(`Error al cargar ${file.name}`);
+          if (error.name === "PasswordException") {
+            toast.error(`${file.name} está protegido. Usa "Desbloquear PDF" primero.`, {
+              action: {
+                label: "Desbloquear",
+                onClick: () => window.location.href = "/desbloquear-pdf"
+              },
+              duration: 6000
+            });
+            // We continue to the next file, this one is skipped as we don't push to allPages
+          } else {
+            toast.error(`Error al cargar ${file.name}`);
+          }
         } finally {
           if (objectUrl) {
             URL.revokeObjectURL(objectUrl);
