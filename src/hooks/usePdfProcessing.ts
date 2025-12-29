@@ -7,7 +7,7 @@ interface ProcessOptions {
   successMessage?: string;
   errorMessage?: string;
   extension?: string;
-  operation?: string; // e.g., "Uniendo PDFs", "Convirtiendo a Word"
+  operation?: string;
   onSuccess?: () => void;
   onError?: (error: Error) => void;
   onContinueEditing?: () => void;
@@ -20,6 +20,7 @@ interface ProcessingState {
   isComplete: boolean;
   fileName: string;
   operation: string;
+  phase: "idle" | "uploading" | "processing" | "ready";
 }
 
 export function usePdfProcessing() {
@@ -28,65 +29,82 @@ export function usePdfProcessing() {
     progress: 0,
     isComplete: false,
     fileName: "",
-    operation: ""
+    operation: "",
+    phase: "idle"
   });
 
-  const [downloadBlob, setDownloadBlob] = useState<{ blob: Blob; fileName: string } | null>(null);
+  const [downloadInfo, setDownloadInfo] = useState<{
+    fileId: string;
+    fileName: string;
+  } | null>(null);
 
   const processAndDownload = async (
     fileName: string,
     formData: FormData,
     options: ProcessOptions
   ) => {
+    const ext = options.extension || "pdf";
+    const fullFileName = `${fileName}.${ext}`;
+
     setState({
       isProcessing: true,
       progress: 0,
       isComplete: false,
-      fileName: fileName,
-      operation: options.operation || "Procesando archivo"
+      fileName: fullFileName,
+      operation: options.operation || "Procesando archivo",
+      phase: "uploading"
     });
 
     try {
-      // Use XMLHttpRequest for progress tracking
-      const result = await new Promise<Blob>((resolve, reject) => {
+      // ===== FASE 1: UPLOAD CON PROGRESO =====
+      const result = await new Promise<{ fileId: string; fileName: string }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
 
-        // Track upload progress
+        // Progreso de upload (0-90%)
         xhr.upload.addEventListener("progress", (e) => {
           if (e.lengthComputable) {
-            const uploadProgress = (e.loaded / e.total) * 50; // Upload is 50% of total
-            setState(prev => ({ ...prev, progress: uploadProgress }));
-          }
-        });
-
-        // Track download progress
-        xhr.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            const downloadProgress = 50 + (e.loaded / e.total) * 50; // Download is other 50%
-            setState(prev => ({ ...prev, progress: downloadProgress }));
+            const uploadProgress = (e.loaded / e.total) * 90;
+            setState(prev => ({
+              ...prev,
+              progress: uploadProgress,
+              phase: "uploading"
+            }));
           }
         });
 
         xhr.addEventListener("load", () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            setState(prev => ({ ...prev, progress: 100 }));
-            resolve(xhr.response);
-          } else {
-            // Try to extract error message from response
-            const reader = new FileReader();
-            reader.onload = () => {
-              const text = reader.result as string;
-              try {
-                const errorData = JSON.parse(text);
-                reject(new Error(errorData.error || options.errorMessage || `Error ${xhr.status}: Falló el procesamiento`));
-              } catch {
-                reject(new Error(text || options.errorMessage || `Error ${xhr.status}: Falló el procesamiento`));
+            try {
+              const response = JSON.parse(xhr.responseText);
+
+              if (response.fileId) {
+                // Nuevo formato: servidor devuelve fileId
+                setState(prev => ({
+                  ...prev,
+                  progress: 95,
+                  phase: "processing"
+                }));
+                resolve({
+                  fileId: response.fileId,
+                  fileName: response.fileName || fullFileName
+                });
+              } else if (response.error) {
+                reject(new Error(response.error));
+              } else {
+                reject(new Error("Respuesta inesperada del servidor"));
               }
-            };
-            reader.onerror = () => {
-              reject(new Error(options.errorMessage || `Error ${xhr.status}: Falló el procesamiento`));
-            };
-            reader.readAsText(xhr.response);
+            } catch (e) {
+              // Respuesta no es JSON - podría ser el formato antiguo (blob directo)
+              // Manejar compatibilidad hacia atrás
+              reject(new Error("Formato de respuesta no soportado"));
+            }
+          } else {
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              reject(new Error(errorData.error || `Error ${xhr.status}`));
+            } catch {
+              reject(new Error(`Error ${xhr.status}: Falló el procesamiento`));
+            }
           }
         });
 
@@ -95,34 +113,36 @@ export function usePdfProcessing() {
         });
 
         const fullEndpoint = getApiUrl(options.endpoint);
-
         xhr.open("POST", fullEndpoint);
-        xhr.responseType = "blob";
         xhr.send(formData);
       });
 
-      // Determine file extension
-      let ext = options.extension;
-      if (!ext) {
-        ext = result.type === "application/zip" ? "zip" : "pdf";
-      }
+      // Guardar info para descarga
+      setDownloadInfo({
+        fileId: result.fileId,
+        fileName: fullFileName
+      });
 
-      const fullFileName = `${fileName}.${ext}`;
+      // ===== FASE 2: TRIGGER DESCARGA NATIVA =====
+      setState(prev => ({
+        ...prev,
+        progress: 100,
+        phase: "ready"
+      }));
 
-      // Store blob for potential re-download
-      setDownloadBlob({ blob: result, fileName: fullFileName });
+      // Descarga usando el navegador (muestra progreso nativo)
+      const downloadUrl = getApiUrl(`/api/worker/download/${result.fileId}`);
 
-      // Trigger download
-      const url = window.URL.createObjectURL(result);
+      // Crear link y forzar descarga
       const a = document.createElement("a");
-      a.href = url;
+      a.href = downloadUrl;
       a.download = fullFileName;
+      a.style.display = "none";
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      // Mark as complete
+      // Marcar como completo
       setState(prev => ({ ...prev, isComplete: true }));
 
       toast.success(options.successMessage || "¡Archivo procesado correctamente!");
@@ -135,13 +155,13 @@ export function usePdfProcessing() {
       toast.error(msg);
       options.onError?.(error instanceof Error ? error : new Error(msg));
 
-      // Reset state on error
       setState({
         isProcessing: false,
         progress: 0,
         isComplete: false,
         fileName: "",
-        operation: ""
+        operation: "",
+        phase: "idle"
       });
 
       return false;
@@ -149,15 +169,15 @@ export function usePdfProcessing() {
   };
 
   const handleDownloadAgain = () => {
-    if (!downloadBlob) return;
+    if (!downloadInfo) return;
 
-    const url = window.URL.createObjectURL(downloadBlob.blob);
+    const downloadUrl = getApiUrl(`/api/worker/download/${downloadInfo.fileId}`);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = downloadBlob.fileName;
+    a.href = downloadUrl;
+    a.download = downloadInfo.fileName;
+    a.style.display = "none";
     document.body.appendChild(a);
     a.click();
-    window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
 
     toast.success("Archivo descargado nuevamente");
@@ -169,9 +189,10 @@ export function usePdfProcessing() {
       progress: 0,
       isComplete: false,
       fileName: "",
-      operation: ""
+      operation: "",
+      phase: "idle"
     });
-    setDownloadBlob(null);
+    setDownloadInfo(null);
     callback?.();
   };
 
@@ -181,10 +202,25 @@ export function usePdfProcessing() {
       progress: 0,
       isComplete: false,
       fileName: "",
-      operation: ""
+      operation: "",
+      phase: "idle"
     });
-    setDownloadBlob(null);
+    setDownloadInfo(null);
     callback?.();
+  };
+
+  // Helper para obtener el texto de la fase actual
+  const getPhaseText = () => {
+    switch (state.phase) {
+      case "uploading":
+        return "Subiendo archivos...";
+      case "processing":
+        return "Procesando...";
+      case "ready":
+        return "¡Listo! Descargando...";
+      default:
+        return state.operation;
+    }
   };
 
   return {
@@ -192,7 +228,8 @@ export function usePdfProcessing() {
     progress: state.progress,
     isComplete: state.isComplete,
     fileName: state.fileName,
-    operation: state.operation,
+    operation: getPhaseText(),
+    phase: state.phase,
     processAndDownload,
     handleDownloadAgain,
     handleContinueEditing,
