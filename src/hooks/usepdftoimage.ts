@@ -242,8 +242,15 @@ export function usePdfToImage() {
                 });
 
                 if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || "Error en el servidor");
+                    const text = await response.text();
+                    let errorMsg = "Error en el servidor";
+                    try {
+                        const error = JSON.parse(text);
+                        errorMsg = error.error || errorMsg;
+                    } catch {
+                        errorMsg = text || errorMsg;
+                    }
+                    throw new Error(errorMsg);
                 }
 
                 onProgress?.(2, 2);
