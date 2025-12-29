@@ -215,6 +215,7 @@ export function usePdfToImage() {
     );
 
     // Conversión en servidor
+    // Conversión en servidor - UNA sola petición, recibe ZIP directo
     const convertOnServer = useCallback(
         async (
             file: File,
@@ -222,91 +223,37 @@ export function usePdfToImage() {
             fileName: string,
             options: ConvertOptions
         ): Promise<ConvertResult> => {
-            const { format, quality, dpi = 300, onProgress } = options;
+            const { format, quality, dpi = 150, onProgress } = options;
 
             try {
-                // Para el servidor, enviamos página por página o el PDF completo
-                // dependiendo de la cantidad de páginas
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("format", format);
+                formData.append("quality", quality.toString());
+                formData.append("dpi", dpi.toString());
+                formData.append("pages", selectedPageIndices.map(i => i + 1).join(","));
 
-                if (selectedPageIndices.length === 1) {
-                    // Una sola página: petición simple
-                    const formData = new FormData();
-                    formData.append("file", file);
-                    formData.append("format", format === "jpg" ? "jpg" : format);
-                    formData.append("quality", quality.toString());
-                    formData.append("dpi", dpi.toString());
-                    formData.append("pages", (selectedPageIndices[0] + 1).toString()); // 1-indexed
+                onProgress?.(1, 2);
+                setProgress({ current: 1, total: 2 });
 
-                    onProgress?.(1, 1);
-                    setProgress({ current: 1, total: 1 });
+                const response = await fetch("/api/worker/pdf-to-image", {
+                    method: "POST",
+                    body: formData,
+                });
 
-                    const response = await fetch("/api/worker/pdf-to-image", {
-                        method: "POST",
-                        body: formData,
-                    });
-
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error || "Error en el servidor");
-                    }
-
-                    const blob = await response.blob();
-                    const ext = format === "jpg" ? "jpg" : format;
-                    const finalName = `${fileName}.${ext}`;
-                    downloadBlob(blob, finalName);
-
-                    return { success: true, usedServer: true, blob, fileName: finalName };
-                } else {
-                    // Múltiples páginas: procesar y crear ZIP
-                    const imageBlobs: { blob: Blob; name: string }[] = [];
-                    const total = selectedPageIndices.length;
-
-                    for (let i = 0; i < total; i++) {
-                        const pageIndex = selectedPageIndices[i];
-                        const pageNum = pageIndex + 1;
-
-                        setProgress({ current: i + 1, total });
-                        onProgress?.(i + 1, total);
-
-                        const formData = new FormData();
-                        formData.append("file", file);
-                        formData.append("format", format === "jpg" ? "jpg" : format);
-                        formData.append("quality", quality.toString());
-                        formData.append("dpi", dpi.toString());
-                        formData.append("pages", pageNum.toString());
-
-                        const response = await fetch("/api/worker/pdf-to-image", {
-                            method: "POST",
-                            body: formData,
-                        });
-
-                        if (!response.ok) {
-                            console.error(`Error en página ${pageNum}`);
-                            continue;
-                        }
-
-                        const blob = await response.blob();
-                        const ext = format === "jpg" ? "jpg" : format;
-                        imageBlobs.push({ blob, name: `page-${pageNum}.${ext}` });
-                    }
-
-                    if (imageBlobs.length === 0) {
-                        throw new Error("No se pudieron convertir las páginas");
-                    }
-
-                    // Crear ZIP
-                    const zip = new JSZip();
-                    imageBlobs.forEach(({ blob, name }) => zip.file(name, blob));
-                    const zipBlob = await zip.generateAsync({
-                        type: "blob",
-                        compression: "DEFLATE",
-                        compressionOptions: { level: 6 }
-                    });
-                    const finalName = `${fileName}.zip`;
-                    downloadBlob(zipBlob, finalName);
-
-                    return { success: true, usedServer: true, blob: zipBlob, fileName: finalName };
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || "Error en el servidor");
                 }
+
+                onProgress?.(2, 2);
+                setProgress({ current: 2, total: 2 });
+
+                const blob = await response.blob();
+                const ext = selectedPageIndices.length === 1 ? (format === "jpg" ? "jpg" : format) : "zip";
+                downloadBlob(blob, `${fileName}.${ext}`);
+
+                return { success: true, usedServer: true };
             } catch (error) {
                 console.error("Server conversion error:", error);
                 throw error;
