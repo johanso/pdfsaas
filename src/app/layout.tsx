@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Navbar } from "@/components/layout/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { FileContextProvider } from "@/context/FileContext";
 
 const nunitoSans = Nunito_Sans({
   variable: "--font-nunito-sans",
@@ -36,9 +37,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Navbar />
-          {children}
-          <Toaster />
+          <FileContextProvider>
+            <Navbar />
+            {children}
+            <Toaster />
+          </FileContextProvider>
         </ThemeProvider>
       </body>
     </html>
