@@ -16,12 +16,11 @@ import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 
 // Hooks
 import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { getApiUrl } from "@/lib/api";
 
 type InputMode = "file" | "url";
 type ViewportKey = "mobile" | "tablet" | "desktop" | "desktopLarge";
 type MarginPreset = "none" | "narrow" | "normal" | "wide" | "custom";
-
-const API_URL = process.env.NEXT_PUBLIC_PDF_WORKER_URL || '/api/worker';
 
 const VIEWPORT_CONFIG: Record<ViewportKey, { width: number; height: number; label: string }> = {
   mobile: { width: 375, height: 667, label: "Móvil" },
@@ -168,7 +167,7 @@ export default function HtmlToPdfClient() {
 
       formData.append("viewport", JSON.stringify(buildViewportPayload(targetViewport)));
 
-      const response = await fetch(`${API_URL}/html-to-pdf/preview`, {
+      const response = await fetch(getApiUrl("/api/worker/html-to-pdf/preview"), {
         method: "POST",
         body: formData
       });

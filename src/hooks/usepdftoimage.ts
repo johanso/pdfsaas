@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import * as pdfjs from "pdfjs-dist";
 import JSZip from "jszip";
+import { getApiUrl } from "@/lib/api";
 
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
@@ -12,8 +13,6 @@ export type DpiOption = 72 | 150 | 300 | 600;
 
 // Formatos que solo soporta el servidor
 const SERVER_ONLY_FORMATS: ImageFormat[] = ["tiff", "bmp"];
-
-const API_URL = process.env.NEXT_PUBLIC_PDF_WORKER_URL || '/api/worker';
 
 // Límites para procesamiento en cliente
 const CLIENT_LIMITS = {
@@ -238,7 +237,7 @@ export function usePdfToImage() {
                 onProgress?.(1, 2);
                 setProgress({ current: 1, total: 2 });
 
-                const response = await fetch(`${API_URL}/pdf-to-image`, {
+                const response = await fetch(getApiUrl("/api/worker/pdf-to-image"), {
                     method: "POST",
                     body: formData,
                 });

@@ -8,10 +8,10 @@ export type PageOrientation = "auto" | "portrait" | "landscape";
 export type MarginPreset = "none" | "small" | "normal";
 export type ImageQuality = "original" | "compressed";
 
+import { getApiUrl } from "@/lib/api";
+
 // Límites
 const CLIENT_LIMIT = 50;
-
-const API_URL = process.env.NEXT_PUBLIC_PDF_WORKER_URL || '/api/worker';
 
 // Dimensiones de página en puntos (72 DPI)
 const PAGE_SIZES = {
@@ -279,7 +279,7 @@ export function useImageToPdf() {
         formData.append("margin", margin);
         formData.append("quality", quality);
 
-        const response = await fetch(`${API_URL}/image-to-pdf`, {
+        const response = await fetch(getApiUrl("/api/worker/image-to-pdf"), {
           method: "POST",
           body: formData,
         });

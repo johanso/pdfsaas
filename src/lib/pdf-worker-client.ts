@@ -1,5 +1,7 @@
+import { getApiUrl } from "./api";
+
 export class PdfWorkerClient {
-  private baseUrl = process.env.NEXT_PUBLIC_PDF_WORKER_URL || '/api/worker';
+  private baseUrl = "/api/worker";
 
   // ===== WORD =====
   async wordToPdf(file: File): Promise<Blob> {
@@ -82,8 +84,10 @@ export class PdfWorkerClient {
       ? input
       : this.fileToFormData(input);
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'POST',
+    const fullUrl = getApiUrl(`${this.baseUrl}${endpoint}`);
+
+    const response = await fetch(fullUrl, {
+      method: "POST",
       body: formData
     });
 
