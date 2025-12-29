@@ -35,6 +35,8 @@ interface ConvertResult {
     success: boolean;
     error?: string;
     usedServer?: boolean;
+    blob?: Blob;
+    fileName?: string;
 }
 
 // Detectar si debe usar servidor
@@ -123,6 +125,8 @@ export function usePdfToImage() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [progress, setProgress] = useState({ current: 0, total: 0 });
     const [processingMode, setProcessingMode] = useState<"client" | "server" | null>(null);
+    const [isComplete, setIsComplete] = useState(false);
+    const [downloadData, setDownloadData] = useState<{ blob: Blob; fileName: string } | null>(null);
 
     // Conversión en cliente (tu código original mejorado)
     const convertOnClient = useCallback(
@@ -185,10 +189,11 @@ export function usePdfToImage() {
                     throw new Error("No se pudieron convertir las páginas");
                 }
 
-                // Descargar
                 if (imageBlobs.length === 1) {
                     const { blob, name } = imageBlobs[0];
-                    downloadBlob(blob, `${fileName}.${name.split(".").pop()}`);
+                    const finalName = `${fileName}.${name.split(".").pop()}`;
+                    downloadBlob(blob, finalName);
+                    return { success: true, usedServer: false, blob, fileName: finalName };
                 } else {
                     const zip = new JSZip();
                     imageBlobs.forEach(({ blob, name }) => zip.file(name, blob));
@@ -197,10 +202,10 @@ export function usePdfToImage() {
                         compression: "DEFLATE",
                         compressionOptions: { level: 6 }
                     });
-                    downloadBlob(zipBlob, `${fileName}.zip`);
+                    const finalName = `${fileName}.zip`;
+                    downloadBlob(zipBlob, finalName);
+                    return { success: true, usedServer: false, blob: zipBlob, fileName: finalName };
                 }
-
-                return { success: true, usedServer: false };
             } catch (error) {
                 console.error("Client conversion error:", error);
                 throw error;
@@ -247,9 +252,10 @@ export function usePdfToImage() {
 
                     const blob = await response.blob();
                     const ext = format === "jpg" ? "jpg" : format;
-                    downloadBlob(blob, `${fileName}.${ext}`);
+                    const finalName = `${fileName}.${ext}`;
+                    downloadBlob(blob, finalName);
 
-                    return { success: true, usedServer: true };
+                    return { success: true, usedServer: true, blob, fileName: finalName };
                 } else {
                     // Múltiples páginas: procesar y crear ZIP
                     const imageBlobs: { blob: Blob; name: string }[] = [];
@@ -296,9 +302,10 @@ export function usePdfToImage() {
                         compression: "DEFLATE",
                         compressionOptions: { level: 6 }
                     });
-                    downloadBlob(zipBlob, `${fileName}.zip`);
+                    const finalName = `${fileName}.zip`;
+                    downloadBlob(zipBlob, finalName);
 
-                    return { success: true, usedServer: true };
+                    return { success: true, usedServer: true, blob: zipBlob, fileName: finalName };
                 }
             } catch (error) {
                 console.error("Server conversion error:", error);
@@ -369,29 +376,63 @@ export function usePdfToImage() {
                     result = await convertOnClient(file, selectedPageIndices, fileName, options);
                 }
 
-                toast.success("¡Conversión completada!");
-                onSuccess?.();
+                if (result.success && result.blob && result.fileName) {
+                    setIsComplete(true);
+                    setDownloadData({ blob: result.blob, fileName: result.fileName });
+                    toast.success("¡Conversión completada!");
+                    options.onSuccess?.();
+                } else {
+                    throw new Error(result.error || "Error en la conversión");
+                }
+
                 return result;
             } catch (error) {
                 console.error("Conversion error:", error);
                 const errorMessage = error instanceof Error ? error.message : "Error durante la conversión";
                 toast.error(errorMessage);
-                onError?.(error instanceof Error ? error : new Error(errorMessage));
-                return { success: false, error: errorMessage };
-            } finally {
+                options.onError?.(error instanceof Error ? error : new Error(errorMessage));
+
+                // Reset on error
                 setIsProcessing(false);
                 setProgress({ current: 0, total: 0 });
                 setProcessingMode(null);
+
+                return { success: false, error: errorMessage };
             }
         },
         [convertOnClient, convertOnServer]
     );
 
+    const handleDownloadAgain = useCallback(() => {
+        if (downloadData) {
+            const url = URL.createObjectURL(downloadData.blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = downloadData.fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast.success("Archivo descargado nuevamente");
+        }
+    }, [downloadData]);
+
+    const handleStartNew = useCallback(() => {
+        setIsProcessing(false);
+        setIsComplete(false);
+        setProgress({ current: 0, total: 0 });
+        setProcessingMode(null);
+        setDownloadData(null);
+    }, []);
+
     return {
         isProcessing,
+        isComplete,
         progress,
         processingMode,
         convertAndDownload,
+        handleDownloadAgain,
+        handleStartNew,
         shouldUseServer,
         getFormatInfo,
     };

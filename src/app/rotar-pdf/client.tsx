@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 // Components
@@ -16,6 +16,7 @@ import { usePdfPages } from "@/hooks/usePdfPages";
 export default function RotatePdfClient() {
   const [file, setFile] = useState<File | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
 
   const { pages, rotateAllPages, resetRotation, rotatePage, reorderPages } = usePdfPages(file);
   const {
@@ -29,6 +30,13 @@ export default function RotatePdfClient() {
     handleContinueEditing,
     handleStartNew
   } = usePdfProcessing();
+
+
+  useEffect(() => {
+    if (pages.length > 0) {
+      setIsInitialLoading(false);
+    }
+  }, [pages.length]);
 
   const handleRotateRight = () => {
     rotateAllPages(90);
@@ -74,11 +82,22 @@ export default function RotatePdfClient() {
 
   const handleReset = () => {
     setFile(null);
+    setIsInitialLoading(false);
   };
 
   const handleFilesSelected = (files: File[]) => {
     if (files.length > 0) {
       setFile(files[0]);
+      setIsInitialLoading(true);
+    }
+  };
+
+  const handleRemovePage = (id: string) => {
+    const newPages = pages.filter(p => p.id !== id);
+    if (newPages.length === 0) {
+      handleReset();
+    } else {
+      reorderPages(newPages);
     }
   };
 
@@ -115,7 +134,7 @@ export default function RotatePdfClient() {
         downloadButtonText={isProcessing ? "Procesando..." : "Aplicar Giro y Descargar"}
         isDownloadDisabled={isProcessing || !hasModifications}
         onDownload={() => setIsDialogOpen(true)}
-        isGridLoading={file !== null && pages.length === 0}
+        isGridLoading={isInitialLoading && pages.length === 0}
         saveDialogProps={{
           isOpen: isDialogOpen,
           onOpenChange: setIsDialogOpen,
@@ -144,6 +163,7 @@ export default function RotatePdfClient() {
           onRotate={rotatePage}
           onRotateLeft={(id) => rotatePage(id, -90)}
           onRotateRight={(id) => rotatePage(id, 90)}
+          onRemove={handleRemovePage}
         />
       </PdfToolLayout>
 

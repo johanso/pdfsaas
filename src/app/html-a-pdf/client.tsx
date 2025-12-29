@@ -336,9 +336,9 @@ export default function HtmlToPdfClient() {
           </Tabs>
         }
         sidebarCustomControls={
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Viewport Selection */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label className="flex items-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
                 <Layout className="w-4 h-4" />
                 Resolución
@@ -370,19 +370,14 @@ export default function HtmlToPdfClient() {
               </div>
             </div>
 
-            <Separator className="bg-zinc-100 dark:bg-zinc-800" />
-
             {/* Margins */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                <Maximize className="w-4 h-4" />
-                Márgenes del PDF
-              </div>
+            <div className="space-y-2">
+              <Label className="block text-sm font-medium">Márgenes del PDF</Label>
               <Select
                 value={marginPreset}
                 onValueChange={(v) => setMarginPreset(v as MarginPreset)}
               >
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="w-full shadow-none">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -435,6 +430,8 @@ export default function HtmlToPdfClient() {
                 </div>
               )}
             </div>
+
+            <Separator className="my-4" />
           </div>
         }
         summaryItems={[

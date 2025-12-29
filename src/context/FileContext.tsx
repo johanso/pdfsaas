@@ -94,7 +94,7 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
     });
 
     const mappedFiles = await Promise.all(mappedFilesPromises);
-    setFiles(prev => [...prev, ...mappedFiles]); // Append to existing
+    setFiles(prev => [...mappedFiles, ...prev]); // Append to existing
   };
 
   const rotateFile = (id: string, degrees: number = 90) => {

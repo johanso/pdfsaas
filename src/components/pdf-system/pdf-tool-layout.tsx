@@ -150,7 +150,14 @@ export function PdfToolLayout({
                     "bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-4 md:p-6 min-h-[320px]",
                     hasFeatures && ""
                   )}>
-                    {children}
+                    {isGridLoading ? (
+                      <div className="flex flex-col items-center justify-center min-h-[300px] gap-4">
+                        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                        <p className="text-sm font-medium text-zinc-500 animate-pulse">Preparando archivo...</p>
+                      </div>
+                    ) : (
+                      children
+                    )}
                   </section>
                 </div>
 

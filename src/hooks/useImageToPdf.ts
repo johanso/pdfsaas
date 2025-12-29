@@ -111,6 +111,8 @@ export function useImageToPdf() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [processingMode, setProcessingMode] = useState<"client" | "server" | null>(null);
+  const [isComplete, setIsComplete] = useState(false);
+  const [downloadData, setDownloadData] = useState<{ blob: Blob; fileName: string } | null>(null);
 
   // Conversión en cliente
   const convertOnClient = useCallback(
@@ -118,7 +120,7 @@ export function useImageToPdf() {
       images: ImageItem[],
       fileName: string,
       options: ConvertOptions
-    ): Promise<boolean> => {
+    ): Promise<{ success: boolean; blob?: Blob; fileName?: string }> => {
       const { pageSize, orientation, margin, quality, onProgress } = options;
       const marginPx = MARGINS[margin];
 
@@ -236,9 +238,10 @@ export function useImageToPdf() {
         // Guardar PDF
         const pdfBytes = await pdfDoc.save();
         const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
-        downloadBlob(blob, `${fileName}.pdf`);
+        const finalName = `${fileName}.pdf`;
+        downloadBlob(blob, finalName);
 
-        return true;
+        return { success: true, blob, fileName: finalName };
       } catch (error) {
         console.error("Client conversion error:", error);
         throw error;
@@ -253,7 +256,7 @@ export function useImageToPdf() {
       images: ImageItem[],
       fileName: string,
       options: ConvertOptions
-    ): Promise<boolean> => {
+    ): Promise<{ success: boolean; blob?: Blob; fileName?: string }> => {
       const { pageSize, orientation, margin, quality, onProgress } = options;
 
       try {
@@ -285,9 +288,10 @@ export function useImageToPdf() {
         }
 
         const blob = await response.blob();
-        downloadBlob(blob, `${fileName}.pdf`);
+        const finalName = `${fileName}.pdf`;
+        downloadBlob(blob, finalName);
 
-        return true;
+        return { success: true, blob, fileName: finalName };
       } catch (error) {
         console.error("Server conversion error:", error);
         throw error;
@@ -302,12 +306,12 @@ export function useImageToPdf() {
       images: ImageItem[],
       fileName: string,
       options: ConvertOptions
-    ): Promise<boolean> => {
+    ): Promise<{ success: boolean; blob?: Blob; fileName?: string }> => {
       const { onSuccess, onError } = options;
 
       if (images.length === 0) {
         toast.error("Agrega al menos una imagen");
-        return false;
+        return { success: false };
       }
 
       setIsProcessing(true);
@@ -322,40 +326,71 @@ export function useImageToPdf() {
       }
 
       try {
-        let success: boolean;
+        let result: { success: boolean; blob?: Blob; fileName?: string };
 
         if (useServer) {
-          success = await convertOnServer(images, fileName, options);
+          result = await convertOnServer(images, fileName, options);
         } else {
-          success = await convertOnClient(images, fileName, options);
+          result = await convertOnClient(images, fileName, options);
         }
 
-        if (success) {
+        if (result.success && result.blob && result.fileName) {
+          setIsComplete(true);
+          setDownloadData({ blob: result.blob, fileName: result.fileName });
           toast.success("¡PDF creado correctamente!");
           onSuccess?.();
+        } else {
+          throw new Error("Error en la conversión");
         }
 
-        return success;
+        return result;
       } catch (error) {
         console.error("Conversion error:", error);
         const errorMessage = error instanceof Error ? error.message : "Error al crear PDF";
         toast.error(errorMessage);
         onError?.(error instanceof Error ? error : new Error(errorMessage));
-        return false;
-      } finally {
+
+        // Reset on error
         setIsProcessing(false);
         setProgress({ current: 0, total: 0 });
         setProcessingMode(null);
+
+        return { success: false };
       }
     },
     [convertOnClient, convertOnServer]
   );
 
+  const handleDownloadAgain = useCallback(() => {
+    if (downloadData) {
+      const url = URL.createObjectURL(downloadData.blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = downloadData.fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Archivo descargado nuevamente");
+    }
+  }, [downloadData]);
+
+  const handleStartNew = useCallback(() => {
+    setIsProcessing(false);
+    setIsComplete(false);
+    setProgress({ current: 0, total: 0 });
+    setProcessingMode(null);
+    setDownloadData(null);
+  }, []);
+
   return {
     isProcessing,
+    isComplete,
     progress,
     processingMode,
     convertAndDownload,
+    handleDownloadAgain,
+    handleStartNew,
     shouldUseServer,
     CLIENT_LIMIT,
   };

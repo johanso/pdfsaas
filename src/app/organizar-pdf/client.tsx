@@ -18,6 +18,7 @@ export default function OrganizePdfClient() {
   const [pages, setPages] = useState<PageData[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [isGridLoading, setIsGridLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -39,12 +40,20 @@ export default function OrganizePdfClient() {
   ) as File[];
 
   const handleAddFiles = async (files: File[]) => {
-    const newPages = await loadPdfPages(files);
-    if (newPages.length > 0) {
-      setPages(prev => [...newPages, ...prev]);
-      toast.success(`${newPages.length} página(s) añadida(s)`);
-    } else if (files.length > 0) {
-      toast.error("No se pudieron cargar archivos PDF");
+    if (files.length === 0) return;
+    setIsGridLoading(true);
+    try {
+      const newPages = await loadPdfPages(files);
+      if (newPages.length > 0) {
+        setPages(prev => [...newPages, ...prev]);
+        toast.success(`${newPages.length} página(s) añadida(s)`);
+      } else {
+        toast.error("No se pudieron cargar archivos PDF");
+      }
+    } catch (error) {
+      toast.error("Error al cargar los archivos");
+    } finally {
+      setIsGridLoading(false);
     }
   };
 
@@ -159,7 +168,7 @@ export default function OrganizePdfClient() {
         downloadButtonText={isProcessing ? "Procesando..." : "Guardar Documento"}
         isDownloadDisabled={isProcessing || pages.length === 0}
         onDownload={() => setShowSaveDialog(true)}
-        isGridLoading={false}
+        isGridLoading={isGridLoading}
         saveDialogProps={{
           isOpen: showSaveDialog,
           onOpenChange: setShowSaveDialog,
