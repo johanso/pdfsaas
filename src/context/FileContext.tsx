@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { toast } from "sonner";
 import { getOfficePageCount } from "@/lib/office-utils";
+import { FILE_SIZE_LIMITS, formatBytes } from "@/lib/config";
 
 export interface PdfFile {
   id: string;
@@ -51,11 +52,40 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
   // Let's modify addFiles to accept options.
 
   const addFiles = async (newFiles: File[], skipPdfValidation: boolean = false) => {
-    const validFiles = skipPdfValidation
-      ? newFiles
-      : newFiles.filter(f => f.type === "application/pdf");
+    // ===== VALIDACIÓN 1: Tamaño individual =====
+    const oversizedFiles = newFiles.filter(f => f.size > FILE_SIZE_LIMITS.max);
+    if (oversizedFiles.length > 0) {
+      toast.error(
+        `${oversizedFiles.length} archivo${oversizedFiles.length > 1 ? 's exceden' : ' excede'} el límite de ${formatBytes(FILE_SIZE_LIMITS.max)}`,
+        {
+          description: oversizedFiles.map(f => f.name).slice(0, 3).join(", ") + (oversizedFiles.length > 3 ? "..." : ""),
+          duration: 5000
+        }
+      );
+    }
 
-    if (!skipPdfValidation && validFiles.length < newFiles.length) {
+    const sizedFiles = newFiles.filter(f => f.size <= FILE_SIZE_LIMITS.max);
+    if (sizedFiles.length === 0) return;
+
+    // ===== VALIDACIÓN 2: Tamaño total del batch =====
+    const currentTotalSize = files.reduce((acc, f) => acc + f.file.size, 0);
+    const newTotalSize = sizedFiles.reduce((acc, f) => acc + f.size, 0);
+    
+    if (currentTotalSize + newTotalSize > FILE_SIZE_LIMITS.maxBatch) {
+      const availableSpace = FILE_SIZE_LIMITS.maxBatch - currentTotalSize;
+      toast.error("Límite total excedido", {
+        description: `Máximo ${formatBytes(FILE_SIZE_LIMITS.maxBatch)} por lote. Espacio disponible: ${formatBytes(availableSpace)}`,
+        duration: 5000
+      });
+      return;
+    }
+
+    // ===== VALIDACIÓN 3: Tipo de archivo =====
+    const validFiles = skipPdfValidation
+      ? sizedFiles
+      : sizedFiles.filter(f => f.type === "application/pdf");
+
+    if (!skipPdfValidation && validFiles.length < sizedFiles.length) {
       toast.error("Algunos archivos no eran PDF y fueron ignorados.");
     }
 
