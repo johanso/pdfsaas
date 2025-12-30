@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
-import { FileText, Sparkles, Zap, Shield, Clock, CheckCircle2, Download, Upload, Loader2 } from "lucide-react";
+import {
+  FileText, Sparkles, Zap, Shield, Clock, CheckCircle2, Download,
+  Upload, Loader2, Gauge
+} from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "./ui/button";
+import { formatBytes, formatTime, type UploadStats } from "@/hooks/usePdfProcessing";
 
 interface ProcessingScreenProps {
   fileName?: string;
@@ -9,6 +13,7 @@ interface ProcessingScreenProps {
   progress?: number;
   isComplete?: boolean;
   phase?: "idle" | "uploading" | "processing" | "ready";
+  uploadStats?: UploadStats | null;
   onDownload?: () => void;
   onEditAgain?: () => void;
   onStartNew?: () => void;
@@ -38,6 +43,7 @@ const ProcessingScreen = ({
   progress = 0,
   isComplete = false,
   phase = "uploading",
+  uploadStats = null,
   onDownload,
   onEditAgain,
   onStartNew
@@ -45,8 +51,6 @@ const ProcessingScreen = ({
   const [currentFact, setCurrentFact] = useState(0);
   const [currentTip, setCurrentTip] = useState(0);
   const [dots, setDots] = useState("");
-
-  console.log("phase", phase);
 
   // Rotate fun facts
   useEffect(() => {
@@ -74,7 +78,7 @@ const ProcessingScreen = ({
 
   const CurrentTipIcon = tips[currentTip].icon;
 
-  // Determinar icono y color según la fase
+  // Icono según fase
   const getPhaseIcon = () => {
     if (isComplete) {
       return <CheckCircle2 className="h-12 w-12 text-green-500" />;
@@ -91,28 +95,9 @@ const ProcessingScreen = ({
     }
   };
 
-  // Texto descriptivo según la fase
-  const getPhaseDescription = () => {
-    if (isComplete) {
-      return "Tu archivo se ha descargado exitosamente";
-    }
-    switch (phase) {
-      case "uploading":
-        return `Subiendo ${fileName}...`;
-      case "processing":
-        return "Procesando en el servidor...";
-      case "ready":
-        return "¡Listo! Iniciando descarga...";
-      default:
-        return fileName;
-    }
-  };
-
-  // Color del fondo del icono según fase
+  // Color del fondo del icono
   const getIconBgClass = () => {
-    if (isComplete || phase === "ready") {
-      return "bg-green-500/20";
-    }
+    if (isComplete || phase === "ready") return "bg-green-500/20";
     return "bg-primary/10";
   };
 
@@ -129,24 +114,17 @@ const ProcessingScreen = ({
 
           <div className="relative z-10">
             {/* Icon Animation */}
-            <div className="mb-8 flex justify-center">
+            <div className="mb-6 flex justify-center">
               <div className="relative">
-                {/* Outer ring - solo durante upload/processing */}
                 {!isComplete && phase !== "ready" && (
                   <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-primary" style={{ animationDuration: "3s" }} />
                 )}
-
-                {/* Middle ring */}
                 {!isComplete && phase !== "ready" && (
                   <div className="absolute inset-2 animate-spin rounded-full border-4 border-transparent border-b-accent" style={{ animationDuration: "2s", animationDirection: "reverse" }} />
                 )}
-
-                {/* Inner circle with icon */}
                 <div className={`flex h-24 w-24 items-center justify-center rounded-full ${getIconBgClass()} transition-colors duration-500`}>
                   {getPhaseIcon()}
                 </div>
-
-                {/* Floating particles - solo durante upload */}
                 {phase === "uploading" && !isComplete && (
                   <>
                     <div className="absolute -right-2 top-4 h-2 w-2 animate-bounce rounded-full bg-primary" style={{ animationDelay: "0.1s" }} />
@@ -158,32 +136,82 @@ const ProcessingScreen = ({
             </div>
 
             {/* Status Text */}
-            <div className="mb-6 text-center">
-              <h2 className="mb-2 text-2xl font-bold text-foreground">
+            <div className="mb-4 text-center">
+              <h2 className="mb-1 text-2xl font-bold text-foreground">
                 {isComplete ? "¡Completado!" : `${operation}${dots}`}
               </h2>
-              <p className="text-sm text-muted-foreground">
-                {getPhaseDescription()}
-              </p>
+
+              {/* Upload Stats - Similar a iLovePDF */}
+              {phase === "uploading" && uploadStats && !isComplete && (
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-foreground">
+                    {uploadStats.currentFileName}
+                    <span className="text-muted-foreground ml-2">
+                      ({formatBytes(uploadStats.currentFileSize)})
+                    </span>
+                  </p>
+                  <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Tiempo restante: <span className="font-medium text-foreground">{formatTime(uploadStats.timeRemaining)}</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Gauge className="h-3 w-3" />
+                      Velocidad: <span className="font-medium text-foreground">{formatBytes(uploadStats.speed)}/s</span>
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {phase === "processing" && !isComplete && (
+                <p className="text-sm text-muted-foreground">
+                  Esto puede tardar unos segundos...
+                </p>
+              )}
+
+              {phase === "ready" && !isComplete && (
+                <p className="text-sm text-muted-foreground">
+                  Tu archivo está listo
+                </p>
+              )}
+
+              {isComplete && (
+                <p className="text-sm text-muted-foreground">
+                  Tu archivo se ha descargado exitosamente
+                </p>
+              )}
             </div>
 
             {/* Progress Bar */}
             {!isComplete && (
-              <div className="mb-8">
+              <div className="mb-6">
                 <div className="mb-2 flex justify-between text-sm">
                   <span className="text-muted-foreground">
-                    {phase === "uploading" ? "Subiendo" : phase === "processing" ? "Procesando" : "Preparando"}
+                    {phase === "uploading" && uploadStats
+                      ? `${formatBytes(uploadStats.bytesUploaded)} / ${formatBytes(uploadStats.totalBytes)}`
+                      : phase === "processing"
+                        ? "Procesando"
+                        : "Preparando"
+                    }
                   </span>
                   <span className="font-medium text-primary">{Math.round(progress)}%</span>
                 </div>
-                <Progress value={progress} className="h-2" />
+                <Progress value={progress} className="h-3" />
+
+                {/* Porcentaje grande estilo iLovePDF */}
+                <div className="mt-4 text-center">
+                  <span className="text-4xl font-bold text-foreground">{Math.round(progress)}%</span>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
+                    {phase === "uploading" ? "SUBIDO" : phase === "processing" ? "PROCESANDO" : "COMPLETADO"}
+                  </p>
+                </div>
               </div>
             )}
 
             {/* Completed actions */}
             {isComplete && (
               <div className="space-y-4">
-                <p className="text text-sm font-medium text-center mb-4">
+                <p className="text-sm font-medium text-center mb-4">
                   ¿Qué deseas hacer ahora?
                 </p>
 
@@ -198,7 +226,6 @@ const ProcessingScreen = ({
                   <Button variant="outline" onClick={onEditAgain} className="w-full lg:w-auto">
                     Volver a editar
                   </Button>
-
                   <Button variant="outline" onClick={onStartNew} className="w-full lg:w-auto">
                     Procesar otro archivo
                   </Button>
@@ -206,9 +233,9 @@ const ProcessingScreen = ({
               </div>
             )}
 
-            {/* Tip Section */}
-            {!isComplete && (
-              <div className="mb-6 rounded-xl border border-border/50 bg-muted/30 p-4 transition-all duration-500">
+            {/* Tip Section - Solo durante upload/processing */}
+            {!isComplete && phase !== "ready" && (
+              <div className="mb-4 rounded-xl border border-border/50 bg-muted/30 p-4 transition-all duration-500">
                 <div className="flex items-start gap-3">
                   <div className="rounded-lg bg-primary/10 p-2">
                     <CurrentTipIcon className="h-5 w-5 text-primary" />
@@ -223,8 +250,8 @@ const ProcessingScreen = ({
               </div>
             )}
 
-            {/* Fun Fact */}
-            {!isComplete && (
+            {/* Fun Fact - Solo durante upload/processing */}
+            {!isComplete && phase !== "ready" && (
               <div className="text-center">
                 <p className="text-xs font-medium text-muted-foreground mb-2">¿SABÍAS QUE?</p>
                 <p className="text-sm text-muted-foreground italic leading-relaxed transition-opacity duration-500">
@@ -233,18 +260,31 @@ const ProcessingScreen = ({
               </div>
             )}
 
-            {/* Processing Steps - Visual indicator */}
+            {/* Processing Steps Indicator */}
             {!isComplete && (
               <div className="mt-6 flex justify-center gap-2">
-                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${phase === "uploading" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
+                <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${phase === "uploading"
+                    ? "bg-primary text-primary-foreground"
+                    : phase === "processing" || phase === "ready"
+                      ? "bg-green-500/20 text-green-600"
+                      : "bg-muted text-muted-foreground"
+                  }`}>
                   <Upload className="h-3 w-3" />
                   <span>Subir</span>
                 </div>
-                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${phase === "processing" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
+                <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${phase === "processing"
+                    ? "bg-primary text-primary-foreground"
+                    : phase === "ready"
+                      ? "bg-green-500/20 text-green-600"
+                      : "bg-muted text-muted-foreground"
+                  }`}>
                   <Loader2 className={`h-3 w-3 ${phase === "processing" ? "animate-spin" : ""}`} />
                   <span>Procesar</span>
                 </div>
-                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${phase === "ready" || isComplete ? "bg-green-500/20 text-green-600" : "bg-muted text-muted-foreground"}`}>
+                <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${phase === "ready"
+                    ? "bg-green-500 text-white"
+                    : "bg-muted text-muted-foreground"
+                  }`}>
                   <Download className="h-3 w-3" />
                   <span>Descargar</span>
                 </div>
