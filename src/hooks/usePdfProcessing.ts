@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { getApiUrl } from "@/lib/api";
+import { gzipSync } from "fflate";
 
 interface ProcessOptions {
   endpoint: string;
@@ -8,6 +9,7 @@ interface ProcessOptions {
   errorMessage?: string;
   extension?: string;
   operation?: string;
+  compress?: boolean; // Nueva opción para habilitar compresión
   onSuccess?: () => void;
   onError?: (error: Error) => void;
   onContinueEditing?: () => void;
@@ -19,10 +21,13 @@ export interface UploadStats {
   totalFiles: number;
   currentFileName: string;
   currentFileSize: number;
+  compressedSize: number;
   bytesUploaded: number;
   totalBytes: number;
   speed: number;
   timeRemaining: number;
+  compressionRatio: number;
+  phase: "compressing" | "uploading";
 }
 
 interface ProcessingState {
@@ -31,7 +36,7 @@ interface ProcessingState {
   isComplete: boolean;
   fileName: string;
   operation: string;
-  phase: "idle" | "uploading" | "processing" | "ready";
+  phase: "idle" | "compressing" | "uploading" | "processing" | "ready";
   uploadStats: UploadStats | null;
 }
 
@@ -56,6 +61,21 @@ export function formatTime(seconds: number): string {
   return `${Math.round(seconds / 3600)} h`;
 }
 
+// Comprimir archivo usando gzip
+async function compressFile(file: File): Promise<{ blob: Blob; originalSize: number; compressedSize: number }> {
+  const arrayBuffer = await file.arrayBuffer();
+  const uint8Array = new Uint8Array(arrayBuffer);
+
+  // Comprimir con gzip
+  const compressed = gzipSync(uint8Array, { level: 6 });
+
+  return {
+    blob: new Blob([new Uint8Array(compressed)], { type: "application/gzip" }),
+    originalSize: file.size,
+    compressedSize: compressed.length,
+  };
+}
+
 export function usePdfProcessing() {
   const [state, setState] = useState<ProcessingState>({
     isProcessing: false,
@@ -75,6 +95,25 @@ export function usePdfProcessing() {
   const speedSamples = useRef<number[]>([]);
   const lastProgressTime = useRef<number>(0);
   const lastProgressBytes = useRef<number>(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Cancelar proceso
+  const cancelProcess = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setState({
+      isProcessing: false,
+      progress: 0,
+      isComplete: false,
+      fileName: "",
+      operation: "",
+      phase: "idle",
+      uploadStats: null,
+    });
+    toast.info("Proceso cancelado");
+  }, []);
 
   // Calcular velocidad promedio
   const calculateSpeed = useCallback((loaded: number, timestamp: number) => {
@@ -110,6 +149,7 @@ export function usePdfProcessing() {
   ) => {
     const ext = options.extension || "pdf";
     const fullFileName = `${fileName}.${ext}`;
+    const useCompression = options.compress !== false; // Por defecto comprime
 
     // Reset speed tracking
     speedSamples.current = [];
@@ -118,43 +158,115 @@ export function usePdfProcessing() {
 
     // Extraer archivos del FormData
     const files: File[] = [];
-    formData.forEach((value) => {
+    const otherEntries: [string, FormDataEntryValue][] = [];
+
+    formData.forEach((value, key) => {
       if (value instanceof File) {
         files.push(value);
+      } else {
+        otherEntries.push([key, value]);
       }
     });
 
-    const totalBytes = files.reduce((acc, f) => acc + f.size, 0) || 1;
+    const totalOriginalSize = files.reduce((acc, f) => acc + f.size, 0) || 1;
 
     setState({
       isProcessing: true,
       progress: 0,
       isComplete: false,
       fileName: fullFileName,
-      operation: "Subiendo archivos",
-      phase: "uploading",
+      operation: useCompression ? "Preparando archivos" : "Preparando archivos",
+      phase: useCompression ? "compressing" : "uploading",
       uploadStats: {
         currentFile: 1,
         totalFiles: Math.max(files.length, 1),
         currentFileName: files[0]?.name || fullFileName,
         currentFileSize: files[0]?.size || 0,
+        compressedSize: 0,
         bytesUploaded: 0,
-        totalBytes,
+        totalBytes: totalOriginalSize,
         speed: 0,
         timeRemaining: 0,
+        compressionRatio: 0,
+        phase: useCompression ? "compressing" : "uploading",
       },
     });
 
     try {
+      // ===== FASE 1: COMPRESIÓN (si está habilitada) =====
+      let uploadFormData = formData;
+      let totalCompressedSize = totalOriginalSize;
+
+      if (useCompression && files.length > 0) {
+        uploadFormData = new FormData();
+
+        // Agregar datos no-archivo
+        otherEntries.forEach(([key, value]) => {
+          uploadFormData.append(key, value);
+        });
+
+        // Comprimir cada archivo
+        let totalCompressed = 0;
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+
+          setState((prev) => ({
+            ...prev,
+            operation: `Preparando ${i + 1} de ${files.length}`,
+            progress: (i / files.length) * 15, // 0-15% para compresión
+            uploadStats: prev.uploadStats ? {
+              ...prev.uploadStats,
+              currentFile: i + 1,
+              currentFileName: file.name,
+              currentFileSize: file.size,
+              phase: "compressing",
+            } : null,
+          }));
+
+          const { blob, compressedSize } = await compressFile(file);
+          totalCompressed += compressedSize;
+
+          // Agregar archivo comprimido con extensión .gz
+          uploadFormData.append("files", blob, file.name + ".gz");
+        }
+
+        totalCompressedSize = totalCompressed;
+
+        // Indicar al servidor que los archivos están comprimidos
+        uploadFormData.append("compressed", "true");
+
+        const ratio = ((1 - totalCompressedSize / totalOriginalSize) * 100);
+
+        setState((prev) => ({
+          ...prev,
+          progress: 15,
+          operation: `Preparado ${ratio.toFixed(0)}% - Subiendo`,
+          phase: "uploading",
+          uploadStats: prev.uploadStats ? {
+            ...prev.uploadStats,
+            compressedSize: totalCompressedSize,
+            totalBytes: totalCompressedSize,
+            compressionRatio: ratio,
+            phase: "uploading",
+          } : null,
+        }));
+      }
+
+      // ===== FASE 2: UPLOAD =====
+      abortControllerRef.current = new AbortController();
+
       const result = await new Promise<{ fileId: string; fileName: string }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         let currentFileIndex = 0;
 
         xhr.upload.addEventListener("progress", (e) => {
           if (e.lengthComputable) {
-            const uploadProgress = (e.loaded / e.total) * 85;
+            // Progreso: 15-85% (si comprimió) o 0-85% (sin compresión)
+            const baseProgress = useCompression ? 15 : 0;
+            const uploadProgress = baseProgress + (e.loaded / e.total) * (85 - baseProgress);
 
-            // Estimar archivo actual basado en bytes
+            // Estimar archivo actual
             if (files.length > 1) {
               let accumulatedSize = 0;
               for (let i = 0; i < files.length; i++) {
@@ -174,18 +286,18 @@ export function usePdfProcessing() {
               ...prev,
               progress: uploadProgress,
               operation: files.length > 1
-                ? `Subiendo archivo ${currentFileIndex + 1} de ${files.length}`
+                ? `Subiendo ${currentFileIndex + 1} de ${files.length}`
                 : "Subiendo archivo",
-              uploadStats: {
+              uploadStats: prev.uploadStats ? {
+                ...prev.uploadStats,
                 currentFile: currentFileIndex + 1,
-                totalFiles: Math.max(files.length, 1),
                 currentFileName: files[currentFileIndex]?.name || fullFileName,
-                currentFileSize: files[currentFileIndex]?.size || e.total,
                 bytesUploaded: e.loaded,
                 totalBytes: e.total,
                 speed,
                 timeRemaining,
-              },
+                phase: "uploading",
+              } : null,
             }));
           }
         });
@@ -221,8 +333,17 @@ export function usePdfProcessing() {
           reject(new Error("Error de red"));
         });
 
+        xhr.addEventListener("abort", () => {
+          reject(new Error("Cancelado por el usuario"));
+        });
+
+        // Conectar abort signal
+        abortControllerRef.current!.signal.addEventListener("abort", () => {
+          xhr.abort();
+        });
+
         xhr.open("POST", getApiUrl(options.endpoint));
-        xhr.send(formData);
+        xhr.send(uploadFormData);
       });
 
       // Guardar info para descarga
@@ -231,18 +352,18 @@ export function usePdfProcessing() {
         fileName: fullFileName,
       });
 
-      // ===== FASE 2: PROCESANDO =====
+      // ===== FASE 3: PROCESANDO =====
       setState((prev) => ({
         ...prev,
         progress: 90,
         phase: "processing",
-        operation: "Procesando en servidor",
+        operation: "Procesando",
         uploadStats: null,
       }));
 
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 2000));
 
-      // ===== FASE 3: DESCARGA =====
+      // ===== FASE 4: DESCARGA =====
       setState((prev) => ({
         ...prev,
         progress: 100,
@@ -269,7 +390,9 @@ export function usePdfProcessing() {
 
       return true;
     } catch (error) {
-      console.error(error);
+      if (error instanceof Error && error.message === "Cancelado por el usuario") {
+        return false;
+      }
       const msg = error instanceof Error ? error.message : "Error al procesar";
       toast.error(msg);
       options.onError?.(error instanceof Error ? error : new Error(msg));
@@ -343,5 +466,6 @@ export function usePdfProcessing() {
     handleDownloadAgain,
     handleContinueEditing,
     handleStartNew,
+    cancelProcess,
   };
 }

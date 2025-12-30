@@ -37,7 +37,8 @@ export default function UnirPdfClient() {
     processAndDownload,
     handleDownloadAgain,
     handleContinueEditing,
-    handleStartNew
+    handleStartNew,
+    cancelProcess
   } = usePdfProcessing();
 
   const handleFiles = async (newFiles: File[]) => {
@@ -155,6 +156,7 @@ export default function UnirPdfClient() {
           onDownload={handleDownloadAgain}
           onEditAgain={() => handleContinueEditing()}
           onStartNew={() => handleStartNew(reset)}
+          onCancel={cancelProcess}
         />
       )}
     </>
