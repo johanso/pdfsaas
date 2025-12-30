@@ -373,13 +373,17 @@ export function usePdfProcessing() {
 
       // Trigger descarga nativa
       const downloadUrl = getApiUrl(`/api/worker/download/${result.fileId}`);
+      const response = await fetch(downloadUrl);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = downloadUrl;
+      a.href = url;
       a.download = fullFileName;
       a.style.display = "none";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
       // Marcar como completo
       await new Promise((r) => setTimeout(r, 300));
@@ -411,17 +415,21 @@ export function usePdfProcessing() {
     }
   };
 
-  const handleDownloadAgain = () => {
+  const handleDownloadAgain = async () => {
     if (!downloadInfo) return;
 
     const downloadUrl = getApiUrl(`/api/worker/download/${downloadInfo.fileId}`);
+    const response = await fetch(downloadUrl);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = downloadUrl;
+    a.href = url;
     a.download = downloadInfo.fileName;
     a.style.display = "none";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 
     toast.success("Archivo descargado nuevamente");
   };

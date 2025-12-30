@@ -102,7 +102,7 @@ export default function UnirPdfClient() {
         saveDialogProps={{
           isOpen: isDialogOpen,
           onOpenChange: setIsDialogOpen,
-          defaultName: "merged-document",
+          defaultName: "archivos-unidos",
           onSave: handleSubmit,
           isProcessing,
           title: "Guardar archivo",
