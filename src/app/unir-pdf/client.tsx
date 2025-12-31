@@ -77,8 +77,8 @@ export default function UnirPdfClient() {
     <>
       <PdfToolLayout
         toolId="merge-pdf"
-        title="Unir PDF"
-        description="Combina múltiples archivos PDF en un solo documento ordenado."
+        title="Unir PDF: Juntar y combinar PDF"
+        description="Combina múltiples documentos en un solo archivo PDF. Sin marcas de agua, sin registro y con un límite de hasta 150MB por archivo."
         hasFiles={files.length > 0}
         onFilesSelected={handleFiles}
         dropzoneMultiple={true}

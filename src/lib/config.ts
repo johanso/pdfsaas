@@ -5,10 +5,7 @@
 
 // Límites de tamaño en bytes
 export const FILE_SIZE_LIMITS = {
-  // Máximo por archivo individual
   max: parseInt(process.env.NEXT_PUBLIC_MAX_FILE_SIZE || "157286400"), // 150MB por defecto
-  
-  // Máximo total del lote (archivos actuales + nuevos)
   maxBatch: parseInt(process.env.NEXT_PUBLIC_MAX_BATCH_SIZE || "524288000"), // 500MB por defecto
 };
 

@@ -28,7 +28,7 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Button variant="hero" size="lg" className="w-full sm:w-auto text-lg px-8 py-6">
+            <Button variant="hero" size="lg" className="w-full sm:w-auto max-w-xs text-lg px-8 py-6">
               Ver Herramientas
             </Button>
           </div>

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Navbar } from "@/components/layout/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FileContextProvider } from "@/context/FileContext";
+import Footer from "@/components/layout/footer";
 
 const nunitoSans = Nunito_Sans({
   variable: "--font-nunito-sans",
@@ -40,6 +41,7 @@ export default function RootLayout({
           <FileContextProvider>
             <Navbar />
             {children}
+            <Footer />
             <Toaster />
           </FileContextProvider>
         </ThemeProvider>

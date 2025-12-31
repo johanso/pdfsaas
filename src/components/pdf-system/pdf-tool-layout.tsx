@@ -107,7 +107,7 @@ export function PdfToolLayout({
   const hasFeatures = features && Object.values(features).some(v => v === true);
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl pb-24">
+    <div className="container mx-auto py-8 px-4 max-w-7xl pb-16">
       <div className="space-y-6">
         <ToolBreadcrumb toolId={toolId} />
         <HeadingPage titlePage={title} descriptionPage={description} />
