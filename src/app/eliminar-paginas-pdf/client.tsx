@@ -120,7 +120,7 @@ export default function DeletePagesClient() {
       <PdfToolLayout
         toolId="delete-pages"
         title="Eliminar Páginas PDF"
-        description="Selecciona, reordena y elimina las páginas que no necesites de tu documento."
+        description="Selecciona visualmente las páginas que no sirven y descarga un documento limpio. Fácil, rápido y compatible con selección por rangos."
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
