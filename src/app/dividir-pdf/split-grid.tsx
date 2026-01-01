@@ -5,6 +5,7 @@ import { Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getSplitGroupColor } from "@/lib/split-colors";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const PdfThumbnail = dynamic(() => import("@/components/pdf-thumbnail").then(mod => mod.PdfThumbnail), {
   ssr: false,
@@ -93,20 +94,27 @@ export function SplitGrid({
                     : "bg-zinc-200 group-hover:bg-zinc-400")} />
 
                 {/* Scissor Button */}
-                <div className="absolute -right-5 top-1/2 -translate-y-1/2 z-9">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "w-6 h-6 rounded-full border shadow-sm transition-all",
-                      isSplit
-                        ? "bg-red-500 text-white border-red-600 hover:bg-red-600 hover:text-white"
-                        : "bg-white dark:bg-zinc-800 text-zinc-400 border-dashed border-zinc-400 dark:border-zinc-700 hover:text-zinc-600 hover:border-zinc-400 dark:hover:text-zinc-200"
-                    )}
-                    onClick={() => onRangeClick(pageNumber)}
-                  >
-                    <Scissors className={cn("w-3 h-3", isSplit && "text-white")} />
-                  </Button>
+                <div className="absolute -right-6 top-1/2 -translate-y-1/2 z-9">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "w-8 h-8 rounded-full border shadow-sm transition-all",
+                          isSplit
+                            ? "bg-red-500 text-white border-red-600 hover:bg-red-600 hover:text-white"
+                            : "bg-white dark:bg-zinc-800 text-zinc-400 border-dashed border-zinc-400 dark:border-zinc-700 hover:text-zinc-600 hover:border-zinc-400 dark:hover:text-zinc-200"
+                        )}
+                        onClick={() => onRangeClick(pageNumber)}
+                      >
+                        <Scissors className={cn("w-4 h-4 size-5!", isSplit && "text-white")} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Cortar aquí</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </>
             )}

@@ -145,8 +145,8 @@ export default function SplitPdfClient() {
     <>
       <PdfToolLayout
         toolId="split-pdf"
-        title="Dividir PDF"
-        description="Herramienta profesional para separar, extraer y organizar tus documentos."
+        title="Dividir, Separar o cortar PDF"
+        description="Extrae páginas sueltas o divide tu archivo en varios documentos PDF. Fácil, rápido y seguro."
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
@@ -178,7 +178,7 @@ export default function SplitPdfClient() {
                     <p className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">Modo Rangos</p>
                     <p>Haz clic en las tijeras entre las páginas para crear nuevos grupos.</p>
                     {rangeGroups.length > 0 && (
-                      <div className="mt-4 space-y-2">
+                      <div className="mt-4 space-y-3">
                         <div className="space-y-1 max-h-[300px] overflow-y-auto pr-1">
                           {rangeGroups.map((group, index) => (
                             <div key={index} className="flex items-center gap-2 p-2 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-700">
@@ -195,8 +195,12 @@ export default function SplitPdfClient() {
                             </div>
                           ))}
                         </div>
-                        <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-                          Se crearán <span className="font-semibold text-zinc-900 dark:text-zinc-100">{rangeGroups.length} archivos PDF</span> en un .zip
+                        <div className="p-3 bg-green-100/60 dark:bg-green-200/90 border border-green-300 dark:border-green-600 rounded-lg text-xs text-zinc-600 dark:text-zinc-700">
+                          {
+                            rangeGroups.length > 1
+                              ? <>Se crearán <span className="font-semibold text-zinc-900">{rangeGroups.length} archivos PDF</span> en un .zip al descargar.</>
+                              : <>El archivo cargado aun no se ha dividido.</>
+                          }
                         </div>
                       </div>
                     )}
@@ -209,11 +213,12 @@ export default function SplitPdfClient() {
                       <p>Divide el documento en partes de igual tamaño.</p>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Páginas por archivo:</label>
+                      <label className="text-xs block font-medium text-zinc-700 dark:text-zinc-300">Páginas por archivo:</label>
                       <Input
                         type="number"
                         min={0}
                         max={numPages}
+                        className="shadow-none"
                         value={fixedSize}
                         onChange={(e) => setFixedSize(Math.min(parseInt(e.target.value) || 1, numPages))}
                       />
@@ -221,18 +226,13 @@ export default function SplitPdfClient() {
                     {(() => {
                       const totalGroups = Math.ceil(numPages / fixedSize);
                       return (
-                        // Saber de cuantas paginas queda cada archivo, en caso de que no sean iguales saber cuantas paginas tiene el archivo restante. Si el usuario divide un PDF de 25 paginas en grupos de 10, se crean 3 archivos, 2 de 10 paginas y 1 de 5 paginas.
-
-                        <div className="p-3 bg-green-100 dark:bg-zinc-500 border border-green-200 dark:border-zinc-600 rounded-lg text-xs text-zinc-600 dark:text-zinc-400">
-                          Se crearán <span className="font-semibold text-zinc-900 dark:text-zinc-100">{totalGroups} </span> 
-                          archivo{totalGroups > 1 ? 's' : ''} PDF. Cada uno tendrá <span className="font-semibold text-zinc-900 dark:text-zinc-100">{fixedSize} </span>
-                          página{fixedSize > 1 ? 's' : ''}.
-                          {numPages % fixedSize !== 0 && (
-                            <> El último archivo tendrá {numPages % fixedSize} página{(numPages % fixedSize) > 1 ? 's' : ''}.</>
+                        <div className="p-3 bg-green-100/60 dark:bg-green-200/90 border border-green-300 dark:border-green-600 rounded-lg text-xs text-zinc-600 dark:text-zinc-700">
+                          {numPages % fixedSize !== 0 ? (
+                            <>El documento se dividirá en <strong>{totalGroups}</strong> archivos: {totalGroups - 1} archivo{totalGroups - 1 > 1 ? 's' : ''} de <strong>{fixedSize}</strong> página{fixedSize > 1 ? 's' : ''} y 1 archivo de <strong>{numPages % fixedSize}</strong> página{(numPages % fixedSize) > 1 ? 's' : ''}.</>
+                          ) : (
+                            <>El documento se dividirá en <strong>{totalGroups}</strong> archivos de <strong>{fixedSize}</strong> página{fixedSize > 1 ? 's' : ''} cada uno.</>
                           )}
                         </div>
-
-
                       );
                     })()}
                   </div>

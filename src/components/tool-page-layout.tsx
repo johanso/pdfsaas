@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Clock, Shield, Zap, FileText, Scissors, RotateCw, Minimize2 } from "lucide-react";
+import { CheckCircle2, Clock, Shield, Zap, FileText, Scissors, RotateCw, Minimize2, Layers, FileArchive } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TOOL_CATEGORIES } from "@/lib/tools-categories";
 import { TOOLS } from "@/lib/tools-data";
@@ -23,6 +23,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Scissors,
   RotateCw,
   Minimize2,
+  Layers,
+  FileArchive,
 };
 
 export function ToolPageLayout({ data, children, categoryId = "ORGANIZE" }: ToolPageLayoutProps) {
@@ -45,7 +47,7 @@ export function ToolPageLayout({ data, children, categoryId = "ORGANIZE" }: Tool
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-              Cómo funciona
+              ¿Cómo funciona esta herramienta?
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Es muy sencillo. Solo sigue estos pasos.
