@@ -153,7 +153,6 @@ export default function SplitPdfClient() {
         summaryItems={[
           { label: "Total páginas", value: numPages },
           { label: "Modo", value: mode === "ranges" ? "Por Rangos" : "Cantidad Fija" },
-          { label: "Archivos a crear", value: mode === "ranges" ? rangeGroups.length : Math.ceil(numPages / fixedSize) },
         ]}
         downloadButtonText={isProcessing ? "Procesando..." : (getIsZip() ? "Dividir y Descargar ZIP" : "Dividir y Descargar PDF")}
         isDownloadDisabled={isProcessing || numPages === 0 || (mode === "ranges" && ranges.length === 0) || (mode === "fixed" && fixedSize < 1)}
@@ -179,8 +178,8 @@ export default function SplitPdfClient() {
                     <p className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">Modo Rangos</p>
                     <p>Haz clic en las tijeras entre las páginas para crear nuevos grupos.</p>
                     {rangeGroups.length > 0 && (
-                      <div className="mt-4 space-y-3">
-                        <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
+                      <div className="mt-4 space-y-2">
+                        <div className="space-y-1 max-h-[300px] overflow-y-auto pr-1">
                           {rangeGroups.map((group, index) => (
                             <div key={index} className="flex items-center gap-2 p-2 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-700">
                               <div className={`w-2 h-2 rounded-full ${group.color} shrink-0`} />
@@ -213,7 +212,7 @@ export default function SplitPdfClient() {
                       <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Páginas por archivo:</label>
                       <Input
                         type="number"
-                        min={1}
+                        min={0}
                         max={numPages}
                         value={fixedSize}
                         onChange={(e) => setFixedSize(Math.min(parseInt(e.target.value) || 1, numPages))}
@@ -222,9 +221,18 @@ export default function SplitPdfClient() {
                     {(() => {
                       const totalGroups = Math.ceil(numPages / fixedSize);
                       return (
-                        <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xs text-zinc-600 dark:text-zinc-400">
-                          Se crearán <span className="font-semibold text-zinc-900 dark:text-zinc-100">{totalGroups}</span> archivo{totalGroups > 1 ? 's' : ''} PDF.
+                        // Saber de cuantas paginas queda cada archivo, en caso de que no sean iguales saber cuantas paginas tiene el archivo restante. Si el usuario divide un PDF de 25 paginas en grupos de 10, se crean 3 archivos, 2 de 10 paginas y 1 de 5 paginas.
+
+                        <div className="p-3 bg-green-100 dark:bg-zinc-500 border border-green-200 dark:border-zinc-600 rounded-lg text-xs text-zinc-600 dark:text-zinc-400">
+                          Se crearán <span className="font-semibold text-zinc-900 dark:text-zinc-100">{totalGroups} </span> 
+                          archivo{totalGroups > 1 ? 's' : ''} PDF. Cada uno tendrá <span className="font-semibold text-zinc-900 dark:text-zinc-100">{fixedSize} </span>
+                          página{fixedSize > 1 ? 's' : ''}.
+                          {numPages % fixedSize !== 0 && (
+                            <> El último archivo tendrá {numPages % fixedSize} página{(numPages % fixedSize) > 1 ? 's' : ''}.</>
+                          )}
                         </div>
+
+
                       );
                     })()}
                   </div>

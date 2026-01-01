@@ -1,5 +1,3 @@
-import type { ComponentType } from "react";
-
 export interface LucideIconProps {
   className?: string;
   size?: number | string;
