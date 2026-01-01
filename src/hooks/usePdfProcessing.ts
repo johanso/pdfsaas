@@ -356,7 +356,7 @@ export function usePdfProcessing() {
         ...prev,
         progress: 90,
         phase: "processing",
-        operation: "Procesando en servidor",
+        operation: "Procesando",
         uploadStats: null,
       }));
 

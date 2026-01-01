@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { CheckCircle2, Circle } from "lucide-react";
 
@@ -21,6 +22,8 @@ export default function ExtractPdfClient() {
   const [file, setFile] = useState<File | null>(null);
   const [extractMode, setExtractMode] = useState<"separate" | "merge">("separate");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const pathname = usePathname();
+  const previousPathname = useRef<string | null>(null);
 
   const { pages, reorderPages } = usePdfPages(file);
   const {
@@ -31,6 +34,17 @@ export default function ExtractPdfClient() {
     invertSelection,
     reset: resetSelection
   } = usePageSelection(pages.length);
+
+  // Reset state when navigating away from this tool
+  useEffect(() => {
+    if (previousPathname.current && previousPathname.current !== pathname) {
+      setFile(null);
+      setExtractMode("separate");
+      setShowSaveDialog(false);
+      resetSelection();
+    }
+    previousPathname.current = pathname;
+  }, [pathname, resetSelection]);
 
   const { isProcessing,
     progress,
@@ -43,15 +57,22 @@ export default function ExtractPdfClient() {
     handleStartNew } = usePdfProcessing();
 
   const handleFilesSelected = (files: File[]) => {
-    if (files.length > 0) {
-      const f = files[0];
-      if (f.type !== "application/pdf") {
-        toast.error("Por favor selecciona un archivo PDF válido");
-        return;
-      }
-      resetSelection();
-      setFile(f);
+    if (files.length === 0) return;
+    
+    if (files.length > 1) {
+      toast.warning("Solo se procesará el primer archivo", {
+        description: "Esta herramienta solo acepta un archivo PDF a la vez",
+        duration: 4000
+      });
     }
+    
+    const f = files[0];
+    if (f.type !== "application/pdf") {
+      toast.error("Por favor selecciona un archivo PDF válido");
+      return;
+    }
+    resetSelection();
+    setFile(f);
   };
 
   const handleReset = () => {
@@ -102,8 +123,8 @@ export default function ExtractPdfClient() {
     <>
       <PdfToolLayout
         toolId="extract-pages"
-        title="Extraer Páginas PDF"
-        description="Selecciona las páginas que quieres conservar y crea un nuevo PDF o descárgalas por separado."
+        title="Extraer Páginas de PDF"
+        description="Elimina páginas no deseadas o guarda solo las que necesitas. Herramienta visual rápida para separar hojas sueltas o crear nuevos documentos PDF."
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
@@ -177,9 +198,11 @@ export default function ExtractPdfClient() {
           defaultName: "paginas-extraidas",
           onSave: handleSubmit,
           isProcessing,
-          title: extractMode === "separate" ? "Guardar archivo ZIP" : "Guardar archivo PDF",
-          description: extractMode === "separate" ? "Asigna un nombre a tu archivo comprimido." : "Asigna un nombre a tu nuevo archivo PDF.",
-          extension: extractMode === "separate" ? "zip" : "pdf",
+          title: extractMode === "separate" && selectedPages.length > 1 ? "Guardar archivo ZIP" : "Guardar archivo PDF",
+          description: extractMode === "separate" && selectedPages.length > 1
+            ? "Asigna un nombre a tu archivo comprimido."
+            : "Asigna un nombre a tu nuevo archivo PDF.",
+          extension: extractMode === "separate" && selectedPages.length > 1 ? "zip" : "pdf",
         }}
         successDialogProps={{
           isOpen: false,

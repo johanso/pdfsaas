@@ -1,6 +1,19 @@
 "use client";
 
-import { CheckCircle2, Clock, Shield, Zap, FileText, Scissors, RotateCw, Minimize2, Layers, FileArchive } from "lucide-react";
+import { CheckCircle2, 
+  Clock,
+  Shield, 
+  Zap, 
+  FileText, 
+  Scissors,
+  RotateCw, 
+  Minimize2, 
+  Layers, 
+  FileArchive,
+  CheckSquare,
+  FileOutput,
+  MousePointerClick,
+  Smartphone } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TOOL_CATEGORIES } from "@/lib/tools-categories";
 import { TOOLS } from "@/lib/tools-data";
@@ -25,6 +38,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Minimize2,
   Layers,
   FileArchive,
+  CheckSquare,
+  FileOutput,
+  MousePointerClick,
+  Smartphone,
 };
 
 export function ToolPageLayout({ data, children, categoryId = "ORGANIZE" }: ToolPageLayoutProps) {

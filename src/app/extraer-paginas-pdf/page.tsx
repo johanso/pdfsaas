@@ -1,11 +1,51 @@
 import type { Metadata } from "next";
+import { ToolPageLayout } from "@/components/tool-page-layout";
+import { extractPdfContent } from "@/content/tools/extract-pdf";
 import ExtractPdfClient from "./client";
 
+const { metadata: meta, jsonLd } = extractPdfContent;
+
 export const metadata: Metadata = {
-  title: "Extraer páginas de PDF - Herramienta online gratuita",
-  description: "Extrae páginas específicas de tus archivos PDF y guárdalas como documentos separados o unidos. Gratis y fácil de usar.",
+  title: meta.title,
+  description: meta.description,
+  keywords: meta.keywords,
+  alternates: {
+    canonical: meta.canonical,
+  },
+  openGraph: {
+    title: meta.title,
+    description: meta.description,
+    type: "website",
+    url: meta.canonical,
+    siteName: "PDF SaaS",
+    images: meta.ogImage ? [
+      {
+        url: meta.ogImage,
+        width: 1200,
+        height: 630,
+        alt: meta.title,
+      },
+    ] : undefined,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function ExtractPdfPage() {
-  return <ExtractPdfClient />;
+  return (
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+
+      <ToolPageLayout data={extractPdfContent} categoryId="ORGANIZE">
+        <ExtractPdfClient />
+      </ToolPageLayout>
+    </>
+  );
 }
