@@ -188,6 +188,11 @@ export default function OrganizePdfClient() {
           items={pages}
           config={PDF_CARD_PRESETS.organize}
           selectedIds={selectedIds}
+          showAddCard={true}
+          onAddFiles={handleAddFiles}
+          addCardText="Añadir PDF"
+          addCardSubtext="Arrastra o haz clic"
+          addCardDisabled={isProcessing || isGridLoading}
           extractCardData={(page) => ({
             id: page.id,
             file: page.file,

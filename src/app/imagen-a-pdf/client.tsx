@@ -432,6 +432,11 @@ export default function ImageToPdfClient() {
           onReorder={handleReorder}
           onRotate={handleRotate}
           onRemove={handleRemove}
+          showAddCard={true}
+          onAddFiles={handleFilesSelected}
+          addCardText="Añadir Imagen"
+          addCardSubtext="Arrastra o haz clic"
+          addCardDisabled={isProcessing}
           extractCardData={(img) => ({
             id: img.id,
             file: img.file,

@@ -25,6 +25,7 @@ export default function UnirPdfClient() {
     sortAZ,
     sortZA,
     reset,
+    isLoading,
   } = usePdfFiles();
   const {
     isProcessing,
@@ -84,7 +85,7 @@ export default function UnirPdfClient() {
         dropzoneMultiple={true}
         onReset={reset}
         onAdd={() => fileInputRef.current?.click()}
-        textAdd="Añadir PDF"
+        textAdd="Añadir otro PDF"
         features={{ sorting: true }}
         actions={{
           onSortAZ: sortAZ,
@@ -98,7 +99,7 @@ export default function UnirPdfClient() {
         downloadButtonText={isProcessing ? "Procesando..." : "Unir y Descargar PDF"}
         isDownloadDisabled={files.length < 2 || isProcessing}
         onDownload={() => setIsDialogOpen(true)}
-        isGridLoading={false}
+        isGridLoading={isLoading && files.length === 0}
         saveDialogProps={{
           isOpen: isDialogOpen,
           onOpenChange: setIsDialogOpen,
@@ -127,6 +128,11 @@ export default function UnirPdfClient() {
           })}
           onReorder={reorderFiles}
           onRemove={removeFile}
+          showAddCard={true}
+          onAddFiles={handleFiles}
+          addCardText="Añadir PDF"
+          addCardSubtext="Arrastra o haz clic"
+          addCardDisabled={isProcessing}
         />
 
         {/* Hidden file input for "Añadir PDF" button */}

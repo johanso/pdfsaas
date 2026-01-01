@@ -8,6 +8,7 @@ export function usePdfFiles(skipPdfValidation: boolean = false) {
 
   return {
     ...context,
-    addFiles
+    addFiles,
+    isLoading: context.isLoading
   };
 }

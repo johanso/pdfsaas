@@ -17,6 +17,7 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { PdfCard, PdfCardConfig } from "./pdf-card";
+import { AddPdfCard } from "./add-pdf-card";
 
 // ============================================
 // TIPOS MEJORADOS
@@ -53,6 +54,12 @@ interface PdfGridProps<T> {
   renderCardActions?: (item: T) => React.ReactNode;
   extractCardData?: ExtractCardData<T>; // ✨ NUEVO: Función para extraer datos
   className?: string;
+  // Add PDF Card props
+  showAddCard?: boolean;
+  onAddFiles?: (files: File[]) => void;
+  addCardText?: string;
+  addCardSubtext?: string;
+  addCardDisabled?: boolean;
 }
 
 export function PdfGrid<T extends { id: string }>({
@@ -69,7 +76,12 @@ export function PdfGrid<T extends { id: string }>({
   onRemove,
   renderCardActions,
   extractCardData,
-  className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
+  className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4",
+  showAddCard = false,
+  onAddFiles,
+  addCardText,
+  addCardSubtext,
+  addCardDisabled = false,
 }: PdfGridProps<T>) {
   const draggable = config?.draggable !== false;
 
@@ -132,6 +144,14 @@ export function PdfGrid<T extends { id: string }>({
           />
         );
       })}
+      {showAddCard && onAddFiles && (
+        <AddPdfCard
+          onFilesAdded={onAddFiles}
+          text={addCardText}
+          subtext={addCardSubtext}
+          disabled={addCardDisabled}
+        />
+      )}
     </div>
   );
 

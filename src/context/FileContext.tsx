@@ -25,6 +25,7 @@ interface FileContextType {
   reset: () => void;
   getTotalSize: () => number;
   getTotalPages: () => number;
+  isLoading: boolean;
 }
 
 export const FileContext = createContext<FileContextType | undefined>(undefined);
@@ -39,6 +40,7 @@ export function useFileContext() {
 
 export function FileContextProvider({ children }: { children: ReactNode }) {
   const [files, setFiles] = useState<PdfFile[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // We can't pass skipPdfValidation as a prop easily if we want it global
   // For now, we'll assume validation is needed, or allow all and handle in UI
@@ -52,7 +54,10 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
   // Let's modify addFiles to accept options.
 
   const addFiles = async (newFiles: File[], skipPdfValidation: boolean = false) => {
-    // ===== VALIDACIÓN 1: Tamaño individual =====
+    setIsLoading(true);
+    
+    try {
+      // ===== VALIDACIÓN 1: Tamaño individual =====
     const oversizedFiles = newFiles.filter(f => f.size > FILE_SIZE_LIMITS.max);
     if (oversizedFiles.length > 0) {
       toast.error(
@@ -146,8 +151,11 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
       );
     }
 
-    if (mappedFiles.length > 0) {
-      setFiles(prev => [...mappedFiles, ...prev]);
+      if (mappedFiles.length > 0) {
+        setFiles(prev => [...mappedFiles, ...prev]);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -208,7 +216,8 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
       sortZA,
       reset,
       getTotalSize,
-      getTotalPages
+      getTotalPages,
+      isLoading
     }}>
       {children}
     </FileContext.Provider>

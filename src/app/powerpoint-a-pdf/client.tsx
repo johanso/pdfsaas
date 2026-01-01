@@ -20,6 +20,7 @@ export default function PowerPointToPdfClient() {
     addFiles,
     removeFile,
     reset,
+    isLoading,
   } = usePdfFiles(true); // Skip PDF validation for PowerPoint files
 
   const {
@@ -100,6 +101,7 @@ export default function PowerPointToPdfClient() {
         downloadButtonText="Convertir a PDF"
         isDownloadDisabled={isProcessing || files.length === 0}
         onDownload={() => setIsDialogOpen(true)}
+        isGridLoading={isLoading && files.length === 0}
         saveDialogProps={{
           isOpen: isDialogOpen,
           onOpenChange: setIsDialogOpen,
