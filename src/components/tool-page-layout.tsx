@@ -63,8 +63,8 @@ export function ToolPageLayout({ data, children, categoryId = "ORGANIZE" }: Tool
       <section className="py-12 md:py-16 bg-muted/80 dark:bg-muted/20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-              ¿Cómo funciona esta herramienta?
+            <h2 className="text-xl lg:text-2xl font-bold text-foreground mb-2">
+              {data.titleSectionSteps || "¿Cómo funciona esta herramienta?"}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Es muy sencillo. Solo sigue estos pasos.
@@ -95,8 +95,8 @@ export function ToolPageLayout({ data, children, categoryId = "ORGANIZE" }: Tool
       <section className="py-12 md:py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-              ¿Por qué usar nuestra herramienta?
+            <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
+              {data.titleSectionBenefits || "¿Por qué usar nuestra herramienta?"}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               La forma más rápida y segura de trabajar con tus documentos PDF.
@@ -133,8 +133,8 @@ export function ToolPageLayout({ data, children, categoryId = "ORGANIZE" }: Tool
       <section className="py-12 md:py-16 bg-muted/80 dark:bg-muted/20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-              Preguntas frecuentes
+            <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
+              {data.titleSectionFAQ || "Preguntas Frecuentes"}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Todo lo que necesitas saber sobre esta herramienta.
@@ -167,7 +167,7 @@ export function ToolPageLayout({ data, children, categoryId = "ORGANIZE" }: Tool
         <section className="py-12 md:py-16">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
                 Otras herramientas PDF
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">

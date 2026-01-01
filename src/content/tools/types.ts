@@ -36,6 +36,9 @@ export interface ToolMetadata {
 
 export interface ToolPageData {
   id: string;
+  titleSectionSteps?: string;
+  titleSectionBenefits?: string;
+  titleSectionFAQ?: string;
   metadata: ToolMetadata;
   steps: ToolStep[];
   benefits: ToolBenefit[];

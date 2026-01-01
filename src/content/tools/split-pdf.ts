@@ -19,6 +19,10 @@ export const splitPdfContent: ToolPageData = {
     ogImage: "/og-images/split-pdf.jpg",
   },
 
+  titleSectionSteps: " Cómo separar y cortar archivos PDF fácilmente",
+  titleSectionBenefits: "¿Por qué usar nuestro cortador de PDF visual?",
+  titleSectionFAQ: "Preguntas Frecuentes sobre cómo separar hojas PDF",
+
   steps: [
     {
       number: "1",

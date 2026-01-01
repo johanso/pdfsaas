@@ -23,6 +23,10 @@ export const mergePdfContent: ToolPageData = {
     ogImage: "/og-images/merge-pdf.jpg",
   },
 
+  titleSectionSteps: "Cómo combinar y unir archivos PDF paso a paso",
+  titleSectionBenefits: "¿Por qué elegir nuestra herramienta para juntar PDFs?",
+  titleSectionFAQ: "Preguntas Frecuentes sobre la fusión de documentos",
+
   steps: [
     {
       number: "1",

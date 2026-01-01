@@ -19,6 +19,10 @@ export const extractPdfContent: ToolPageData = {
     ogImage: "/og-images/extract-pdf.jpg", // Asegúrate de crear esta imagen
   },
 
+  titleSectionSteps: "Cómo extraer páginas de un PDF paso a paso",
+  titleSectionBenefits: "¿Por qué elegir nuestra herramienta para sacar hojas PDF?",
+  titleSectionFAQ: "Preguntas Frecuentes sobre extracción de páginas",
+
   steps: [
     {
       number: "1",
