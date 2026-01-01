@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { getOfficePageCount } from "@/lib/office-utils";
 import { FILE_SIZE_LIMITS, formatBytes } from "@/lib/config";
@@ -41,6 +42,36 @@ export function useFileContext() {
 export function FileContextProvider({ children }: { children: ReactNode }) {
   const [files, setFiles] = useState<PdfFile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const pathname = usePathname();
+  const previousPathname = useRef<string | null>(null);
+
+  // Reset files when changing routes (to free memory and avoid confusion)
+  useEffect(() => {
+    if (previousPathname.current && previousPathname.current !== pathname) {
+      // Only reset if we're navigating between different tools
+      const isToolRoute = (path: string) => path.startsWith('/unir-pdf') ||
+        path.startsWith('/imagen-a-pdf') ||
+        path.startsWith('/organizar-pdf') ||
+        path.startsWith('/excel-a-pdf') ||
+        path.startsWith('/word-a-pdf') ||
+        path.startsWith('/powerpoint-a-pdf') ||
+        path.startsWith('/html-a-pdf') ||
+        path.startsWith('/dividir-pdf') ||
+        path.startsWith('/eliminar-paginas-pdf') ||
+        path.startsWith('/extraer-paginas-pdf') ||
+        path.startsWith('/rotar-pdf') ||
+        path.startsWith('/pdf-a-imagen');
+      
+      const wasToolRoute = isToolRoute(previousPathname.current);
+      const isNowToolRoute = isToolRoute(pathname);
+      
+      // Reset if navigating between different tools
+      if (wasToolRoute && isNowToolRoute && previousPathname.current !== pathname) {
+        setFiles([]);
+      }
+    }
+    previousPathname.current = pathname;
+  }, [pathname]);
 
   // We can't pass skipPdfValidation as a prop easily if we want it global
   // For now, we'll assume validation is needed, or allow all and handle in UI
@@ -187,6 +218,11 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
   };
 
   const reset = () => {
+    // Clean up object URLs to free memory
+    files.forEach(f => {
+      // Note: We're not creating object URLs in FileContext, but if any component does,
+      // they should clean up. This is a placeholder for future memory management.
+    });
     setFiles([]);
     // toast.success("Archivos restablecidos."); // Optional, might be annoying on nav
   };

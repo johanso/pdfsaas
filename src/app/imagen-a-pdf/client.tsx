@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import {
   Maximize,
@@ -92,6 +93,8 @@ export default function ImageToPdfClient() {
   const [margin, setMargin] = useState<MarginPreset>("small");
   const [quality, setQuality] = useState<ImageQuality>("original");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const pathname = usePathname();
+  const previousPathname = useRef<string | null>(null);
 
   // Multi-selection hook
   const {
@@ -101,6 +104,24 @@ export default function ImageToPdfClient() {
     deselectAll,
     invertSelection
   } = useMultiSelect(images, (img) => img.id);
+
+  // Reset state when navigating away from this tool
+  useEffect(() => {
+    if (previousPathname.current && previousPathname.current !== pathname) {
+      // Clean up object URLs to free memory
+      images.forEach(img => {
+        if (img.preview) URL.revokeObjectURL(img.preview);
+      });
+      setImages([]);
+      setPageSize("a4");
+      setOrientation("auto");
+      setMargin("small");
+      setQuality("original");
+      setIsDialogOpen(false);
+      deselectAll();
+    }
+    previousPathname.current = pathname;
+  }, [pathname, images, deselectAll]);
 
   const {
     isProcessing,

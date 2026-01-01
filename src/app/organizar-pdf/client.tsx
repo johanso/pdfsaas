@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 // Components
@@ -20,6 +21,19 @@ export default function OrganizePdfClient() {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [isGridLoading, setIsGridLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pathname = usePathname();
+  const previousPathname = useRef<string | null>(null);
+
+  // Reset state when navigating away from this tool
+  useEffect(() => {
+    if (previousPathname.current && previousPathname.current !== pathname) {
+      setPages([]);
+      setSelectedIds([]);
+      setShowSaveDialog(false);
+      setIsGridLoading(false);
+    }
+    previousPathname.current = pathname;
+  }, [pathname]);
 
   const {
     isProcessing,
