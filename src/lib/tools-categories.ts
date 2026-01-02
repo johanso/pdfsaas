@@ -39,7 +39,6 @@ export const TOOL_CATEGORIES = {
       'pdf-to-word',
       'pdf-to-excel',
       'pdf-to-powerpoint',
-      'pdf-to-greyscale'
     ]
   },
   EDIT: {
@@ -74,14 +73,15 @@ export const TOOL_CATEGORIES = {
   OPTIMIZE: {
     id: 'optimize',
     name: 'Optimizar',
-    description: 'Reduce tamaño y mejora rendimiento',
+    description: 'Mejora y optimiza tus PDFs',
     icon: 'Gauge',
     color: 'yellow',
     tools: [
-      'compress-pdf',
-      'reduce-size',
-      'optimize-images',
-      'remove-duplicates'
+      'compress-pdf', 
+      'ocr-pdf', 
+      'pdf-to-grayscale',
+      'flatten-pdf',
+      'repair-pdf'
     ]
   }
 } as const;

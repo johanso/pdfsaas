@@ -79,36 +79,6 @@ export const TOOLS: Record<string, Tool> = {
     category: 'convert-from-pdf',
     isAvailable: true
   },
-  'pdf-to-jpg': {
-    id: 'pdf-to-jpg',
-    name: 'PDF a JPG',
-    description: 'Extrae imágenes en formato JPG',
-    path: '/pdf-a-jpg',
-    icon: 'FileImage',
-    category: 'convert-from-pdf',
-    isAvailable: false,
-    comingSoon: true
-  },
-  'pdf-to-png': {
-    id: 'pdf-to-png',
-    name: 'PDF a PNG',
-    description: 'Extrae imágenes en formato PNG',
-    path: '/pdf-a-png',
-    icon: 'FileImage',
-    category: 'convert-from-pdf',
-    isAvailable: false,
-    comingSoon: true
-  },
-  'pdf-to-webp': {
-    id: 'pdf-to-webp',
-    name: 'PDF a WebP',
-    description: 'Extrae imágenes en formato WebP',
-    path: '/pdf-a-webp',
-    icon: 'FileImage',
-    category: 'convert-from-pdf',
-    isAvailable: false,
-    comingSoon: true
-  },
   'pdf-to-word': {
     id: 'pdf-to-word',
     name: 'PDF a Word',
@@ -135,16 +105,6 @@ export const TOOLS: Record<string, Tool> = {
     description: 'Convierte a presentaciones',
     path: '/pdf-a-powerpoint',
     icon: 'Presentation',
-    category: 'convert-from-pdf',
-    isAvailable: false,
-    comingSoon: true
-  },
-  'pdf-to-greyscale': {
-    id: 'pdf-to-greyscale',
-    name: 'PDF a B/N',
-    description: 'Convierte a escala de grises',
-    path: '/pdf-a-blanco-negro',
-    icon: 'Paintbrush',
     category: 'convert-from-pdf',
     isAvailable: false,
     comingSoon: true
@@ -326,44 +286,54 @@ export const TOOLS: Record<string, Tool> = {
   },
 
   // --- OPTIMIZE ---
-  'compress-pdf': {
-    id: 'compress-pdf',
-    name: 'Comprimir PDF',
-    description: 'Reduce el tamaño del archivo',
-    path: '/comprimir-pdf',
-    icon: 'Minimize2',
-    category: 'optimize',
-    isAvailable: false,
-    comingSoon: true
-  },
-  'reduce-size': {
-    id: 'reduce-size',
-    name: 'Reducir Tamaño',
-    description: 'Optimización avanzada de peso',
-    path: '/reducir-tamaño',
-    icon: 'ArrowDownLeft',
-    category: 'optimize',
-    isAvailable: false,
-    comingSoon: true
-  },
-  'optimize-images': {
-    id: 'optimize-images',
-    name: 'Optimizar Imágenes',
-    description: 'Mejora la calidad vs peso',
-    path: '/optimizar-imagenes',
-    icon: 'Zap',
-    category: 'optimize',
-    isAvailable: false,
-    comingSoon: true
-  },
-  'remove-duplicates': {
-    id: 'remove-duplicates',
-    name: 'Quitar Duplicados',
-    description: 'Elimina páginas idénticas',
-    path: '/quitar-duplicados',
-    icon: 'CopyMinus',
-    category: 'optimize',
-    isAvailable: false,
-    comingSoon: true
-  }
+'compress-pdf': {
+  id: 'compress-pdf',
+  name: 'Comprimir PDF',
+  description: 'Reduce el tamaño del archivo manteniendo calidad',
+  path: '/comprimir-pdf',
+  icon: 'Minimize2',
+  category: 'optimize',
+  isAvailable: true,
+  comingSoon: false
+},
+'ocr-pdf': {
+  id: 'ocr-pdf',
+  name: 'OCR PDF',
+  description: 'Convierte PDFs escaneados en texto seleccionable y buscable',
+  path: '/ocr-pdf',
+  icon: 'ScanText',
+  category: 'optimize',
+  isAvailable: true,
+  comingSoon: false
+},
+'pdf-to-grayscale': {
+  id: 'pdf-to-grayscale',
+  name: 'PDF a Escala de Grises',
+  description: 'Convierte a blanco y negro para ahorrar tinta',
+  path: '/pdf-escala-grises',
+  icon: 'Contrast',
+  category: 'optimize',
+  isAvailable: false,
+  comingSoon: true
+},
+'flatten-pdf': {
+  id: 'flatten-pdf',
+  name: 'Aplanar PDF',
+  description: 'Fusiona formularios y anotaciones en el documento',
+  path: '/aplanar-pdf',
+  icon: 'Layers',
+  category: 'optimize',
+  isAvailable: false,
+  comingSoon: true
+},
+'repair-pdf': {
+  id: 'repair-pdf',
+  name: 'Reparar PDF',
+  description: 'Intenta recuperar PDFs corruptos o dañados',
+  path: '/reparar-pdf',
+  icon: 'Wrench',
+  category: 'optimize',
+  isAvailable: false,
+  comingSoon: true
+}
 };

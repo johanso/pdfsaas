@@ -10,4 +10,5 @@ export { excelToPdfContent } from "./excel-to-pdf";
 export { powerpointToPdfContent } from "./powerpoint-to-pdf";
 export { htmlToPdfContent } from "./html-to-pdf";
 export { pdfToImageContent } from "./pdf-to-image";
+export { ocrPdfContent } from "./ocr-pdf";
 

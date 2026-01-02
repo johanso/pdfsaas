@@ -166,6 +166,18 @@ export const PDF_CARD_PRESETS = {
     iconSelectedName: "check",
   } as PdfCardConfig,
 
+  // Para OCR PDF (archivos escaneados)
+  ocr: {
+    draggable: true,
+    selectable: false,
+    rotatable: false,
+    removable: true,
+    showFileName: false,
+    showFileInfo: false,
+    showPageNumber: true,
+    showRotationBadge: false,
+  } as PdfCardConfig,
+
 };
 
 // ============================================
