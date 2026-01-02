@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ToolPageLayout } from "@/components/tool-page-layout";
-import { deletePdfContent } from "@/content/tools/delete-pages";
+import { deletePdfContent } from "@/content/tools";
 import DeletePagesClient from "./client";
 
 const { metadata: meta, jsonLd } = deletePdfContent;

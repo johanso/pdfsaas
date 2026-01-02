@@ -125,6 +125,14 @@ export function PdfGrid<T extends { id: string }>({
 
   const gridContent = (
     <div className={className}>
+      {showAddCard && onAddFiles && (
+        <AddPdfCard
+          onFilesAdded={onAddFiles}
+          text={addCardText}
+          subtext={addCardSubtext}
+          disabled={addCardDisabled}
+        />
+      )}
       {items.map((item) => {
         const cardData = getCardData(item);
         return (
@@ -144,14 +152,7 @@ export function PdfGrid<T extends { id: string }>({
           />
         );
       })}
-      {showAddCard && onAddFiles && (
-        <AddPdfCard
-          onFilesAdded={onAddFiles}
-          text={addCardText}
-          subtext={addCardSubtext}
-          disabled={addCardDisabled}
-        />
-      )}
+      
     </div>
   );
 

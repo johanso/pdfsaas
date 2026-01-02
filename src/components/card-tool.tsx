@@ -18,10 +18,13 @@ export default function CardTool({
       className={!tool.isAvailable ? 'pointer-events-none' : ''}
     >
       <Card className={cn(
-        "group h-full cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 border-border bg-card overflow-hidden",
+        "group h-full cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 border-neutral-100 dark:border-neutral-800 bg-card overflow-hidden",
         !tool.isAvailable && 'opacity-40 grayscale-[0.5]'
       )}
       >
+        {!tool.isAvailable &&
+          <span className="absolute right-2 top-2 rounded-2xl px-2 py-0.5 bg-neutral-200 dark:bg-neutral-800 dark:text-gray-400 text-[10px]">Deshabilitada</span>
+        }
         <CardContent className="h-full group p-4 bg-card rounded-xl border border-neutral-100 dark:border-neutral-900 hover:shadow-lg transition-all text-center">
           <div className={cn(
             "flex items-center justify-center w-18 h-10 rounded-full shrink-0 mx-auto transition-transform group-hover:scale-110 mb-2",

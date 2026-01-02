@@ -107,8 +107,8 @@ export default function RotatePdfClient() {
     <>
       <PdfToolLayout
         toolId="rotate-pdf"
-        title="Rotar PDF"
-        description="Corrige la orientación de tus documentos. Rota páginas sueltas o el archivo completo en segundos."
+        title="Rotar / Girar PDF"
+        description="Endereza tus documentos escaneados. Rota páginas individuales o todo el archivo a la vez y guarda los cambios permanentemente."
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}

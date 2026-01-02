@@ -15,7 +15,12 @@ import { CheckCircle2,
   MousePointerClick,
   Smartphone,
   Eraser,
-  Keyboard } from "lucide-react";
+  Keyboard,
+  RefreshCw,
+  FileScan,
+  Save,
+  Trash2,
+  Move, Copy, Files } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TOOL_CATEGORIES } from "@/lib/tools-categories";
 import { TOOLS } from "@/lib/tools-data";
@@ -45,7 +50,14 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   MousePointerClick,
   Smartphone,
   Eraser,
-  Keyboard
+  Keyboard,
+  RefreshCw,
+  FileScan,
+  Save,
+  Trash2,
+  Move,
+  Copy,
+  Files
 };
 
 export function ToolPageLayout({ data, children, categoryId = "ORGANIZE" }: ToolPageLayoutProps) {

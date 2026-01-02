@@ -155,8 +155,8 @@ export default function OrganizePdfClient() {
     <>
       <PdfToolLayout
         toolId="organize-pdf"
-        title="Organizar PDF"
-        description="Ordena, añade, gira y elimina páginas de múltiples archivos PDF."
+        title="Organizar, Ordenar, Eliminar y Añadir PDFs"
+        description="El editor de estructura completo. Arrastra para cambiar el orden, inserta páginas en blanco, duplica hojas o combina varios archivos en uno nuevo."
         hasFiles={pages.length > 0}
         onFilesSelected={handleAddFiles}
         dropzoneMultiple
