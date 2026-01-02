@@ -77,8 +77,8 @@ export default function PowerPointToPdfClient() {
     <>
       <PdfToolLayout
         toolId="powerpoint-to-pdf"
-        title="Convertir PowerPoint a PDF"
-        description="Convierte presentaciones de Microsoft PowerPoint (PPTX, PPT) a PDF preservando diapositivas."
+        title="Convertir PowerPoint: PPT y PPTX a PDF"
+        description="Transforma tus presentaciones en documentos portátiles. Asegura que nadie mueva tus textos o imágenes al compartir tus diapositivas."
         hasFiles={files.length > 0}
         onFilesSelected={handleFilesSelected}
         acceptedFileTypes=".ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"

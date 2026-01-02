@@ -60,6 +60,7 @@ interface PdfGridProps<T> {
   addCardText?: string;
   addCardSubtext?: string;
   addCardDisabled?: boolean;
+  addCardAccept?: string;
 }
 
 export function PdfGrid<T extends { id: string }>({
@@ -82,6 +83,7 @@ export function PdfGrid<T extends { id: string }>({
   addCardText,
   addCardSubtext,
   addCardDisabled = false,
+  addCardAccept,
 }: PdfGridProps<T>) {
   const draggable = config?.draggable !== false;
 
@@ -131,6 +133,7 @@ export function PdfGrid<T extends { id: string }>({
           text={addCardText}
           subtext={addCardSubtext}
           disabled={addCardDisabled}
+          accept={addCardAccept}
         />
       )}
       {items.map((item) => {

@@ -77,8 +77,8 @@ export default function WordToPdfClient() {
     <>
       <PdfToolLayout
         toolId="word-to-pdf"
-        title="Convertir Word a PDF"
-        description="Convierte documentos de Microsoft Word (DOCX, DOC) a PDF de alta calidad."
+        title="Convertir Word: DOC y DOCX a PDF"
+        description="Transforma tus documentos de texto en archivos PDF de alta calidad. Mantenemos el formato original, las tablas y las imágenes intactas."
         hasFiles={files.length > 0}
         onFilesSelected={handleFilesSelected}
         acceptedFileTypes=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"

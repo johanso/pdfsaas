@@ -1,11 +1,51 @@
 import type { Metadata } from "next";
+import { ToolPageLayout } from "@/components/tool-page-layout";
+import { powerpointToPdfContent } from "@/content/tools";
 import PowerPointToPdfClient from "./client";
 
+const { metadata: meta, jsonLd } = powerpointToPdfContent;
+
 export const metadata: Metadata = {
-  title: "PowerPoint a PDF - Convierte presentaciones PPT a PDF",
-  description: "Convierte presentaciones de PowerPoint (PPT, PPTX) a PDF en segundos. Conserva el formato de tus diapositivas.",
+  title: meta.title,
+  description: meta.description,
+  keywords: meta.keywords,
+  alternates: {
+    canonical: meta.canonical,
+  },
+  openGraph: {
+    title: meta.title,
+    description: meta.description,
+    type: "website",
+    url: meta.canonical,
+    siteName: "PDF SaaS",
+    images: meta.ogImage ? [
+      {
+        url: meta.ogImage,
+        width: 1200,
+        height: 630,
+        alt: meta.title,
+      },
+    ] : undefined,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
-export default function PowerPointToPdfPage() {
-  return <PowerPointToPdfClient />;
+export default function ExtractPdfPage() {
+  return (
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+
+      <ToolPageLayout data={powerpointToPdfContent} categoryId="CONVERT_TO_PDF">
+        <PowerPointToPdfClient />
+      </ToolPageLayout>
+    </>
+  );
 }

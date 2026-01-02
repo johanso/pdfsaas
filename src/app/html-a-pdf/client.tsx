@@ -267,8 +267,8 @@ export default function HtmlToPdfClient() {
     <>
       <PdfToolLayout
         toolId="html-to-pdf"
-        title="HTML a PDF"
-        description="Convierte páginas web o archivos HTML en documentos PDF."
+        title="HTML a PDF: Convertir Webs a PDF"
+        description="Guarda cualquier página web como un documento portátil. Renderizado perfecto de CSS y JavaScript, con opciones de vista móvil o escritorio y limpieza automática de anuncios."
         hasFiles={hasFiles}
         onFilesSelected={handleFileChange}
         acceptedFileTypes=".html,.htm"

@@ -12,6 +12,7 @@ interface AddPdfCardProps {
   subtext?: string;
   aspectRatio?: "3/4" | "square" | "16/9";
   disabled?: boolean;
+  accept?: string;
 }
 
 export function AddPdfCard({
@@ -21,6 +22,7 @@ export function AddPdfCard({
   subtext = "Arrastra o haz clic",
   aspectRatio = "3/4",
   disabled = false,
+  accept = "application/pdf",
 }: AddPdfCardProps) {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -86,7 +88,7 @@ export function AddPdfCard({
         type="file"
         className="hidden"
         multiple={true}
-        accept="application/pdf"
+        accept={accept}
         onChange={handleFileInput}
         disabled={disabled}
       />

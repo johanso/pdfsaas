@@ -1,27 +1,53 @@
 "use client";
 
-import { CheckCircle2, 
+import {
+  CheckCircle2,
   Clock,
-  Shield, 
-  Zap, 
-  FileText, 
+  Shield,
+  Zap,
+  Maximize,
+  FileText,
   Scissors,
-  RotateCw, 
-  Minimize2, 
-  Layers, 
+  RotateCw,
+  Minimize2,
+  Layers,
   FileArchive,
   CheckSquare,
   FileOutput,
   MousePointerClick,
   Smartphone,
   Eraser,
+  Laptop,
   Keyboard,
   RefreshCw,
   FileScan,
   Save,
   Trash2,
-  Move, Copy, Files } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+  Move,
+  Copy,
+  Files,
+  Settings2,
+  Image,
+  ShieldCheck,
+  Table,
+  FileSpreadsheet,
+  Calculator,
+  Lock,
+  Presentation,
+  Share2,
+  Printer,
+  Globe,
+  Chromium,
+  Ghost,
+  Layout,
+  Settings
+} from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { TOOL_CATEGORIES } from "@/lib/tools-categories";
 import { TOOLS } from "@/lib/tools-data";
 import CardTool from "@/components/card-tool";
@@ -57,18 +83,39 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Trash2,
   Move,
   Copy,
-  Files
+  Files,
+  Settings2,
+  Image,
+  Maximize,
+  ShieldCheck,
+  Laptop,
+  Table,
+  FileSpreadsheet,
+  Calculator,
+  Lock,
+  Presentation,
+  Share2,
+  Printer,
+  Chromium,
+  Globe,
+  Ghost,
+  Layout,
+  Settings
 };
 
-export function ToolPageLayout({ data, children, categoryId = "ORGANIZE" }: ToolPageLayoutProps) {
+export function ToolPageLayout({
+  data,
+  children,
+  categoryId = "ORGANIZE",
+}: ToolPageLayoutProps) {
   const category = TOOL_CATEGORIES[categoryId];
 
   const relatedTools = category.tools
-    .map(toolId => ({
+    .map((toolId) => ({
       ...TOOLS[toolId],
-      categoryInfo: category
+      categoryInfo: category,
     }))
-    .filter(tool => tool.id !== data.id && tool.isAvailable);
+    .filter((tool) => tool.id !== data.id && tool.isAvailable);
 
   return (
     <>
@@ -96,7 +143,9 @@ export function ToolPageLayout({ data, children, categoryId = "ORGANIZE" }: Tool
                 <h3 className="text-lg font-semibold text-foreground mb-2">
                   {step.title}
                 </h3>
-                <p className="text-md text-muted-foreground">{step.description}</p>
+                <p className="text-md text-muted-foreground">
+                  {step.description}
+                </p>
 
                 {index < data.steps.length - 1 && (
                   <div className="hidden md:block absolute top-8 left-[65%] w-[80%] border-t-2 border-dashed border-border" />
@@ -112,7 +161,8 @@ export function ToolPageLayout({ data, children, categoryId = "ORGANIZE" }: Tool
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">
-              {data.titleSectionBenefits || "¿Por qué usar nuestra herramienta?"}
+              {data.titleSectionBenefits ||
+                "¿Por qué usar nuestra herramienta?"}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               La forma más rápida y segura de trabajar con tus documentos PDF.
@@ -192,7 +242,7 @@ export function ToolPageLayout({ data, children, categoryId = "ORGANIZE" }: Tool
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 max-w-5xl mx-auto">
-              {relatedTools.map(tool => (
+              {relatedTools.map((tool) => (
                 <CardTool key={tool.id} tool={tool} />
               ))}
             </div>

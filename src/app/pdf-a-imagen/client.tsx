@@ -7,7 +7,6 @@ import {
   Image as ImageIcon,
   Globe,
   Server,
-  Monitor,
   FileImage,
   Printer,
   Info
@@ -16,8 +15,6 @@ import {
 // Components
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Progress } from "@/components/ui/progress";
-import { Card } from "@/components/ui/card";
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import ProcessingScreen from "@/components/processing-screen";
@@ -92,9 +89,7 @@ export default function PdfToImageClient() {
     selectedPages,
     setSelectedPages,
     togglePage,
-    selectAll,
     deselectAll,
-    invertSelection,
     reset: resetSelection
   } = usePageSelection(pages.length);
 
@@ -215,8 +210,8 @@ export default function PdfToImageClient() {
     <>
       <PdfToolLayout
         toolId="pdf-to-image"
-        title="Convertir PDF a Imagen"
-        description="Convierte páginas de tu PDF a imágenes de alta calidad (JPG, PNG, WebP, TIFF, BMP)."
+        title="Convertir PDF a Imagenes de Alta Calidad"
+        description="Transforma páginas de PDF en archivos de imagen nítidos. Elige resolución de hasta 600 DPI para impresión o formatos ligeros para web."
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}

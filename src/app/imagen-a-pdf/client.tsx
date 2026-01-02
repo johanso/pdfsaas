@@ -72,9 +72,9 @@ const ORIENTATIONS: { id: PageOrientation; label: string; icon: any }[] = [
 ];
 
 const MARGINS: { id: MarginPreset; label: string }[] = [
-  { id: "none", label: "Sin margen" },
-  { id: "small", label: "Pequeño" },
   { id: "normal", label: "Normal" },
+  { id: "small", label: "Pequeño" },
+  { id: "none", label: "Sin margen" },
 ];
 
 const QUALITIES: { id: ImageQuality; label: string; description: string }[] = [
@@ -90,7 +90,7 @@ export default function ImageToPdfClient() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pageSize, setPageSize] = useState<PageSize>("a4");
   const [orientation, setOrientation] = useState<PageOrientation>("auto");
-  const [margin, setMargin] = useState<MarginPreset>("small");
+  const [margin, setMargin] = useState<MarginPreset>("normal");
   const [quality, setQuality] = useState<ImageQuality>("original");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const pathname = usePathname();
@@ -115,7 +115,7 @@ export default function ImageToPdfClient() {
       setImages([]);
       setPageSize("a4");
       setOrientation("auto");
-      setMargin("small");
+      setMargin("normal");
       setQuality("original");
       setIsDialogOpen(false);
       deselectAll();
@@ -178,7 +178,7 @@ export default function ImageToPdfClient() {
     setImages([]);
     setPageSize("a4");
     setOrientation("auto");
-    setMargin("small");
+    setMargin("normal");
     setQuality("original");
     setIsDialogOpen(false);
     deselectAll();
@@ -261,8 +261,8 @@ export default function ImageToPdfClient() {
     <>
       <PdfToolLayout
         toolId="images-to-pdf"
-        title="Convertir imagen a PDF"
-        description="Convierte tus imágenes en un documento PDF."
+        title="Convertir Imagen: JPG, PNG y Fotos a PDF"
+        description="Transforma tus fotos en un archivo PDF ordenado. Procesamiento ultrarrápido en tu navegador para máxima privacidad, con soporte para documentos masivos."
         hasFiles={images.length > 0}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
@@ -298,7 +298,7 @@ export default function ImageToPdfClient() {
               <div className="space-y-2">
                 <Label className="block text-sm font-medium">Tamaño de página</Label>
                 <div className="grid gap-1.5">
-                  <Select value={pageSize}>
+                  <Select value={pageSize} onValueChange={(value) => setPageSize(value as PageSize)}>
                     <SelectTrigger className="w-full shadow-none">
                       <SelectValue placeholder="Selecciona un tamaño" />
                     </SelectTrigger>
@@ -319,7 +319,7 @@ export default function ImageToPdfClient() {
                   <Label className="block text-sm font-medium">Orientación</Label>
                   <div className="grid gap-1.5">
 
-                    <Select value={orientation}>
+                    <Select value={orientation} onValueChange={(value) => setOrientation(value as PageOrientation)}>
                       <SelectTrigger className="w-full shadow-none">
                         <SelectValue placeholder="Selecciona una orientación" />
                       </SelectTrigger>
@@ -340,7 +340,7 @@ export default function ImageToPdfClient() {
               <div className="space-y-2">
                 <Label className="block text-sm font-medium">Márgenes</Label>
                 <div className="grid gap-1.5">
-                  <Select value={margin}>
+                  <Select value={margin} onValueChange={(value) => setMargin(value as MarginPreset)}>
                     <SelectTrigger className="w-full shadow-none">
                       <SelectValue placeholder="Selecciona un margen" />
                     </SelectTrigger>
@@ -458,6 +458,7 @@ export default function ImageToPdfClient() {
           addCardText="Añadir Imagen"
           addCardSubtext="Arrastra o haz clic"
           addCardDisabled={isProcessing}
+          addCardAccept={ACCEPTED_TYPES.join(",")}
           extractCardData={(img) => ({
             id: img.id,
             file: img.file,

@@ -77,8 +77,8 @@ export default function ExcelToPdfClient() {
     <>
       <PdfToolLayout
         toolId="excel-to-pdf"
-        title="Convertir Excel a PDF"
-        description="Convierte hojas de cálculo de Microsoft Excel (XLSX, XLS) a PDF."
+        title="Convertir Excel y Hojas de Cálculo a PDF"
+        description="Transforma tus archivos XLS y XLSX en documentos PDF no editables. Mantén tus filas, columnas y fórmulas calculadas perfectamente organizadas."
         hasFiles={files.length > 0}
         onFilesSelected={handleFilesSelected}
         acceptedFileTypes=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
