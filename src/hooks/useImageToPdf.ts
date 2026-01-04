@@ -312,7 +312,7 @@ export function useImageToPdf() {
         return { success: false };
       }
 
-      setIsProcessing(true);
+
       setClientProgress({ current: 0, total: images.length });
 
       // Determinar si usar servidor
@@ -349,7 +349,7 @@ export function useImageToPdf() {
         onError?.(error instanceof Error ? error : new Error(errorMessage));
 
         // Reset on error
-        setIsProcessing(false);
+
         setClientProgress({ current: 0, total: 0 });
         setProcessingMode(null);
 
