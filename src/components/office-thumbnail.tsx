@@ -51,14 +51,14 @@ export function OfficeThumbnail({ file, className }: OfficeThumbnailProps) {
     const { Icon, color, bg, label } = getFileTypeInfo();
 
     return (
-        <div className={cn("flex flex-col items-center justify-center gap-3 p-4", bg, className)}>
+        <div className={cn("flex flex-col items-center justify-center gap-3 p-1", bg, className)}>
             <Icon className={cn("w-16 h-16", color)} strokeWidth={1.5} />
-            <div className="text-center">
+            {/* <div className="text-center">
                 <p className={cn("text-xs font-medium", color)}>{label}</p>
                 <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">
                     .{extension?.toUpperCase()}
                 </p>
-            </div>
+            </div> */}
         </div>
     );
 }

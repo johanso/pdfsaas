@@ -317,7 +317,10 @@ export function PdfCard({
               : "bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30"
           )}>
             {isOfficeFile() ? (
-              <BootstrapIcon name="file-earmark-text" size={24} />
+              <OfficeThumbnail
+                file={data.file}
+                className="w-full h-full rounded"
+              />
             ) : (
               <FileText className="w-6 h-6" />
             )}

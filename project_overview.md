@@ -79,34 +79,29 @@ Cada herramienta tiene su propia ruta y típicamente consta de un `page.tsx` (Se
 
 ## 🎣 3. Hooks Personalizados (`src/hooks`) - El "Cerebro"
 
-Estos hooks encapsulan la lógica de negocio compleja, separándola de la UI.
+La arquitectura ha sido refactorizada para usar un patrón de **Pipeline Modular**.
 
-### Gestión de Archivos y Procesamiento
-*   **`usePdfFiles`**:
-    *   *Qué hace:* Gestiona la lista de archivos (`files`), validaciones de tipo/tamaño y manejo de errores de subida.
-    *   *Estado:* Array de archivos `File[]`.
-*   **`usePdfProcessing`**:
-    *   *Qué hace:* Orquestador principal. Controla el flujo: Subida -> Procesamiento -> Descarga -> Reset.
-    *   *Clave:* Gestiona el progreso dual (simulado para UX + real vía XHR).
-*   **`usePdfMultiLoader`**:
-    *   *Qué hace:* Convierte múltiples archivos PDF físicos en una lista virtual plana de páginas (`PdfPage`).
-    *   *Detalle:* Genera miniaturas en workers para no bloquear el UI thread.
+### Core Hooks (`src/hooks/core/`) - Bloques de Construcción
+*   **`useXhrUpload`**: Maneja la subida de archivos vía `XMLHttpRequest` con reportes de progreso, velocidad y tiempo restante reales.
+*   **`useProcessingTimer`**: Simula el progreso para fases de espera (como procesamiento en servidor) para mejorar la UX.
+*   **`useDownload`**: Gestiona la descarga de Blobs o URLs de forma unificada.
 
-### Lógica Específica de Herramientas
-*   **`usePdfToImage`**:
-    *   *Qué hace:* Lógica inteligente de decisión Cliente vs Servidor.
-    *   *Decisión:* Si pide TIFF, BMP, o >300 DPI -> Servidor. Si es JPG simple -> Cliente.
-*   **`useImageToPdf`**:
-    *   *Qué hace:* Versión inversa. Permite ajustar márgenes, orientación y tamaño de página (A4, Carta).
-    *   *Decisión:* Procesa localmente con `pdf-lib` a menos que sean demasiadas imágenes.
-*   **`usePdfPages`**:
-    *   *Qué hace:* Gestiona el estado visual de las páginas: rotación (grados), orden (índices) y selección (`deleted`, `selected`).
-*   **`usePageSelection`**:
-    *   *Qué hace:* Lógica de checkmarks. Soporta "Seleccionar todo", rangos e inversión de selección.
+### Orquestador
+*   **`useProcessingPipeline`**: 
+    *   *Qué hace:* Combina los Core Hooks en un flujo estándar: Preparar -> Subir -> Procesar -> Descargar.
+    *   *Beneficio:* Elimina código duplicado y asegura que todas las herramientas tengan el mismo manejo de errores y feedback visual.
 
-### Utilidades UI
-*   **`useMobile`**: Detecta viewport móvil para ajustar layouts.
-*   **`useMultiSelect`**: Maneja atajos de teclado (Shift+Click) para selecciones múltiples en el grid.
+### Hooks de Herramientas (Consumidores)
+*   **`usePdfProcessing`**: (Genérico) Usa el pipeline para herramientas estándar (`unir`, `dividir`).
+*   **`useCompressPdf`**: (Especializado) Inyecta lógica de compresión Gzip antes de la subida en el pipeline.
+*   **`useOcrPdf`**: (Complejo) Gestiona estados de UI avanzados (tips, rotación de mensajes) y simula tiempos largos de espera mientras orquesta el pipeline.
+
+### Hooks de Utilidad y Híbridos
+*   **`usePdfFiles`**: Gestión global de archivos (drag & drop, validaciones).
+*   **`usePdfMultiLoader`**: Renderizado virtual de páginas para grids grandes.
+*   **`usePdfToImage` / `useImageToPdf`**: Herramientas híbridas que deciden inteligentemente si procesar en cliente o servidor.
+*   **`useMobile`**: Responsive design.
+*   **`useMultiSelect`**: Selección avanzada.
 
 ---
 
