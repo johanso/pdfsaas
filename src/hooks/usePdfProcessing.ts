@@ -92,6 +92,8 @@ export function usePdfProcessing() {
     fileName: string;
   } | null>(null);
 
+  const [lastResponse, setLastResponse] = useState<any>(null);
+
   const speedSamples = useRef<number[]>([]);
   const lastProgressTime = useRef<number>(0);
   const lastProgressBytes = useRef<number>(0);
@@ -307,6 +309,7 @@ export function usePdfProcessing() {
               const response = JSON.parse(xhr.responseText);
               if (response.fileId) {
                 resolve({
+                  ...response,
                   fileId: response.fileId,
                   fileName: response.fileName || fullFileName,
                 });
@@ -344,6 +347,8 @@ export function usePdfProcessing() {
         xhr.open("POST", getApiUrl(options.endpoint));
         xhr.send(uploadFormData);
       });
+
+      setLastResponse(result);
 
       // Guardar info para descarga
       setDownloadInfo({
@@ -477,5 +482,6 @@ export function usePdfProcessing() {
     handleContinueEditing,
     handleStartNew,
     cancelProcess,
+    lastResponse,
   };
 }

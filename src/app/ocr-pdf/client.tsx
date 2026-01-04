@@ -137,8 +137,8 @@ export default function OcrPdfClient() {
       case "scanned":
         return (
           <Badge variant="destructive" className="gap-1.5">
-            <FileText className="w-3 h-3" />
-            Escaneado
+            <FileText className="w-3 h-3" color="white" />
+            <span className="text-white">Escaneado</span>
           </Badge>
         );
       case "has-text":
@@ -169,7 +169,7 @@ export default function OcrPdfClient() {
       {/* Estado OCR */}
       {file && (
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Estado del documento</span>
+          <span className="text-sm font-medium">Est. documento</span>
           <div className="flex items-center gap-2">
             {renderStatusBadge()}
             {ocrStatus === "has-text" && (
@@ -211,7 +211,7 @@ export default function OcrPdfClient() {
           values={selectedLanguages}
           onValuesChange={setSelectedLanguages}
         >
-          <MultiSelectTrigger className="w-full">
+          <MultiSelectTrigger className="w-full shadow-none">
             <MultiSelectValue placeholder="Seleccionar idiomas" />
           </MultiSelectTrigger>
           <MultiSelectContent search={{ placeholder: "Buscar idioma..." }}>
@@ -245,7 +245,7 @@ export default function OcrPdfClient() {
           value={dpi.toString()}
           onValueChange={(v) => setDpi(Number(v) as DpiOption)}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full shadow-none">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -270,7 +270,7 @@ export default function OcrPdfClient() {
         </Label>
       </div>
 
-      <Separator />
+      <Separator className="my-4" />
     </div>
   );
 

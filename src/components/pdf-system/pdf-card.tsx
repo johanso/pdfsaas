@@ -178,6 +178,18 @@ export const PDF_CARD_PRESETS = {
     showRotationBadge: false,
   } as PdfCardConfig,
 
+  // Para Comprimir PDF
+  compress: {
+    draggable: false,
+    selectable: false,
+    rotatable: false,
+    removable: true,
+    showFileName: true,
+    showFileInfo: true,
+    showPageNumber: false,
+    showRotationBadge: false,
+  } as PdfCardConfig,
+
 };
 
 // ============================================

@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { gzipSync } from "fflate";
 import { getApiUrl } from "@/lib/api";
 import { Loader2, Check, Info } from "lucide-react";
+import { usePdfFiles } from "./usePdfFiles";
 
 // ============================================================================
 // TYPES
@@ -137,7 +138,22 @@ export function useOcrPdf() {
   // State
   // -------------------------------------------------------------------------
 
-  const [file, setFileState] = useState<File | null>(null);
+  // -------------------------------------------------------------------------
+  // Global State (FileContext)
+  // -------------------------------------------------------------------------
+  const {
+    files,
+    addFiles,
+    removeFile: removeContextFile,
+    reset: resetContextFiles
+  } = usePdfFiles();
+
+  const file = files[0]?.file || null;
+
+  // -------------------------------------------------------------------------
+  // State
+  // -------------------------------------------------------------------------
+
   const [pages, setPages] = useState<PageInfo[]>([]);
   const [ocrStatus, setOcrStatus] = useState<OcrStatus>("idle");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -243,7 +259,7 @@ export function useOcrPdf() {
     }
 
     if (speedSamples.current.length === 0) return 0;
-    return speedSamples.current.reduce((a, b) => a + b, 0) / speedSamples.current.length;
+    return speedSamples.current.reduce((a: number, b: number) => a + b, 0) / speedSamples.current.length;
   }, []);
 
   // -------------------------------------------------------------------------
@@ -309,7 +325,9 @@ export function useOcrPdf() {
       }
 
       setPages([]);
-      setFileState(null);
+      if (isMounted.current && fileIdRef.current === currentFileId) {
+        setOcrStatus("error");
+      }
     }
   }, []);
 
@@ -349,39 +367,46 @@ export function useOcrPdf() {
   // Set file - main entry point
   // -------------------------------------------------------------------------
 
-  const setFile = useCallback((newFile: File | null) => {
+  // -------------------------------------------------------------------------
+  // Watch for file changes in context
+  // -------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!file) {
+      setPages([]);
+      setOcrStatus("idle");
+      setIsProcessing(false);
+      setIsComplete(false);
+      setProgress(0);
+      setPhase("idle");
+      setOperation("");
+      setTip("");
+      setUploadStats(null);
+      setResultBlob(null);
+      setResultFileName("");
+      return;
+    }
+
     fileIdRef.current += 1;
     const currentFileId = fileIdRef.current;
 
-    // Limpiar estado
-    setPages([]);
-    setOcrStatus("idle");
-    setIsProcessing(false);
-    setIsComplete(false);
-    setProgress(0);
-    setPhase("idle");
-    setOperation("");
-    setTip("");
-    setUploadStats(null);
-    setResultBlob(null);
-    setResultFileName("");
+    loadPdfPages(file, currentFileId);
+    detectOcrStatus(file, currentFileId);
+  }, [file, loadPdfPages, detectOcrStatus]);
 
+  const setFile = useCallback((newFile: File | null) => {
     if (!newFile) {
-      setFileState(null);
+      resetContextFiles();
       return;
     }
 
     if (newFile.type !== "application/pdf") {
       toast.error("Por favor selecciona un archivo PDF válido");
-      setFileState(null);
       return;
     }
 
-    setFileState(newFile);
-    loadPdfPages(newFile, currentFileId);
-    detectOcrStatus(newFile, currentFileId);
-
-  }, [loadPdfPages, detectOcrStatus]);
+    addFiles([newFile]);
+  }, [addFiles, resetContextFiles]);
 
   // -------------------------------------------------------------------------
   // Page operations
@@ -391,12 +416,11 @@ export function useOcrPdf() {
     setPages(prev => {
       const newPages = prev.filter(p => p.id !== pageId);
       if (newPages.length === 0) {
-        setFileState(null);
-        setOcrStatus("idle");
+        resetContextFiles();
       }
       return newPages;
     });
-  }, []);
+  }, [resetContextFiles]);
 
   const rotatePage = useCallback((pageId: string, degrees: number = 90) => {
     setPages(prev => prev.map(p =>
@@ -675,23 +699,11 @@ export function useOcrPdf() {
       abortControllerRef.current.abort();
     }
     stopMessageRotation();
-    fileIdRef.current += 1;
-    setFileState(null);
-    setPages([]);
-    setOcrStatus("idle");
-    setIsProcessing(false);
-    setIsComplete(false);
-    setProgress(0);
-    setPhase("idle");
-    setOperation("");
-    setTip("");
-    setUploadStats(null);
+    resetContextFiles();
     setSelectedLanguages(["spa"]);
     setDpi(300);
     setOptimize(true);
-    setResultBlob(null);
-    setResultFileName("");
-  }, [stopMessageRotation]);
+  }, [stopMessageRotation, resetContextFiles]);
 
   const startNew = useCallback(() => {
     stopMessageRotation();

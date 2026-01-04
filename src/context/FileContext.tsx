@@ -60,11 +60,13 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
         path.startsWith('/eliminar-paginas-pdf') ||
         path.startsWith('/extraer-paginas-pdf') ||
         path.startsWith('/rotar-pdf') ||
-        path.startsWith('/pdf-a-imagen');
-      
+        path.startsWith('/pdf-a-imagen') ||
+        path.startsWith('/comprimir-pdf') ||
+        path.startsWith('/ocr-pdf');
+
       const wasToolRoute = isToolRoute(previousPathname.current);
       const isNowToolRoute = isToolRoute(pathname);
-      
+
       // Reset if navigating between different tools
       if (wasToolRoute && isNowToolRoute && previousPathname.current !== pathname) {
         setFiles([]);
@@ -86,101 +88,101 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
 
   const addFiles = async (newFiles: File[], skipPdfValidation: boolean = false) => {
     setIsLoading(true);
-    
+
     try {
       // ===== VALIDACIÓN 1: Tamaño individual =====
-    const oversizedFiles = newFiles.filter(f => f.size > FILE_SIZE_LIMITS.max);
-    if (oversizedFiles.length > 0) {
-      toast.error(
-        `${oversizedFiles.length} archivo${oversizedFiles.length > 1 ? 's exceden' : ' excede'} el límite de ${formatBytes(FILE_SIZE_LIMITS.max)}`,
-        {
-          description: oversizedFiles.map(f => f.name).slice(0, 3).join(", ") + (oversizedFiles.length > 3 ? "..." : ""),
-          duration: 5000
-        }
-      );
-    }
-
-    const sizedFiles = newFiles.filter(f => f.size <= FILE_SIZE_LIMITS.max);
-    if (sizedFiles.length === 0) return;
-
-    // ===== VALIDACIÓN 2: Tamaño total del batch =====
-    const currentTotalSize = files.reduce((acc, f) => acc + f.file.size, 0);
-    const newTotalSize = sizedFiles.reduce((acc, f) => acc + f.size, 0);
-    
-    if (currentTotalSize + newTotalSize > FILE_SIZE_LIMITS.maxBatch) {
-      const availableSpace = FILE_SIZE_LIMITS.maxBatch - currentTotalSize;
-      toast.error("Límite total excedido", {
-        description: `Máximo ${formatBytes(FILE_SIZE_LIMITS.maxBatch)} por lote. Espacio disponible: ${formatBytes(availableSpace)}`,
-        duration: 5000
-      });
-      return;
-    }
-
-    // ===== VALIDACIÓN 3: Tipo de archivo =====
-    const validFiles = skipPdfValidation
-      ? sizedFiles
-      : sizedFiles.filter(f => f.type === "application/pdf");
-
-    if (!skipPdfValidation && validFiles.length < sizedFiles.length) {
-      toast.error("Algunos archivos no eran PDF y fueron ignorados.");
-    }
-
-    if (validFiles.length === 0) return;
-
-    let protectedCount = 0;
-
-    const mappedFilesPromises = validFiles.map(async (f): Promise<PdfFile | null> => {
-      let pageCount: number | undefined;
-
-      if (f.type === "application/pdf") {
-        try {
-          const { pdfjs } = await import("react-pdf");
-          pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-
-          const buffer = await f.arrayBuffer();
-          const pdf = await pdfjs.getDocument(buffer).promise;
-          pageCount = pdf.numPages;
-        } catch (error: any) {
-          if (error.name === "PasswordException") {
-            protectedCount++;
-            return null;
+      const oversizedFiles = newFiles.filter(f => f.size > FILE_SIZE_LIMITS.max);
+      if (oversizedFiles.length > 0) {
+        toast.error(
+          `${oversizedFiles.length} archivo${oversizedFiles.length > 1 ? 's exceden' : ' excede'} el límite de ${formatBytes(FILE_SIZE_LIMITS.max)}`,
+          {
+            description: oversizedFiles.map(f => f.name).slice(0, 3).join(", ") + (oversizedFiles.length > 3 ? "..." : ""),
+            duration: 5000
           }
-          console.error("Error extracting PDF page count:", error);
-        }
-      } else if (skipPdfValidation) {
-        // Office files logic
-        const ext = f.name.toLowerCase().split('.').pop();
-        const officeExtensions = ['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'];
-        if (ext && officeExtensions.includes(ext)) {
-          pageCount = await getOfficePageCount(f);
-        }
+        );
       }
 
-      return {
-        id: crypto.randomUUID(),
-        file: f,
-        name: f.name,
-        rotation: 0,
-        pageCount
-      };
-    });
+      const sizedFiles = newFiles.filter(f => f.size <= FILE_SIZE_LIMITS.max);
+      if (sizedFiles.length === 0) return;
 
-    const resolvedFiles = await Promise.all(mappedFilesPromises);
-    const mappedFiles = resolvedFiles.filter((f): f is PdfFile => f !== null);
+      // ===== VALIDACIÓN 2: Tamaño total del batch =====
+      const currentTotalSize = files.reduce((acc, f) => acc + f.file.size, 0);
+      const newTotalSize = sizedFiles.reduce((acc, f) => acc + f.size, 0);
 
-    if (protectedCount > 0) {
-      toast.error(
-        `${protectedCount} archivo${protectedCount > 1 ? 's' : ''} protegido${protectedCount > 1 ? 's' : ''} detectado${protectedCount > 1 ? 's' : ''} y descartado${protectedCount > 1 ? 's' : ''}.`,
-        {
-          description: "Por favor, desbloquéalos primero.",
-          action: {
-            label: "Desbloquear PDF",
-            onClick: () => window.location.href = "/desbloquear-pdf"
-          },
-          duration: 6000
+      if (currentTotalSize + newTotalSize > FILE_SIZE_LIMITS.maxBatch) {
+        const availableSpace = FILE_SIZE_LIMITS.maxBatch - currentTotalSize;
+        toast.error("Límite total excedido", {
+          description: `Máximo ${formatBytes(FILE_SIZE_LIMITS.maxBatch)} por lote. Espacio disponible: ${formatBytes(availableSpace)}`,
+          duration: 5000
+        });
+        return;
+      }
+
+      // ===== VALIDACIÓN 3: Tipo de archivo =====
+      const validFiles = skipPdfValidation
+        ? sizedFiles
+        : sizedFiles.filter(f => f.type === "application/pdf");
+
+      if (!skipPdfValidation && validFiles.length < sizedFiles.length) {
+        toast.error("Algunos archivos no eran PDF y fueron ignorados.");
+      }
+
+      if (validFiles.length === 0) return;
+
+      let protectedCount = 0;
+
+      const mappedFilesPromises = validFiles.map(async (f): Promise<PdfFile | null> => {
+        let pageCount: number | undefined;
+
+        if (f.type === "application/pdf") {
+          try {
+            const { pdfjs } = await import("react-pdf");
+            pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+            const buffer = await f.arrayBuffer();
+            const pdf = await pdfjs.getDocument(buffer).promise;
+            pageCount = pdf.numPages;
+          } catch (error: any) {
+            if (error.name === "PasswordException") {
+              protectedCount++;
+              return null;
+            }
+            console.error("Error extracting PDF page count:", error);
+          }
+        } else if (skipPdfValidation) {
+          // Office files logic
+          const ext = f.name.toLowerCase().split('.').pop();
+          const officeExtensions = ['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'];
+          if (ext && officeExtensions.includes(ext)) {
+            pageCount = await getOfficePageCount(f);
+          }
         }
-      );
-    }
+
+        return {
+          id: crypto.randomUUID(),
+          file: f,
+          name: f.name,
+          rotation: 0,
+          pageCount
+        };
+      });
+
+      const resolvedFiles = await Promise.all(mappedFilesPromises);
+      const mappedFiles = resolvedFiles.filter((f): f is PdfFile => f !== null);
+
+      if (protectedCount > 0) {
+        toast.error(
+          `${protectedCount} archivo${protectedCount > 1 ? 's' : ''} protegido${protectedCount > 1 ? 's' : ''} detectado${protectedCount > 1 ? 's' : ''} y descartado${protectedCount > 1 ? 's' : ''}.`,
+          {
+            description: "Por favor, desbloquéalos primero.",
+            action: {
+              label: "Desbloquear PDF",
+              onClick: () => window.location.href = "/desbloquear-pdf"
+            },
+            duration: 6000
+          }
+        );
+      }
 
       if (mappedFiles.length > 0) {
         setFiles(prev => [...mappedFiles, ...prev]);

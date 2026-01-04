@@ -23,6 +23,12 @@ interface ProcessingScreenProps {
   customFunFacts?: string[];
   customTips?: { icon: any; text: string }[];
   processingDescription?: string;
+  successDetails?: {
+    originalSize?: number;
+    compressedSize?: number;
+    reductionPercentage?: number;
+    savedBytes?: number;
+  };
 }
 
 const funFacts = [
@@ -59,6 +65,7 @@ const ProcessingScreen = ({
   customFunFacts,
   customTips,
   processingDescription,
+  successDetails,
 }: ProcessingScreenProps) => {
   const activeFunFacts = customFunFacts || funFacts;
   const activeTips = customTips || tips;
@@ -210,9 +217,34 @@ const ProcessingScreen = ({
               )}
 
               {isComplete && (
-                <p className="text-sm text-muted-foreground">
-                  Tu archivo se ha descargado exitosamente
-                </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Tu archivo se ha descargado exitosamente
+                  </p>
+                  {successDetails && (
+                    <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 mt-4 text-center">
+                      <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-1">
+                        Resultado de compresión
+                      </p>
+                      <div className="flex items-center justify-center gap-4">
+                        <div className="text-left">
+                          <p className="text-[10px] text-zinc-500 uppercase">Original</p>
+                          <p className="text-sm font-bold">{formatBytes(successDetails.originalSize || 0)}</p>
+                        </div>
+                        <div className="h-8 w-px bg-green-500/30"></div>
+                        <div className="text-left">
+                          <p className="text-[10px] text-zinc-500 uppercase">Comprimido</p>
+                          <p className="text-sm font-bold text-green-600 dark:text-green-400">{formatBytes(successDetails.compressedSize || 0)}</p>
+                        </div>
+                        <div className="h-8 w-px bg-green-500/30"></div>
+                        <div className="text-left">
+                          <p className="text-[10px] text-zinc-500 uppercase">Ahorro</p>
+                          <p className="text-sm font-bold text-green-600 dark:text-green-400">-{successDetails.reductionPercentage?.toFixed(1)}%</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
