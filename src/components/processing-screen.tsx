@@ -18,6 +18,11 @@ interface ProcessingScreenProps {
   onEditAgain?: () => void;
   onStartNew?: () => void;
   onCancel?: () => void;
+  customTip?: string;
+  customTipLabel?: string;
+  customFunFacts?: string[];
+  customTips?: { icon: any; text: string }[];
+  processingDescription?: string;
 }
 
 const funFacts = [
@@ -49,7 +54,15 @@ const ProcessingScreen = ({
   onEditAgain,
   onStartNew,
   onCancel,
+  customTip,
+  customTipLabel = "PROCESO",
+  customFunFacts,
+  customTips,
+  processingDescription,
 }: ProcessingScreenProps) => {
+  const activeFunFacts = customFunFacts || funFacts;
+  const activeTips = customTips || tips;
+
   const [currentFact, setCurrentFact] = useState(0);
   const [currentTip, setCurrentTip] = useState(0);
   const [dots, setDots] = useState("");
@@ -57,18 +70,18 @@ const ProcessingScreen = ({
   // Rotate fun facts
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentFact((prev) => (prev + 1) % funFacts.length);
+      setCurrentFact((prev) => (prev + 1) % activeFunFacts.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeFunFacts.length]);
 
   // Rotate tips
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTip((prev) => (prev + 1) % tips.length);
+      setCurrentTip((prev) => (prev + 1) % activeTips.length);
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeTips.length]);
 
   // Animate dots
   useEffect(() => {
@@ -78,7 +91,7 @@ const ProcessingScreen = ({
     return () => clearInterval(interval);
   }, []);
 
-  const CurrentTipIcon = tips[currentTip].icon;
+  const CurrentTipIcon = activeTips[currentTip].icon;
 
   // Icono según fase
   const getPhaseIcon = () => {
@@ -152,7 +165,6 @@ const ProcessingScreen = ({
                 {isComplete ? "¡Completado!" : `${operation}${dots}`}
               </h2>
 
-              {/* Upload Stats - Similar a iLovePDF */}
               {phase === "compressing" && uploadStats && !isComplete && (
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-foreground">
@@ -187,7 +199,7 @@ const ProcessingScreen = ({
 
               {phase === "processing" && !isComplete && (
                 <p className="text-sm text-muted-foreground">
-                  Esto puede tardar unos segundos...
+                  {processingDescription || "Esto puede tardar unos segundos..."}
                 </p>
               )}
 
@@ -255,9 +267,13 @@ const ProcessingScreen = ({
                     <CurrentTipIcon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">CONSEJO</p>
+                    {customTip ? (
+                      <p className="text-xs font-medium text-muted-foreground mb-1">{customTipLabel}</p>
+                    ) : (
+                      <p className="text-xs font-medium text-muted-foreground mb-1">CONSEJO</p>
+                    )}
                     <p className="text-sm text-foreground leading-relaxed">
-                      {tips[currentTip].text}
+                      {customTip || activeTips[currentTip].text}
                     </p>
                   </div>
                 </div>
@@ -269,7 +285,7 @@ const ProcessingScreen = ({
               <div className="text-center">
                 <p className="text-xs font-medium text-muted-foreground mb-2">¿SABÍAS QUE?</p>
                 <p className="text-sm text-muted-foreground italic leading-relaxed transition-opacity duration-500">
-                  "{funFacts[currentFact]}"
+                  "{activeFunFacts[currentFact]}"
                 </p>
               </div>
             )}
