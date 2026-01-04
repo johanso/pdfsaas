@@ -145,8 +145,8 @@ export default function CompressPdfClient() {
           },
           {
             label: "Nivel",
-            value: mode === "simple" 
-              ? presetInfo.title 
+            value: mode === "simple"
+              ? presetInfo.title
               : `${dpi} DPI / ${imageQuality}%`,
           },
         ]}
@@ -265,8 +265,8 @@ export default function CompressPdfClient() {
         }}
         successDialogProps={{
           isOpen: false,
-          onOpenChange: () => {},
-          onContinue: () => {},
+          onOpenChange: () => { },
+          onContinue: () => { },
         }}
       >
         <PdfGrid
@@ -284,7 +284,7 @@ export default function CompressPdfClient() {
         />
       </PdfToolLayout>
 
-      {isProcessing && (
+      {(isProcessing || isComplete) && (
         <ProcessingScreen
           progress={progress}
           isComplete={isComplete}
@@ -299,11 +299,11 @@ export default function CompressPdfClient() {
           successDetails={
             result
               ? {
-                  originalSize: result.originalSize,
-                  compressedSize: result.compressedSize,
-                  reductionPercentage: result.reduction,
-                  savedBytes: result.saved,
-                }
+                originalSize: result.originalSize,
+                compressedSize: result.compressedSize,
+                reductionPercentage: result.reduction,
+                savedBytes: result.saved,
+              }
               : undefined
           }
         />
@@ -333,11 +333,10 @@ function PresetCard({
 }) {
   return (
     <Card
-      className={`relative cursor-pointer transition-all ${
-        selected
+      className={`relative cursor-pointer transition-all ${selected
           ? "border-primary bg-primary/5 ring-1 ring-primary/20"
           : "hover:border-zinc-300 dark:hover:border-zinc-700 bg-transparent"
-      }`}
+        }`}
       onClick={onClick}
     >
       <CardContent className="py-3 px-3">

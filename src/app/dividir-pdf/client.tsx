@@ -268,7 +268,7 @@ export default function SplitPdfClient() {
         />
       </PdfToolLayout>
 
-      {isProcessing && (
+      {(isProcessing || isComplete) && (
         <ProcessingScreen
           fileName={fileName}
           operation={operation}

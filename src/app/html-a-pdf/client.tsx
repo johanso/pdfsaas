@@ -540,7 +540,7 @@ export default function HtmlToPdfClient() {
         </div>
       </PdfToolLayout>
 
-      {isProcessing && (
+      {(isProcessing || isComplete) && (
         <ProcessingScreen
           fileName={fileName}
           operation={operation}

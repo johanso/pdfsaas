@@ -188,7 +188,7 @@ export default function DeletePagesClient() {
 
       {/* Processing Screen */}
       {
-        isProcessing && (
+        (isProcessing || isComplete) && (
           <ProcessingScreen
             fileName={fileName}
             operation={operation}

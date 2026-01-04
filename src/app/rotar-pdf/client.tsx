@@ -169,7 +169,7 @@ export default function RotatePdfClient() {
 
       {/* Processing Screen */}
       {
-        isProcessing && (
+        (isProcessing || isComplete) && (
           <ProcessingScreen
             fileName={fileName}
             operation={operation}

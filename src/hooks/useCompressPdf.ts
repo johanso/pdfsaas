@@ -1,7 +1,6 @@
-import { useState, useCallback, useRef } from "react";
-import { toast } from "sonner";
-import { getApiUrl } from "@/lib/api";
+import { useCallback, useMemo } from "react";
 import { gzipSync } from "fflate";
+import { useProcessingPipeline, ProcessingResult } from "./useProcessingPipeline";
 
 // ============================================================================
 // TYPES
@@ -9,10 +8,9 @@ import { gzipSync } from "fflate";
 
 export type CompressionPreset = "extreme" | "recommended" | "low";
 export type CompressionMode = "simple" | "advanced";
-export type ProcessingPhase = "idle" | "compressing" | "uploading" | "processing" | "ready";
+export type ProcessingPhase = "idle" | "preparing" | "compressing" | "uploading" | "processing" | "downloading" | "ready" | "error";
 
-export interface CompressionResult {
-  success: boolean;
+export interface CompressionResult extends ProcessingResult {
   fileId: string;
   fileName: string;
   originalSize: number;
@@ -21,48 +19,20 @@ export interface CompressionResult {
   saved: number;
 }
 
-export interface UploadStats {
-  currentFile: number;
-  totalFiles: number;
-  currentFileName: string;
-  currentFileSize: number;
-  compressedSize: number;
-  bytesUploaded: number;
-  totalBytes: number;
-  speed: number;
-  timeRemaining: number;
-  compressionRatio: number;
-  phase: "compressing" | "uploading";
-}
+// Re-export UploadStats for compatibility
+export type { UploadStats } from "./useProcessingPipeline";
 
 // ============================================================================
 // HELPERS
 // ============================================================================
 
-export function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-}
-
-export function formatTime(seconds: number): string {
-  if (!seconds || seconds === Infinity || isNaN(seconds)) return "--";
-  if (seconds < 60) return `${Math.round(seconds)} seg`;
-  if (seconds < 3600) {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.round(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")} min`;
-  }
-  return `${Math.round(seconds / 3600)} h`;
-}
+export { formatBytes, formatTime } from "@/lib/format";
 
 async function compressFileGzip(file: File): Promise<{ blob: Blob; originalSize: number; compressedSize: number }> {
   const arrayBuffer = await file.arrayBuffer();
   const uint8Array = new Uint8Array(arrayBuffer);
   const compressed = gzipSync(uint8Array, { level: 6 });
-  
+
   return {
     blob: new Blob([new Uint8Array(compressed)], { type: "application/gzip" }),
     originalSize: file.size,
@@ -75,47 +45,7 @@ async function compressFileGzip(file: File): Promise<{ blob: Blob; originalSize:
 // ============================================================================
 
 export function useCompressPdf() {
-  // Estado de procesamiento
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [phase, setPhase] = useState<ProcessingPhase>("idle");
-  const [operation, setOperation] = useState("");
-  const [uploadStats, setUploadStats] = useState<UploadStats | null>(null);
-  
-  // Resultado
-  const [result, setResult] = useState<CompressionResult | null>(null);
-  const [resultBlob, setResultBlob] = useState<Blob | null>(null);
-  const [resultFileName, setResultFileName] = useState("");
-  
-  // Refs
-  const isMounted = useRef(true);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const speedSamples = useRef<number[]>([]);
-  const lastProgressTime = useRef<number>(0);
-  const lastProgressBytes = useRef<number>(0);
-
-  const calculateSpeed = useCallback((loaded: number, timestamp: number) => {
-    if (lastProgressTime.current === 0) {
-      lastProgressTime.current = timestamp;
-      lastProgressBytes.current = loaded;
-      return 0;
-    }
-
-    const timeDiff = (timestamp - lastProgressTime.current) / 1000;
-    const bytesDiff = loaded - lastProgressBytes.current;
-
-    if (timeDiff > 0.1) {
-      const currentSpeed = bytesDiff / timeDiff;
-      speedSamples.current.push(currentSpeed);
-      if (speedSamples.current.length > 10) speedSamples.current.shift();
-      lastProgressTime.current = timestamp;
-      lastProgressBytes.current = loaded;
-    }
-
-    if (speedSamples.current.length === 0) return 0;
-    return speedSamples.current.reduce((a, b) => a + b, 0) / speedSamples.current.length;
-  }, []);
+  const pipeline = useProcessingPipeline();
 
   const compress = useCallback(async (
     file: File,
@@ -128,247 +58,115 @@ export function useCompressPdf() {
       onSuccess?: () => void;
     }
   ) => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-    
-    speedSamples.current = [];
-    lastProgressTime.current = 0;
-    lastProgressBytes.current = 0;
-    
-    const fullFileName = options.fileName.endsWith('.pdf') 
-      ? options.fileName 
-      : `${options.fileName}.pdf`;
-    
-    setIsProcessing(true);
-    setIsComplete(false);
-    setProgress(0);
-    setPhase("compressing");
-    setOperation("Preparando archivo...");
-    setResult(null);
-    setUploadStats({
-      currentFile: 1,
-      totalFiles: 1,
-      currentFileName: file.name,
-      currentFileSize: file.size,
-      compressedSize: 0,
-      bytesUploaded: 0,
-      totalBytes: file.size,
-      speed: 0,
-      timeRemaining: 0,
-      compressionRatio: 0,
-      phase: "compressing",
+
+    // Configurar pipeline
+    await pipeline.start({
+      files: [file],
+      endpoint: "/api/worker/compress-pdf",
+      operationName: "Comprimiendo PDF",
+      createFormData: async (files) => {
+        const f = files[0];
+        // Custom Logic: Gzip compression before upload
+        const { blob: compressedBlob } = await compressFileGzip(f);
+
+        const formData = new FormData();
+        formData.append("file", compressedBlob, f.name + ".gz");
+        formData.append("compressed", "true");
+        formData.append("mode", options.mode);
+
+        if (options.mode === "simple" && options.preset) {
+          formData.append("preset", options.preset);
+        } else {
+          formData.append("dpi", String(options.dpi || 120));
+          formData.append("imageQuality", String(options.imageQuality || 60));
+        }
+
+        return formData;
+      }
     });
-    
-    const startTime = Date.now();
-    
-    try {
-      // FASE 1: Comprimir con gzip (0% - 10%)
-      for (let i = 0; i <= 10; i += 2) {
-        setProgress(i);
-        await new Promise(r => setTimeout(r, 20));
-      }
-      
-      const { blob: compressedBlob, originalSize, compressedSize } = await compressFileGzip(file);
-      const gzipRatio = ((1 - compressedSize / originalSize) * 100);
-      
-      setProgress(10);
-      setPhase("uploading");
-      setOperation("Subiendo archivo...");
-      setUploadStats(prev => prev ? {
-        ...prev,
-        compressedSize,
-        compressionRatio: gzipRatio,
-        totalBytes: compressedSize,
-        phase: "uploading" as const,
-      } : null);
-      
-      // FASE 2: Subir (10% - 30%)
-      const formData = new FormData();
-      formData.append("file", compressedBlob, file.name + ".gz");
-      formData.append("compressed", "true");
-      formData.append("mode", options.mode);
-      
-      if (options.mode === "simple" && options.preset) {
-        formData.append("preset", options.preset);
-      } else {
-        formData.append("dpi", String(options.dpi || 120));
-        formData.append("imageQuality", String(options.imageQuality || 60));
-      }
-      
-      const uploadResult = await new Promise<CompressionResult>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable && isMounted.current) {
-            const uploadProgress = 10 + (e.loaded / e.total) * 20;
-            setProgress(uploadProgress);
-            
-            const speed = calculateSpeed(e.loaded, Date.now());
-            const remainingBytes = e.total - e.loaded;
-            const timeRemaining = speed > 0 ? remainingBytes / speed : 0;
-            
-            setUploadStats(prev => prev ? {
-              ...prev,
-              bytesUploaded: e.loaded,
-              totalBytes: e.total,
-              speed,
-              timeRemaining,
-              phase: "uploading" as const,
-            } : null);
-          }
-        });
-        
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const data = JSON.parse(xhr.responseText);
-              if (data.success) {
-                resolve(data as CompressionResult);
-              } else {
-                reject(new Error(data.error || "Error al comprimir"));
-              }
-            } catch {
-              reject(new Error("Error al parsear respuesta"));
-            }
-          } else {
-            try {
-              const error = JSON.parse(xhr.responseText);
-              reject(new Error(error.error || `Error ${xhr.status}`));
-            } catch {
-              reject(new Error(`Error ${xhr.status}`));
-            }
-          }
-        });
-        
-        xhr.addEventListener("error", () => reject(new Error("Error de red")));
-        xhr.addEventListener("abort", () => reject(new Error("Cancelado")));
-        
-        xhr.open("POST", getApiUrl("/api/worker/compress-pdf"));
-        xhr.send(formData);
-        
-        abortControllerRef.current!.signal.addEventListener("abort", () => xhr.abort());
-      });
-      
-      // FASE 3: Procesamiento servidor (30% - 85%)
-      setPhase("processing");
-      setProgress(35);
-      setOperation("Comprimiendo PDF...");
-      setUploadStats(null);
-      
-      const processingInterval = setInterval(() => {
-        setProgress(prev => Math.min(80, prev + 1));
-      }, 300);
-      
-      // FASE 4: Descargar resultado (85% - 100%)
-      const downloadUrl = getApiUrl(`/api/worker/download/${uploadResult.fileId}`);
-      const downloadResponse = await fetch(downloadUrl);
-      
-      clearInterval(processingInterval);
-      
-      if (!downloadResponse.ok) {
-        throw new Error("Error al descargar");
-      }
-      
-      setProgress(90);
-      setOperation("Descargando...");
-      
-      const blob = await downloadResponse.blob();
-      
-      setResult(uploadResult);
-      setResultBlob(blob);
-      setResultFileName(fullFileName);
-      
-      // Descargar automáticamente
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fullFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      setProgress(100);
-      setPhase("ready");
-      setOperation("¡Completado!");
-      
-      await new Promise(r => setTimeout(r, 300));
-      setIsComplete(true);
-      
-      const totalTime = (Date.now() - startTime) / 1000;
-      toast.success(`¡Comprimido! -${uploadResult.reduction.toFixed(0)}% en ${formatTime(totalTime)}`);
-      
-      options.onSuccess?.();
-      return true;
-      
-    } catch (error) {
-      console.error("Compress error:", error);
-      const message = error instanceof Error ? error.message : "Error";
-      
-      if (message !== "Cancelado") {
-        toast.error(message);
-      }
-      
-      setIsProcessing(false);
-      setProgress(0);
-      setPhase("idle");
-      setOperation("");
-      setUploadStats(null);
-      return false;
-    }
-  }, [calculateSpeed]);
 
-  const handleDownloadAgain = useCallback(() => {
-    if (resultBlob && resultFileName) {
-      const url = URL.createObjectURL(resultBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = resultFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success("Descargado");
-    }
-  }, [resultBlob, resultFileName]);
+    options.onSuccess?.();
+  }, [pipeline]);
 
-  const handleStartNew = useCallback(() => {
-    setIsProcessing(false);
-    setIsComplete(false);
-    setProgress(0);
-    setPhase("idle");
-    setOperation("");
-    setUploadStats(null);
-    setResult(null);
-    setResultBlob(null);
-    setResultFileName("");
-  }, []);
+  // Map Pipeline State to UI Requirements
+  const { state, cancel, uploadHook, downloadHook } = pipeline;
 
-  const cancelOperation = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+  const phase = useMemo((): ProcessingPhase => {
+    if (state.phase === "idle") return "idle";
+
+    // Map internal pipeline phases to legacy/UI phases
+    // "preparing" -> "compressing" (in UI terms for this tool)
+    if (state.phase === "preparing") return "compressing";
+    if (state.phase === "uploading") {
+      // If upload is 100% but still in uploading phase, it means we are waiting for server
+      if (uploadHook.progress >= 100) return "processing";
+      return "uploading";
     }
-    setIsProcessing(false);
-    setProgress(0);
-    setPhase("idle");
-    setOperation("");
-    setUploadStats(null);
-    toast.info("Cancelado");
-  }, []);
+    if (state.phase === "processing") return "processing";
+    if (state.phase === "downloading") return "processing"; // Keep showing processing while downloading result? Or "processing" -> "ready"?
+    // Actually legacy UI uses "ready" only when complete.
+    // Legacy `useCompressPdf` had: idle, compressing, uploading, processing, ready.
+    if (state.phase === "complete") return "ready";
+    if (state.phase === "error") return "idle"; // Or error state
+
+    return "processing";
+  }, [state.phase, uploadHook.progress]);
+
+  // Weighted Progress Calculation
+  const progress = useMemo(() => {
+    if (state.phase === "idle") return 0;
+    if (state.phase === "complete") return 100;
+
+    // 0-10%: Preparing (Gzip)
+    if (state.phase === "preparing") return 5;
+
+    // 10-30%: Uploading
+    if (state.phase === "uploading") {
+      const p = uploadHook.progress;
+      if (p >= 100) return 30; // Max out at 30 when upload done, start processing
+      return 10 + (p * 0.2);
+    }
+
+    // 30-100%: Processing + Downloading
+    // Since pipeline combines these...
+    // If waiting for XHR (Phase=Uploading, Progress=100)... we can simulate 30->80
+    // But we don't have a timer running for that in the pipeline yet (as discussed).
+    // The pipeline uses `timerHook` during `downloading` (Phase 4).
+
+    if (state.phase === "downloading") {
+      // 90-100% during download
+      return 90 + (state.progress * 0.1);
+    }
+
+    return state.progress;
+  }, [state.phase, state.progress, uploadHook.progress]);
+
+  const operation = useMemo(() => {
+    if (phase === "compressing") return "Preparando archivo...";
+    if (phase === "uploading") return "Subiendo archivo...";
+    if (phase === "processing") return "Procesando en servidor...";
+    if (phase === "ready") return "¡Completado!";
+    return state.operation;
+  }, [phase, state.operation]);
+
+  const result = state.result as CompressionResult | null;
 
   return {
-    isProcessing,
-    isComplete,
+    isProcessing: state.isProcessing,
+    isComplete: state.phase === "complete",
     progress,
     phase,
     operation,
-    uploadStats,
+    uploadStats: state.uploadStats, // This comes from pipeline which gets it from useXhrUpload
     result,
     compress,
-    handleDownloadAgain,
-    handleStartNew,
-    cancelOperation,
+    handleDownloadAgain: () => {
+      if (result && result.fileId) {
+        const url = `/api/worker/download/${result.fileId}`;
+        downloadHook.downloadFromUrl(url, result.fileName);
+      }
+    },
+    handleStartNew: () => cancel(), // Reset pipeline
+    cancelOperation: cancel
   };
 }

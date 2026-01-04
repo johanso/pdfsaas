@@ -138,7 +138,7 @@ export default function PowerPointToPdfClient() {
       </PdfToolLayout>
 
       {/* Processing Screen */}
-      {isProcessing && (
+      {(isProcessing || isComplete) && (
         <ProcessingScreen
           fileName={fileName}
           operation={operation}

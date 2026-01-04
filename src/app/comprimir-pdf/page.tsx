@@ -20,13 +20,13 @@ export const metadata: Metadata = {
     siteName: "PDF SaaS",
     images: meta.ogImage
       ? [
-          {
-            url: meta.ogImage,
-            width: 1200,
-            height: 630,
-            alt: meta.title,
-          },
-        ]
+        {
+          url: meta.ogImage,
+          width: 1200,
+          height: 630,
+          alt: meta.title,
+        },
+      ]
       : undefined,
   },
   robots: {

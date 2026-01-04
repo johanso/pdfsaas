@@ -1,18 +1,25 @@
 import { useState, useEffect } from "react";
 import {
   FileText, Sparkles, Zap, Shield, Clock, CheckCircle2, Download,
-  Upload, Loader2, Gauge, X
+  Upload, Loader2, Gauge, X, Settings2
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "./ui/button";
-import { formatBytes, formatTime, type UploadStats } from "@/hooks/usePdfProcessing";
+import { formatBytes, formatTime } from "@/lib/format";
+// We will define a shared interface for the UI stats, but for now let's rely on the one passed
+// or import it from a central types file.
+// The hook usePdfProcessing previously exported it.
+// Let's import it from useProcessingPipeline or redefine here temporarily?
+// No, best to import from useProcessingPipeline (where we will define the "rich" stats).
+import { type UploadStats } from "@/hooks/useProcessingPipeline";
+
 
 interface ProcessingScreenProps {
   fileName?: string;
   operation?: string;
   progress?: number;
   isComplete?: boolean;
-  phase?: "idle" | "compressing" | "uploading" | "processing" | "ready";
+  phase?: "idle" | "preparing" | "compressing" | "uploading" | "processing" | "downloading" | "ready" | "complete" | "error";
   uploadStats?: UploadStats | null;
   onDownload?: () => void;
   onEditAgain?: () => void;
@@ -106,14 +113,20 @@ const ProcessingScreen = ({
       return <CheckCircle2 className="h-12 w-12 text-green-500" />;
     }
     switch (phase) {
+      case "preparing":
       case "compressing":
-        return <Upload className="h-12 w-12 text-primary animate-pulse" />;
+        return <Settings2 className="h-12 w-12 text-primary animate-pulse" />;
+
       case "uploading":
         return <Upload className="h-12 w-12 text-primary animate-pulse" />;
       case "processing":
         return <Loader2 className="h-12 w-12 text-primary animate-spin" />;
+      case "downloading":
+        return <Download className="h-12 w-12 text-primary animate-bounce" />;
       case "ready":
-        return <Download className="h-12 w-12 text-green-500 animate-bounce" />;
+      case "complete":
+        return <CheckCircle2 className="h-12 w-12 text-green-500 animate-bounce" />;
+
       default:
         return <FileText className="h-12 w-12 text-primary animate-pulse" />;
     }
@@ -130,7 +143,7 @@ const ProcessingScreen = ({
       <div className="w-full max-w-lg px-6">
         {/* Main Card */}
         <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-card p-8 shadow-xl">
-          {(phase === "uploading" || phase === "compressing") && onCancel && (
+          {(phase === "uploading" || phase === "compressing" || phase === "preparing") && onCancel && (
             <div onClick={onCancel} className={`absolute top-4 right-4 z-10 flex items-center gap-1 px-3 py-1.5 bg-destructive text-white hover:bg-destructive/70 rounded-full text-xs font-medium transition-all cursor-pointer`}>
               <X className="h-3 w-3" />
               <span className="leading-none">Cancelar</span>
@@ -172,7 +185,7 @@ const ProcessingScreen = ({
                 {isComplete ? "¡Completado!" : `${operation}${dots}`}
               </h2>
 
-              {phase === "compressing" && uploadStats && !isComplete && (
+              {(phase === "compressing" || phase === "preparing") && uploadStats && !isComplete && (
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-foreground">
                     {uploadStats.currentFileName}
@@ -191,16 +204,6 @@ const ProcessingScreen = ({
                   <p className="text-sm font-medium text-foreground">
                     {uploadStats.currentFileName}
                   </p>
-                  <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      Restante: <span className="font-medium text-foreground">{formatTime(uploadStats.timeRemaining)}</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Gauge className="h-3 w-3" />
-                      <span className="font-medium text-foreground">{formatBytes(uploadStats.speed)}/s</span>
-                    </span>
-                  </div>
                 </div>
               )}
 

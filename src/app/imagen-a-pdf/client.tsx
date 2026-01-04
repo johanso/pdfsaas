@@ -485,7 +485,7 @@ export default function ImageToPdfClient() {
         />
       </PdfToolLayout>
 
-      {isProcessing && (
+      {(isProcessing || isComplete) && (
         <ProcessingScreen
           progress={progress.total > 0 ? (progress.current / progress.total) * 100 : 0}
           isComplete={isComplete}

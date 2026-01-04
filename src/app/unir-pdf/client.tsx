@@ -151,7 +151,7 @@ export default function UnirPdfClient() {
       </PdfToolLayout>
 
       {/* Processing Screen */}
-      {isProcessing && (
+      {(isProcessing || isComplete) && (
         <ProcessingScreen
           fileName={fileName}
           operation={operation}

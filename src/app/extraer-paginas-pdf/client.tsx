@@ -58,14 +58,14 @@ export default function ExtractPdfClient() {
 
   const handleFilesSelected = (files: File[]) => {
     if (files.length === 0) return;
-    
+
     if (files.length > 1) {
       toast.warning("Solo se procesará el primer archivo", {
         description: "Esta herramienta solo acepta un archivo PDF a la vez",
         duration: 4000
       });
     }
-    
+
     const f = files[0];
     if (f.type !== "application/pdf") {
       toast.error("Por favor selecciona un archivo PDF válido");
@@ -233,7 +233,7 @@ export default function ExtractPdfClient() {
       </PdfToolLayout>
 
       {/* Processing Screen */}
-      {isProcessing && (
+      {(isProcessing || isComplete) && (
         <ProcessingScreen
           fileName={fileName}
           operation={operation}

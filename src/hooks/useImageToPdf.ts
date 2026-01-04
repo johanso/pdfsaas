@@ -1,6 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { PDFDocument } from "pdf-lib";
+import { useProcessingPipeline, type ProcessingResult } from "./useProcessingPipeline";
 
 // Tipos
 export type PageSize = "a4" | "letter" | "legal" | "fit";
@@ -9,6 +10,9 @@ export type MarginPreset = "none" | "small" | "normal";
 export type ImageQuality = "original" | "compressed";
 
 import { getApiUrl } from "@/lib/api";
+
+// Re-export UploadStats
+export type { UploadStats } from "./useProcessingPipeline";
 
 // Límites
 const CLIENT_LIMIT = 50;
@@ -110,10 +114,12 @@ async function imageToBytes(file: File, quality: ImageQuality): Promise<Uint8Arr
 }
 
 export function useImageToPdf() {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const pipeline = useProcessingPipeline();
+  const { state: pipelineState, cancel: cancelPipeline } = pipeline;
+
   const [processingMode, setProcessingMode] = useState<"client" | "server" | null>(null);
-  const [isComplete, setIsComplete] = useState(false);
+  const [clientProgress, setClientProgress] = useState({ current: 0, total: 0 });
+  const [isInternalComplete, setIsInternalComplete] = useState(false);
   const [downloadData, setDownloadData] = useState<{ blob: Blob; fileName: string } | null>(null);
 
   // Conversión en cliente
@@ -132,7 +138,7 @@ export function useImageToPdf() {
         for (let i = 0; i < images.length; i++) {
           const { file, rotation } = images[i];
 
-          setProgress({ current: i + 1, total: images.length });
+          setClientProgress({ current: i + 1, total: images.length });
           onProgress?.(i + 1, images.length);
 
           // Obtener dimensiones originales
@@ -252,7 +258,7 @@ export function useImageToPdf() {
     []
   );
 
-  // Conversión en servidor
+  // Conversión en servidor usando Pipeline
   const convertOnServer = useCallback(
     async (
       images: ImageItem[],
@@ -261,45 +267,35 @@ export function useImageToPdf() {
     ): Promise<{ success: boolean; blob?: Blob; fileName?: string }> => {
       const { pageSize, orientation, margin, quality, onProgress } = options;
 
-      try {
-        const formData = new FormData();
-
-        // Agregar imágenes
-        for (let i = 0; i < images.length; i++) {
-          formData.append("images", images[i].file);
-          formData.append(`rotations`, images[i].rotation.toString());
-
-          setProgress({ current: i + 1, total: images.length });
-          onProgress?.(i + 1, images.length);
+      const result = await pipeline.start({
+        files: images.map(i => i.file), // Note: UploadStats uses file list for stats
+        endpoint: "/api/worker/image-to-pdf",
+        operationName: "Creando PDF...",
+        responseType: "blob",
+        createFormData: async (files) => {
+          const formData = new FormData();
+          // Agregar imágenes (re-iterating images array from closure)
+          for (let i = 0; i < images.length; i++) {
+            formData.append("images", images[i].file);
+            formData.append(`rotations`, images[i].rotation.toString());
+          }
+          formData.append("pageSize", pageSize);
+          formData.append("orientation", orientation);
+          formData.append("margin", margin);
+          formData.append("quality", quality);
+          return formData;
         }
+      });
 
-        // Agregar opciones
-        formData.append("pageSize", pageSize);
-        formData.append("orientation", orientation);
-        formData.append("margin", margin);
-        formData.append("quality", quality);
-
-        const response = await fetch(getApiUrl("/api/worker/image-to-pdf"), {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Error en el servidor");
-        }
-
-        const blob = await response.blob();
+      if (result && result.blob) {
         const finalName = `${fileName}.pdf`;
-        downloadBlob(blob, finalName);
-
-        return { success: true, blob, fileName: finalName };
-      } catch (error) {
-        console.error("Server conversion error:", error);
-        throw error;
+        downloadBlob(result.blob, finalName);
+        return { success: true, blob: result.blob, fileName: finalName };
+      } else {
+        throw new Error("No result from server");
       }
     },
-    []
+    [pipeline]
   );
 
   // Función principal
@@ -317,7 +313,7 @@ export function useImageToPdf() {
       }
 
       setIsProcessing(true);
-      setProgress({ current: 0, total: images.length });
+      setClientProgress({ current: 0, total: images.length });
 
       // Determinar si usar servidor
       const { useServer, reason } = shouldUseServer(images.length);
@@ -337,9 +333,9 @@ export function useImageToPdf() {
         }
 
         if (result.success && result.blob && result.fileName) {
-          setIsComplete(true);
+          setIsInternalComplete(true);
           setDownloadData({ blob: result.blob, fileName: result.fileName });
-          toast.success("¡PDF creado correctamente!");
+          if (!useServer) toast.success("¡PDF creado correctamente!");
           onSuccess?.();
         } else {
           throw new Error("Error en la conversión");
@@ -349,12 +345,12 @@ export function useImageToPdf() {
       } catch (error) {
         console.error("Conversion error:", error);
         const errorMessage = error instanceof Error ? error.message : "Error al crear PDF";
-        toast.error(errorMessage);
+        if (!useServer) toast.error(errorMessage);
         onError?.(error instanceof Error ? error : new Error(errorMessage));
 
         // Reset on error
         setIsProcessing(false);
-        setProgress({ current: 0, total: 0 });
+        setClientProgress({ current: 0, total: 0 });
         setProcessingMode(null);
 
         return { success: false };
@@ -365,25 +361,31 @@ export function useImageToPdf() {
 
   const handleDownloadAgain = useCallback(() => {
     if (downloadData) {
-      const url = URL.createObjectURL(downloadData.blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = downloadData.fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadBlob(downloadData.blob, downloadData.fileName);
       toast.success("Archivo descargado nuevamente");
     }
   }, [downloadData]);
 
   const handleStartNew = useCallback(() => {
-    setIsProcessing(false);
-    setIsComplete(false);
-    setProgress({ current: 0, total: 0 });
-    setProcessingMode(null);
+    setIsInternalComplete(false);
     setDownloadData(null);
-  }, []);
+    setProcessingMode(null);
+    setClientProgress({ current: 0, total: 0 });
+    cancelPipeline();
+  }, [cancelPipeline]);
+
+  const progress = useMemo(() => {
+    if (processingMode === "server") {
+      return { current: pipelineState.progress, total: 100 };
+    }
+    return clientProgress;
+  }, [processingMode, pipelineState.progress, clientProgress]);
+
+  const isProcessing = processingMode === "server"
+    ? pipelineState.isProcessing
+    : (clientProgress.total > 0 && !isInternalComplete);
+
+  const isComplete = isInternalComplete || pipelineState.phase === "complete";
 
   return {
     isProcessing,

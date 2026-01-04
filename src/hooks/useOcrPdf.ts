@@ -1,9 +1,11 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { toast } from "sonner";
 import { gzipSync } from "fflate";
 import { getApiUrl } from "@/lib/api";
 import { Loader2, Check, Info } from "lucide-react";
 import { usePdfFiles } from "./usePdfFiles";
+import { useProcessingPipeline, ProcessingResult } from "./useProcessingPipeline";
+import { useProcessingTimer } from "./core/useProcessingTimer";
 
 // ============================================================================
 // TYPES
@@ -24,25 +26,18 @@ export interface PageInfo {
   rotation: number;
 }
 
-export interface UploadStats {
-  currentFile: number;
-  totalFiles: number;
-  currentFileName: string;
-  currentFileSize: number;
-  compressedSize: number;
-  bytesUploaded: number;
-  totalBytes: number;
-  speed: number;
-  timeRemaining: number;
-  compressionRatio: number;
-  phase: "compressing" | "uploading";
-}
+// Re-export shared types
+export type { UploadStats } from "./useProcessingPipeline";
+import { formatTime } from "@/lib/format";
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
 export const DPI_OPTIONS: { value: DpiOption; label: string; description: string }[] = [
+  { value: 150, label: "150 DPI", description: "Rápido" },
+  { value: 300, label: "300 DPI", description: "Estándar" },
+  { value: 600, label: "600 DPI", description: "Alta calidad" },
   { value: 150, label: "150 DPI", description: "Rápido" },
   { value: 300, label: "300 DPI", description: "Estándar" },
   { value: 600, label: "600 DPI", description: "Alta calidad" },
@@ -57,7 +52,6 @@ const DEFAULT_LANGUAGES: Language[] = [
   { code: "ita", name: "Italiano" },
 ];
 
-// Mensajes de operación por fase
 const OPERATION_MESSAGES = {
   idle: "",
   compressing: "Preparando archivo...",
@@ -98,24 +92,7 @@ const OCR_TIPS = [
 // HELPERS
 // ============================================================================
 
-export function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-}
-
-export function formatTime(seconds: number): string {
-  if (!seconds || seconds === Infinity || isNaN(seconds)) return "--";
-  if (seconds < 60) return `${Math.round(seconds)} seg`;
-  if (seconds < 3600) {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.round(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")} min`;
-  }
-  return `${Math.round(seconds / 3600)} h`;
-}
+// Helpers imported from lib
 
 async function compressFile(file: File): Promise<{ blob: Blob; originalSize: number; compressedSize: number }> {
   const arrayBuffer = await file.arrayBuffer();
@@ -134,13 +111,6 @@ async function compressFile(file: File): Promise<{ blob: Blob; originalSize: num
 // ============================================================================
 
 export function useOcrPdf() {
-  // -------------------------------------------------------------------------
-  // State
-  // -------------------------------------------------------------------------
-
-  // -------------------------------------------------------------------------
-  // Global State (FileContext)
-  // -------------------------------------------------------------------------
   const {
     files,
     addFiles,
@@ -150,71 +120,54 @@ export function useOcrPdf() {
 
   const file = files[0]?.file || null;
 
-  // -------------------------------------------------------------------------
-  // State
-  // -------------------------------------------------------------------------
-
+  // Local state for OCR configuration
   const [pages, setPages] = useState<PageInfo[]>([]);
   const [ocrStatus, setOcrStatus] = useState<OcrStatus>("idle");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [phase, setPhase] = useState<ProcessingPhase>("idle");
-  const [operation, setOperation] = useState("");
-  const [tip, setTip] = useState("");
-  const [uploadStats, setUploadStats] = useState<UploadStats | null>(null);
   const [availableLanguages, setAvailableLanguages] = useState<Language[]>(DEFAULT_LANGUAGES);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(["spa"]);
   const [dpi, setDpi] = useState<DpiOption>(300);
   const [optimize, setOptimize] = useState(true);
-  const [resultBlob, setResultBlob] = useState<Blob | null>(null);
-  const [resultFileName, setResultFileName] = useState("");
 
-  // Ref para controlar el montaje y cancelación
+  // UI state for messages
+  const [operationMsg, setOperationMsg] = useState("");
+  const [tip, setTip] = useState("");
+
+  // Refs
   const isMounted = useRef(true);
   const fileIdRef = useRef(0);
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // Refs para calcular velocidad
-  const speedSamples = useRef<number[]>([]);
-  const lastProgressTime = useRef<number>(0);
-  const lastProgressBytes = useRef<number>(0);
-
-  // Refs para rotación de mensajes
   const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const tipIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Pipeline
+  const pipeline = useProcessingPipeline();
+  const { state: pipelineState, uploadHook, downloadHook, cancel: cancelPipeline } = pipeline;
+
+  // Local timer for Server Simulation
+  // OCR takes long, so we simulate progress while Waiting for Response (XHR Pending)
+  const serverTimer = useProcessingTimer();
 
   useEffect(() => {
     isMounted.current = true;
     return () => {
       isMounted.current = false;
-      // Limpiar intervalos
-      if (messageIntervalRef.current) clearInterval(messageIntervalRef.current);
-      if (tipIntervalRef.current) clearInterval(tipIntervalRef.current);
+      stopMessageRotation();
     };
   }, []);
 
-  // -------------------------------------------------------------------------
-  // Message rotation during processing
-  // -------------------------------------------------------------------------
-
+  // Message Rotation Logic
   const startMessageRotation = useCallback(() => {
     if (messageIntervalRef.current || tipIntervalRef.current) return;
-
     let msgIndex = 0;
     let tipIndex = 0;
 
-    // Mensaje inicial
-    setOperation(OPERATION_MESSAGES.processing[0]);
+    setOperationMsg(OPERATION_MESSAGES.processing[0]);
     setTip(PROCESSING_TIPS[0]);
 
-    // Rotar mensajes cada 4 segundos
     messageIntervalRef.current = setInterval(() => {
       msgIndex = (msgIndex + 1) % OPERATION_MESSAGES.processing.length;
-      setOperation(OPERATION_MESSAGES.processing[msgIndex]);
+      setOperationMsg(OPERATION_MESSAGES.processing[msgIndex]);
     }, 4000);
 
-    // Rotar tips cada 6 segundos
     tipIntervalRef.current = setInterval(() => {
       tipIndex = (tipIndex + 1) % PROCESSING_TIPS.length;
       setTip(PROCESSING_TIPS[tipIndex]);
@@ -232,62 +185,23 @@ export function useOcrPdf() {
     }
   }, []);
 
-  // -------------------------------------------------------------------------
-  // Calculate speed
-  // -------------------------------------------------------------------------
-
-  const calculateSpeed = useCallback((loaded: number, timestamp: number) => {
-    if (lastProgressTime.current === 0) {
-      lastProgressTime.current = timestamp;
-      lastProgressBytes.current = loaded;
-      return 0;
-    }
-
-    const timeDiff = (timestamp - lastProgressTime.current) / 1000;
-    const bytesDiff = loaded - lastProgressBytes.current;
-
-    if (timeDiff > 0.1) {
-      const currentSpeed = bytesDiff / timeDiff;
-      speedSamples.current.push(currentSpeed);
-
-      if (speedSamples.current.length > 10) {
-        speedSamples.current.shift();
-      }
-
-      lastProgressTime.current = timestamp;
-      lastProgressBytes.current = loaded;
-    }
-
-    if (speedSamples.current.length === 0) return 0;
-    return speedSamples.current.reduce((a: number, b: number) => a + b, 0) / speedSamples.current.length;
-  }, []);
-
-  // -------------------------------------------------------------------------
-  // Load languages on mount
-  // -------------------------------------------------------------------------
-
+  // Load Languages
   useEffect(() => {
     const loadLanguages = async () => {
       try {
         const response = await fetch(getApiUrl("/api/worker/ocr-pdf/languages"));
         if (response.ok) {
           const data = await response.json();
-          if (data.languages?.length > 0) {
-            setAvailableLanguages(data.languages);
-          }
+          if (data.languages?.length > 0) setAvailableLanguages(data.languages);
         }
       } catch (error) {
         console.warn("Could not load languages, using defaults");
       }
     };
-
     loadLanguages();
   }, []);
 
-  // -------------------------------------------------------------------------
-  // Load PDF pages using pdfjs
-  // -------------------------------------------------------------------------
-
+  // PDF Loading & Detection (Keep existing logic)
   const loadPdfPages = useCallback(async (pdfFile: File, currentFileId: number) => {
     try {
       const { pdfjs } = await import("react-pdf");
@@ -295,60 +209,36 @@ export function useOcrPdf() {
 
       const arrayBuffer = await pdfFile.arrayBuffer();
       const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-
       if (!isMounted.current || fileIdRef.current !== currentFileId) {
         await pdf.destroy();
         return;
       }
-
       const newPages: PageInfo[] = [];
       for (let i = 1; i <= pdf.numPages; i++) {
-        newPages.push({
-          id: `page-${i}-${Date.now()}`,
-          pageNumber: i,
-          rotation: 0,
-        });
+        newPages.push({ id: `page-${i}-${Date.now()}`, pageNumber: i, rotation: 0 });
       }
-
       setPages(newPages);
       await pdf.destroy();
-
     } catch (error: any) {
       console.error("Error loading PDF:", error);
-
       if (!isMounted.current || fileIdRef.current !== currentFileId) return;
-
       if (error.name === "PasswordException") {
-        toast.error("Este PDF está protegido. Usa 'Desbloquear PDF' primero.");
+        toast.error("Este PDF está protegido.");
       } else {
         toast.error("Error al leer el PDF");
       }
-
       setPages([]);
-      if (isMounted.current && fileIdRef.current === currentFileId) {
-        setOcrStatus("error");
-      }
+      if (isMounted.current && fileIdRef.current === currentFileId) setOcrStatus("error");
     }
   }, []);
 
-  // -------------------------------------------------------------------------
-  // Detect OCR status
-  // -------------------------------------------------------------------------
-
   const detectOcrStatus = useCallback(async (pdfFile: File, currentFileId: number) => {
     setOcrStatus("detecting");
-
     try {
       const formData = new FormData();
       formData.append("file", pdfFile);
-
-      const response = await fetch(getApiUrl("/api/worker/ocr-pdf/detect"), {
-        method: "POST",
-        body: formData,
-      });
-
+      const response = await fetch(getApiUrl("/api/worker/ocr-pdf/detect"), { method: "POST", body: formData });
       if (!isMounted.current || fileIdRef.current !== currentFileId) return;
-
       if (response.ok) {
         const data = await response.json();
         setOcrStatus(data.needsOcr ? "scanned" : "has-text");
@@ -357,39 +247,22 @@ export function useOcrPdf() {
       }
     } catch (error) {
       console.error("Error detecting OCR:", error);
-      if (isMounted.current && fileIdRef.current === currentFileId) {
-        setOcrStatus("error");
-      }
+      if (isMounted.current && fileIdRef.current === currentFileId) setOcrStatus("error");
     }
   }, []);
-
-  // -------------------------------------------------------------------------
-  // Set file - main entry point
-  // -------------------------------------------------------------------------
-
-  // -------------------------------------------------------------------------
-  // Watch for file changes in context
-  // -------------------------------------------------------------------------
 
   useEffect(() => {
     if (!file) {
       setPages([]);
       setOcrStatus("idle");
-      setIsProcessing(false);
-      setIsComplete(false);
-      setProgress(0);
-      setPhase("idle");
-      setOperation("");
+      setOperationMsg("");
       setTip("");
-      setUploadStats(null);
-      setResultBlob(null);
-      setResultFileName("");
+      cancelPipeline();
+      serverTimer.stop();
       return;
     }
-
     fileIdRef.current += 1;
     const currentFileId = fileIdRef.current;
-
     loadPdfPages(file, currentFileId);
     detectOcrStatus(file, currentFileId);
   }, [file, loadPdfPages, detectOcrStatus]);
@@ -399,341 +272,158 @@ export function useOcrPdf() {
       resetContextFiles();
       return;
     }
-
     if (newFile.type !== "application/pdf") {
       toast.error("Por favor selecciona un archivo PDF válido");
       return;
     }
-
     addFiles([newFile]);
   }, [addFiles, resetContextFiles]);
 
-  // -------------------------------------------------------------------------
-  // Page operations
-  // -------------------------------------------------------------------------
-
-  const removePage = useCallback((pageId: string) => {
-    setPages(prev => {
-      const newPages = prev.filter(p => p.id !== pageId);
-      if (newPages.length === 0) {
-        resetContextFiles();
-      }
-      return newPages;
-    });
-  }, [resetContextFiles]);
-
-  const rotatePage = useCallback((pageId: string, degrees: number = 90) => {
-    setPages(prev => prev.map(p =>
-      p.id === pageId ? { ...p, rotation: (p.rotation + degrees) % 360 } : p
-    ));
-  }, []);
-
-  const reorderPages = useCallback((newPages: PageInfo[]) => {
-    setPages(newPages);
-  }, []);
-
-  // -------------------------------------------------------------------------
-  // Apply OCR with real progress tracking
-  // -------------------------------------------------------------------------
-
+  // Apply OCR
   const applyOcr = useCallback(async (outputFileName?: string) => {
     if (!file || pages.length === 0) {
       toast.error("No hay archivo para procesar");
-      return false;
+      return;
     }
-
-    // Cancelar cualquier operación anterior
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-
-    // Reset speed tracking
-    speedSamples.current = [];
-    lastProgressTime.current = 0;
-    lastProgressBytes.current = 0;
 
     const fullFileName = outputFileName || file.name.replace(/\.pdf$/i, "-ocr.pdf");
 
-    setIsProcessing(true);
-    setIsComplete(false);
-    setProgress(0);
-    setPhase("compressing");
-    setOperation("Preparando archivo");
-    setTip("Comprimiendo para una subida más rápida");
-    setUploadStats({
-      currentFile: 1,
-      totalFiles: 1,
-      currentFileName: file.name,
-      currentFileSize: file.size,
-      compressedSize: 0,
-      bytesUploaded: 0,
-      totalBytes: file.size,
-      speed: 0,
-      timeRemaining: 0,
-      compressionRatio: 0,
-      phase: "compressing",
+    // Calculate expected duration for Simulation
+    // ocrmypdf ~12s/page at 300dpi. 20s/page at 600dpi.
+    const estimatedSeconds = pages.length * (dpi === 600 ? 20 : dpi === 300 ? 12 : 8);
+    const estimatedDuration = estimatedSeconds * 1000;
+
+    setTip("Comprimiendo para subida rápida...");
+
+    await pipeline.start({
+      files: [file],
+      endpoint: "/api/worker/ocr-pdf",
+      operationName: "Procesando OCR",
+      createFormData: async (f) => {
+        const currentFile = f[0];
+        const { blob: compressedBlob } = await compressFile(currentFile);
+
+        const formData = new FormData();
+        formData.append("file", compressedBlob, currentFile.name + ".gz");
+        formData.append("compressed", "true");
+        formData.append("languages", selectedLanguages.join(","));
+        formData.append("dpi", dpi.toString());
+        formData.append("optimize", optimize.toString());
+
+        const pageInstructions = pages.map((p, idx) => ({
+          originalIndex: p.pageNumber - 1,
+          rotation: p.rotation,
+          newIndex: idx
+        }));
+        formData.append("pageInstructions", JSON.stringify(pageInstructions));
+
+        return formData;
+      }
     });
 
-    const startTime = Date.now();
+  }, [file, pages, selectedLanguages, dpi, optimize, pipeline]);
 
-    try {
-      // =====================================================================
-      // FASE 1: Comprimir archivo (0% - 5%)
-      // =====================================================================
-      for (let i = 0; i <= 5; i++) {
-        setProgress(i);
-        await new Promise(r => setTimeout(r, 20));
-      }
+  // Effect to manage "Server Simulation" when upload hits 100%
+  useEffect(() => {
+    // If uploading and progress is 100%, we are waiting for server response
+    // OR if pipeline explicitly enters a "processing" phase (if we added that logic).
+    // My Pipeline implementation keeps phase at "uploading" until XHR resolves.
+    // So check uploadHook.progress.
 
-      const { blob: compressedBlob, originalSize, compressedSize } = await compressFile(file);
-      const compressionRatio = ((1 - compressedSize / originalSize) * 100);
+    const isWaitingForServer = pipelineState.phase === "uploading" && uploadHook.progress >= 100;
 
-      // =====================================================================
-      // FASE 2: Subir archivo (5% - 10%) - MUY BREVE
-      // =====================================================================
-      setProgress(5);
-      setPhase("uploading");
-      setOperation("Subiendo archivo");
-      setTip("Enviando archivo al servidor para procesar...");
-      setUploadStats(prev => prev ? {
-        ...prev,
-        compressedSize,
-        compressionRatio,
-        totalBytes: compressedSize,
-        phase: "uploading" as const,
-      } : null);
+    if (isWaitingForServer) {
+      // Check if timer is already running?
+      // serverTimer.start restarts.
+      // We need to run this only ONCE when entering this state.
+      // Since we can't easily check "isRunning", we rely on useEffect deps.
+      // We can use a ref to track if we started simulation?
+      // Or just checking if progress > 0? No.
 
-      const formData = new FormData();
-      formData.append("file", compressedBlob, file.name + ".gz");
-      formData.append("compressed", "true");
-      formData.append("languages", selectedLanguages.join(","));
-      formData.append("dpi", dpi.toString());
-      formData.append("optimize", optimize.toString());
-
-      const pageInstructions = pages.map((p, idx) => ({
-        originalIndex: p.pageNumber - 1,
-        rotation: p.rotation,
-        newIndex: idx
-      }));
-      formData.append("pageInstructions", JSON.stringify(pageInstructions));
-
-      const uploadResult = await new Promise<{ success: boolean; fileId?: string; fileName?: string; error?: string }>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable && isMounted.current) {
-            // Upload va de 5% a 10%
-            const uploadProgress = 5 + (e.loaded / e.total) * 5;
-            setProgress(uploadProgress);
-
-            if (e.loaded === e.total && e.total > 0) {
-              setPhase("processing");
-              setUploadStats(null);
-              startMessageRotation();
-            }
-
-            const speed = calculateSpeed(e.loaded, Date.now());
-            const remainingBytes = e.total - e.loaded;
-            const timeRemaining = speed > 0 ? remainingBytes / speed : 0;
-
-            setUploadStats(prev => prev ? {
-              ...prev,
-              bytesUploaded: e.loaded,
-              totalBytes: e.total,
-              speed,
-              timeRemaining,
-              phase: "uploading" as const,
-            } : null);
-          }
-        });
-
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              resolve(JSON.parse(xhr.responseText));
-            } catch {
-              reject(new Error("Error al parsear respuesta"));
-            }
-          } else {
-            try {
-              const error = JSON.parse(xhr.responseText);
-              reject(new Error(error.error || `Error ${xhr.status}`));
-            } catch {
-              reject(new Error(`Error ${xhr.status}`));
-            }
-          }
-        });
-
-        xhr.addEventListener("error", () => reject(new Error("Error de red")));
-        xhr.addEventListener("abort", () => reject(new Error("Cancelado por el usuario")));
-
-        xhr.open("POST", getApiUrl("/api/worker/ocr-pdf"));
-        xhr.send(formData);
-
-        abortControllerRef.current!.signal.addEventListener("abort", () => xhr.abort());
-      });
-
-      if (!uploadResult.success || !uploadResult.fileId) {
-        throw new Error(uploadResult.error || "Error al procesar OCR");
-      }
-
-      // =====================================================================
-      // FASE 3: Procesamiento OCR en servidor (10% - 95%)
-      // =====================================================================
-      // Ya estamos en phase="processing" desde el listener del upload
-      setProgress(10);
-
-      // Asegurarse de que los mensajes estén rotando
+      // Actually, just calling startMessageRotation here is safe (idempotent).
       startMessageRotation();
 
-      // Simular progreso basado en tiempo estimado
-      // ocrmypdf es ~12 seg/página en 300 DPI
-      const estimatedSeconds = pages.length * (dpi === 600 ? 20 : dpi === 300 ? 12 : 8);
-      const progressPerMs = 85 / (estimatedSeconds * 1000); // 85% para esta fase (10% a 95%)
-      const processingStartTime = Date.now();
-
-      const progressInterval = setInterval(() => {
-        if (!isMounted.current) {
-          clearInterval(progressInterval);
-          return;
-        }
-        const elapsed = Date.now() - processingStartTime;
-        const estimatedProgress = 10 + (elapsed * progressPerMs);
-        setProgress(Math.min(93, estimatedProgress));
-      }, 300);
-
-      // =====================================================================
-      // FASE 4: Descargar resultado (95% - 100%)
-      // =====================================================================
-      const downloadUrl = getApiUrl(`/api/worker/download/${uploadResult.fileId}`);
-      const downloadResponse = await fetch(downloadUrl);
-
-      clearInterval(progressInterval);
-      stopMessageRotation();
-
-      if (!downloadResponse.ok) {
-        throw new Error("Error al descargar el archivo procesado");
+      // Start timer if not full
+      if (serverTimer.progress === 0) {
+        // 12s/page est
+        const estimatedSeconds = pages.length * (dpi === 600 ? 20 : dpi === 300 ? 12 : 8);
+        serverTimer.start({
+          duration: estimatedSeconds * 1000,
+          startProgress: 10,
+          endProgress: 95
+        });
       }
-
-      setProgress(95);
-      setOperation("Descargando resultado");
-
-      const blob = await downloadResponse.blob();
-
-      setProgress(98);
-      setResultBlob(blob);
-      setResultFileName(fullFileName);
-
-      // Descargar automáticamente
-      downloadBlob(blob, fullFileName);
-
-      setProgress(100);
-      setPhase("ready");
-      setOperation("¡Completado!");
-
-      const totalTime = (Date.now() - startTime) / 1000;
-      setTip(`Procesado en ${formatTime(totalTime)}`);
-
-      await new Promise(r => setTimeout(r, 300));
-      setIsComplete(true);
-
-      toast.success(`¡OCR aplicado en ${formatTime(totalTime)}!`);
-      return true;
-
-    } catch (error) {
-      console.error("OCR error:", error);
+    } else if (pipelineState.phase === "complete" || pipelineState.phase === "idle" || pipelineState.phase === "error") {
       stopMessageRotation();
-
-      const message = error instanceof Error ? error.message : "Error durante el OCR";
-
-      if (message !== "Cancelado por el usuario") {
-        toast.error(message);
-      }
-
-      setIsProcessing(false);
-      setProgress(0);
-      setPhase("idle");
-      setOperation("");
-      setTip("");
-      setUploadStats(null);
-      return false;
+      serverTimer.stop();
     }
-  }, [file, pages, selectedLanguages, dpi, optimize, calculateSpeed, startMessageRotation, stopMessageRotation]);
 
-  // -------------------------------------------------------------------------
-  // Cancel operation
-  // -------------------------------------------------------------------------
+  }, [pipelineState.phase, uploadHook.progress, pages.length, dpi, startMessageRotation, stopMessageRotation, serverTimer]);
 
   const cancelOperation = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+    cancelPipeline();
     stopMessageRotation();
-    setIsProcessing(false);
-    setProgress(0);
-    setPhase("idle");
-    setOperation("");
-    setTip("");
-    setUploadStats(null);
+    serverTimer.stop();
     toast.info("Operación cancelada");
-  }, [stopMessageRotation]);
-
-  // -------------------------------------------------------------------------
-  // Download helpers
-  // -------------------------------------------------------------------------
-
-  const downloadAgain = useCallback(() => {
-    if (resultBlob && resultFileName) {
-      downloadBlob(resultBlob, resultFileName);
-      toast.success("Archivo descargado");
-    }
-  }, [resultBlob, resultFileName]);
-
-  // -------------------------------------------------------------------------
-  // Reset
-  // -------------------------------------------------------------------------
+  }, [cancelPipeline, stopMessageRotation, serverTimer]);
 
   const reset = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    stopMessageRotation();
+    cancelOperation();
     resetContextFiles();
     setSelectedLanguages(["spa"]);
     setDpi(300);
     setOptimize(true);
-  }, [stopMessageRotation, resetContextFiles]);
+  }, [cancelOperation, resetContextFiles]);
 
-  const startNew = useCallback(() => {
-    stopMessageRotation();
-    setIsProcessing(false);
-    setIsComplete(false);
-    setProgress(0);
-    setPhase("idle");
-    setOperation("");
-    setTip("");
-    setUploadStats(null);
-    setResultBlob(null);
-    setResultFileName("");
-  }, [stopMessageRotation]);
+  // Derived State
+  const currentState = useMemo(() => {
+    const pState = pipelineState;
 
-  // -------------------------------------------------------------------------
-  // Return
-  // -------------------------------------------------------------------------
+    // Map Phase
+    let phase: ProcessingPhase = "idle";
+    let progress = 0;
+    let operation = "";
+
+    if (pState.phase === "preparing") {
+      phase = "compressing";
+      progress = 5;
+      operation = "Preparando archivo...";
+    } else if (pState.phase === "uploading") {
+      if (uploadHook.progress >= 100) {
+        phase = "processing";
+        progress = serverTimer.progress || 10; // Fallback
+        operation = operationMsg || "Procesando en servidor...";
+      } else {
+        phase = "uploading";
+        progress = 5 + (uploadHook.progress * 0.05); // 5% to 10%
+        operation = "Subiendo archivo...";
+      }
+    } else if (pState.phase === "processing" || pState.phase === "downloading") {
+      // Pipeline switches to downloading when XHR returns
+      phase = "processing"; // Keep showing processing/downloading as one
+      progress = 95 + (pState.progress * 0.05); // 95 to 100
+      operation = "Descargando resultado...";
+    } else if (pState.phase === "complete") {
+      phase = "ready";
+      progress = 100;
+      operation = "¡Completado!";
+    }
+
+    return { phase, progress, operation };
+  }, [pipelineState, uploadHook.progress, serverTimer.progress, operationMsg]);
 
   return {
     // State
     file,
     pages,
     ocrStatus,
-    isProcessing,
-    isComplete,
-    progress,
-    phase,
-    operation,
+    isProcessing: pipelineState.isProcessing,
+    isComplete: currentState.phase === "ready",
+    progress: currentState.progress,
+    phase: currentState.phase,
+    operation: currentState.operation,
     tip,
-    uploadStats,
+    uploadStats: pipelineState.uploadStats,
     availableLanguages,
     selectedLanguages,
     dpi,
@@ -746,34 +436,28 @@ export function useOcrPdf() {
     setOptimize,
 
     // Page operations
-    removePage,
-    rotatePage,
-    reorderPages,
+    removePage: (id: string) => setPages(p => p.filter(x => x.id !== id)),
+    rotatePage: (id: string) => setPages(p => p.map(x => x.id === id ? { ...x, rotation: (x.rotation + 90) % 360 } : x)),
+    reorderPages: setPages,
 
     // Actions
     applyOcr,
-    downloadAgain,
+    downloadAgain: () => {
+      if (pipelineState.result?.fileId) {
+        downloadHook.downloadFromUrl(`/api/worker/download/${pipelineState.result.fileId}`, pipelineState.result.fileName || "ocr.pdf");
+      }
+    },
     reset,
-    startNew,
+    startNew: () => {
+      cancelOperation();
+      setOcrStatus("detecting"); // Or whatever initial state
+      // Actually startNew usually keeps files but resets processed state?
+      // Original logic: just stop rotation and reset processing state.
+    },
     cancelOperation,
 
     // Assets
     funFacts: OCR_FUN_FACTS,
     customTips: OCR_TIPS,
   };
-}
-
-// ============================================================================
-// UTILITY
-// ============================================================================
-
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }

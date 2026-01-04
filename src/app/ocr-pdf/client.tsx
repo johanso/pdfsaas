@@ -341,7 +341,7 @@ export default function OcrPdfClient() {
         />
       </PdfToolLayout>
 
-      {isProcessing && (
+      {(isProcessing || isComplete) && (
         <ProcessingScreen
           progress={progress}
           isComplete={isComplete}

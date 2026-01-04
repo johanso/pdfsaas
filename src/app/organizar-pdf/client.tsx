@@ -253,7 +253,7 @@ export default function OrganizePdfClient() {
       </PdfToolLayout>
 
       {/* Processing Screen */}
-      {isProcessing && (
+      {(isProcessing || isComplete) && (
         <ProcessingScreen
           fileName={fileName}
           operation={operation}
