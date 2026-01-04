@@ -73,6 +73,7 @@ interface PdfToolLayoutProps {
   headerContent?: React.ReactNode;
   customEmptyState?: React.ReactNode;
   children: React.ReactNode;
+  layout?: "grid" | "list";
 }
 
 export function PdfToolLayout({
@@ -100,6 +101,7 @@ export function PdfToolLayout({
   headerContent,
   customEmptyState,
   children,
+  layout = "grid",
 }: PdfToolLayoutProps) {
   const isMobile = useIsMobile();
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
@@ -147,7 +149,10 @@ export function PdfToolLayout({
                   )}
 
                   <section className={cn(
-                    "bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg p-4 md:p-6 min-h-[320px]",
+                    "rounded-lg transition-all duration-200",
+                    layout === "grid"
+                      ? "bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 p-4 md:p-6 min-h-[320px]"
+                      : "p-0 bg-transparent border-0 min-h-0",
                     hasFeatures && ""
                   )}>
                     {isGridLoading ? (

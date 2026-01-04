@@ -23,7 +23,8 @@ export function AddPdfCard({
   aspectRatio = "3/4",
   disabled = false,
   accept = "application/pdf",
-}: AddPdfCardProps) {
+  layout = "grid",
+}: AddPdfCardProps & { layout?: "grid" | "list" }) {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -64,6 +65,50 @@ export function AddPdfCard({
     if (disabled) return;
     inputRef.current?.click();
   };
+
+  if (layout === "list") {
+    return (
+      <Card
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={handleClick}
+        className={cn(
+          "relative overflow-hidden transition-all duration-200 cursor-pointer border-2 border-dashed w-full",
+          "h-16 flex items-center justify-center", // Fixed height for list
+          isDragging
+            ? "border-primary bg-primary/5 scale-[1.01] shadow-md"
+            : "border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-900/50 hover:border-primary/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/50",
+          disabled && "opacity-50 cursor-not-allowed hover:bg-transparent hover:scale-100",
+          className
+        )}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          className="hidden"
+          multiple={true}
+          accept={accept}
+          onChange={handleFileInput}
+          disabled={disabled}
+        />
+        <div className="flex items-center gap-3 pointer-events-none">
+          <div className={cn(
+            "p-1.5 rounded-full transition-colors",
+            isDragging ? "bg-primary text-white" : "bg-zinc-200 dark:bg-zinc-700 text-zinc-500"
+          )}>
+            {isDragging ? <Upload className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+          </div>
+          <p className={cn(
+            "text-sm font-medium transition-colors",
+            isDragging ? "text-primary" : "text-zinc-600 dark:text-zinc-400"
+          )}>
+            {text}
+          </p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card

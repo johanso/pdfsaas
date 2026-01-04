@@ -268,10 +268,12 @@ export default function CompressPdfClient() {
           onOpenChange: () => { },
           onContinue: () => { },
         }}
+        layout="list"
       >
         <PdfGrid
           items={files}
           config={PDF_CARD_PRESETS.compress}
+          layout="list"
           extractCardData={(f) => ({
             id: f.id,
             file: f.file,

@@ -39,6 +39,9 @@ export interface PdfCardData {
 }
 
 export interface PdfCardConfig {
+  // Layout mode
+  layout?: "grid" | "list";
+
   // Funcionalidades habilitadas
   draggable?: boolean;
   selectable?: boolean;
@@ -83,6 +86,7 @@ interface PdfCardProps {
 export const PDF_CARD_PRESETS = {
   // Para Unir PDF (archivos completos)
   merge: {
+    layout: "list",
     draggable: true,
     selectable: false,
     rotatable: false,
@@ -180,6 +184,7 @@ export const PDF_CARD_PRESETS = {
 
   // Para Comprimir PDF
   compress: {
+    layout: "list",
     draggable: false,
     selectable: false,
     rotatable: false,
@@ -191,6 +196,8 @@ export const PDF_CARD_PRESETS = {
   } as PdfCardConfig,
 
 };
+
+import { FileText } from "lucide-react";
 
 // ============================================
 // COMPONENTE PRINCIPAL
@@ -210,6 +217,7 @@ export function PdfCard({
   customActions,
 }: PdfCardProps) {
   const {
+    layout = "grid",
     draggable = true,
     selectable = false,
     rotatable = true,
@@ -280,6 +288,75 @@ export function PdfCard({
     }
   };
 
+  // --- RENDER LIST LAYOUT ---
+  if (layout === "list") {
+    return (
+      <div ref={setNodeRef} style={style} className={cn("relative group w-full", isDragging && "z-10")}>
+        <div className={cn(
+          "flex items-center gap-2 p-3 rounded-md border bg-white dark:bg-zinc-900 shadow-sm transition-all duration-200",
+          isDragging ? "ring-2 ring-primary/20 opacity-90 scale-[1.01]" : "hover:border-primary/30 hover:shadow-md",
+          "border-zinc-200 dark:border-zinc-800"
+        )}>
+          {/* Drag Handle */}
+          {draggable && (
+            <div
+              className="cursor-grab active:cursor-grabbing text-zinc-300 hover:text-zinc-500 dark:text-zinc-600 dark:hover:text-zinc-400 p-1"
+              style={{ touchAction: "none" }}
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical className="w-5 h-5" />
+            </div>
+          )}
+
+          {/* Icon */}
+          <div className={cn(
+            "shrink-0 w-10 h-10 mr-2 rounded-lg flex items-center justify-center border",
+            isOfficeFile()
+              ? "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/30"
+              : "bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30"
+          )}>
+            {isOfficeFile() ? (
+              <BootstrapIcon name="file-earmark-text" size={24} />
+            ) : (
+              <FileText className="w-6 h-6" />
+            )}
+          </div>
+
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate" title={title}>
+              {title}
+            </p>
+            {subtitle && (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5" title={subtitle}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1">
+            {(allowDelete || removable) && onRemove && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove();
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- RENDER GRID LAYOUT (existing) ---
   return (
     <div ref={setNodeRef} style={style} className="relative group">
       <Card

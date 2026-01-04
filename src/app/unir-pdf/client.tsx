@@ -114,10 +114,12 @@ export default function UnirPdfClient() {
           onOpenChange: () => { },
           onContinue: () => { },
         }}
+        layout="list"
       >
         <PdfGrid
           items={files}
           config={PDF_CARD_PRESETS.merge}
+          layout="list"
           extractCardData={(f) => ({
             id: f.id,
             file: f.file,
@@ -148,23 +150,25 @@ export default function UnirPdfClient() {
             }
           }}
         />
-      </PdfToolLayout>
+      </PdfToolLayout >
 
       {/* Processing Screen */}
-      {(isProcessing || isComplete) && (
-        <ProcessingScreen
-          fileName={fileName}
-          operation={operation}
-          progress={progress}
-          isComplete={isComplete}
-          phase={phase}
-          uploadStats={uploadStats}
-          onDownload={handleDownloadAgain}
-          onEditAgain={() => handleContinueEditing()}
-          onStartNew={() => handleStartNew(reset)}
-          onCancel={cancelProcess}
-        />
-      )}
+      {
+        (isProcessing || isComplete) && (
+          <ProcessingScreen
+            fileName={fileName}
+            operation={operation}
+            progress={progress}
+            isComplete={isComplete}
+            phase={phase}
+            uploadStats={uploadStats}
+            onDownload={handleDownloadAgain}
+            onEditAgain={() => handleContinueEditing()}
+            onStartNew={() => handleStartNew(reset)}
+            onCancel={cancelProcess}
+          />
+        )
+      }
     </>
   );
 }

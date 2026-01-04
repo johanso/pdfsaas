@@ -61,6 +61,7 @@ interface PdfGridProps<T> {
   addCardSubtext?: string;
   addCardDisabled?: boolean;
   addCardAccept?: string;
+  layout?: "grid" | "list";
 }
 
 export function PdfGrid<T extends { id: string }>({
@@ -77,15 +78,24 @@ export function PdfGrid<T extends { id: string }>({
   onRemove,
   renderCardActions,
   extractCardData,
-  className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4",
+  className,
   showAddCard = false,
   onAddFiles,
   addCardText,
   addCardSubtext,
   addCardDisabled = false,
   addCardAccept,
+  layout = "grid",
 }: PdfGridProps<T>) {
   const draggable = config?.draggable !== false;
+
+  // Merge layout into config
+  const finalConfig: PdfCardConfig = { ...config, layout };
+
+  // Calculate generic class name if not provided
+  const finalClassName = className || (layout === "list"
+    ? "flex flex-col gap-3 w-full mx-auto"
+    : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4");
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -126,7 +136,7 @@ export function PdfGrid<T extends { id: string }>({
   };
 
   const gridContent = (
-    <div className={className}>
+    <div className={finalClassName}>
       {showAddCard && onAddFiles && (
         <AddPdfCard
           onFilesAdded={onAddFiles}
@@ -134,6 +144,7 @@ export function PdfGrid<T extends { id: string }>({
           subtext={addCardSubtext}
           disabled={addCardDisabled}
           accept={addCardAccept}
+          layout={layout}
         />
       )}
       {items.map((item) => {
@@ -142,7 +153,7 @@ export function PdfGrid<T extends { id: string }>({
           <PdfCard
             key={item.id}
             data={cardData}
-            config={config}
+            config={finalConfig}
             isSelected={selectedIds.includes(item.id)}
             onToggle={onToggle ? () => onToggle(item.id) : undefined}
             onRotate={onRotate ? () => onRotate(item.id) : undefined}
@@ -155,7 +166,7 @@ export function PdfGrid<T extends { id: string }>({
           />
         );
       })}
-      
+
     </div>
   );
 

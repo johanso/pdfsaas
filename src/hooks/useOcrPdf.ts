@@ -38,9 +38,6 @@ export const DPI_OPTIONS: { value: DpiOption; label: string; description: string
   { value: 150, label: "150 DPI", description: "Rápido" },
   { value: 300, label: "300 DPI", description: "Estándar" },
   { value: 600, label: "600 DPI", description: "Alta calidad" },
-  { value: 150, label: "150 DPI", description: "Rápido" },
-  { value: 300, label: "300 DPI", description: "Estándar" },
-  { value: 600, label: "600 DPI", description: "Alta calidad" },
 ];
 
 const DEFAULT_LANGUAGES: Language[] = [

@@ -117,9 +117,11 @@ export default function PowerPointToPdfClient() {
           onOpenChange: () => { },
           onContinue: () => { },
         }}
+        layout="list"
       >
         <PdfGrid
           items={files}
+          layout="list"
           config={{
             ...PDF_CARD_PRESETS.merge,
             draggable: false,
