@@ -133,8 +133,8 @@ export default function CompressPdfClient() {
     <>
       <PdfToolLayout
         toolId="compress-pdf"
-        title="Comprimir PDF"
-        description="Reduce el tamaño de tus archivos PDF manteniendo la mejor calidad."
+        title="Comprimir, Reducir Tamaño y Peso de Archivos PDF"
+        description="Optimiza tus documentos para web o correo electrónico. Elige entre máxima compresión o mantener la mejor calidad con nuestros ajustes inteligentes."
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}

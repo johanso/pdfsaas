@@ -4,116 +4,113 @@ export const ocrPdfContent: ToolPageData = {
   id: "ocr-pdf",
 
   metadata: {
-    title: "OCR PDF - Convertir PDF Escaneado a Texto Seleccionable",
-    description: "Aplica OCR a tus PDFs escaneados para hacerlos seleccionables y buscables. Soporta múltiples idiomas incluyendo español e inglés. Gratis y seguro.",
+    title: "OCR PDF - Reconocimiento de Texto Online y PDF Buscable",
+    description: "Convierte PDF escaneado a texto seleccionable (OCR). Haz tu PDF buscable gratis. Soporta español, inglés y alta resolución (600 DPI).",
     keywords: [
       "ocr pdf",
-      "pdf escaneado a texto",
-      "reconocimiento optico de caracteres",
-      "convertir pdf escaneado",
-      "pdf a texto seleccionable",
-      "extraer texto de pdf",
-      "ocr español",
-      "ocr multilenguaje"
+      "ocr online",
+      "reconocimiento de texto pdf",
+      "pdf buscable",
+      "convertir pdf escaneado a texto",
+      "hacer pdf searchable",
+      "ocr pdf español",
+      "copiar texto de pdf escaneado"
     ],
     canonical: "/ocr-pdf",
     ogImage: "/og-images/ocr-pdf.jpg",
   },
 
-  titleSectionSteps: "Cómo aplicar OCR a un PDF escaneado",
-  titleSectionBenefits: "¿Por qué nuestra herramienta de OCR es la mejor?",
-  titleSectionFAQ: "Preguntas Frecuentes sobre OCR PDF",
+  titleSectionSteps: "Cómo hacer un PDF buscable (Searchable) con OCR",
+  titleSectionBenefits: "¿Por qué usar nuestra herramienta de reconocimiento de texto?",
+  titleSectionFAQ: "Preguntas Frecuentes sobre OCR y PDF escaneados",
 
   steps: [
     {
       number: "1",
-      title: "Sube el PDF escaneado",
+      title: "Sube tu PDF escaneado",
       description:
-        "Arrastra tu archivo PDF escaneado. El sistema detectará automáticamente si necesita OCR y te mostrará un badge indicando su estado.",
+        "Carga el documento. Nuestro sistema detectará automáticamente si el archivo es una imagen y necesita reconocimiento de texto.",
     },
     {
       number: "2",
-      title: "Configura idiomas y calidad",
+      title: "Configura el idioma",
       description:
-        "Selecciona los idiomas del documento (puedes elegir varios). Elige la calidad de procesamiento: 150 DPI para velocidad, 300 DPI estándar, o 600 DPI para máxima precisión.",
+        "Selecciona el idioma del documento (ej: Español) para aumentar la precisión. Puedes elegir también la calidad (300 DPI recomendado).",
     },
     {
       number: "3",
-      title: "Procesa y descarga",
+      title: "Aplica el OCR",
       description:
-        "Haz clic en procesar y espera a que se complete el OCR. Descargarás el mismo PDF pero con texto seleccionable y buscable.",
+        "Haz clic en 'Aplicar OCR'. Generaremos una capa de texto invisible sobre tu imagen para que puedas buscar, seleccionar y copiar el contenido.",
     },
   ],
 
   benefits: [
     {
-      icon: "Languages",
-      title: "Soporte Multilenguaje",
+      icon: "Search",
+      title: "Hazlo Buscable (Searchable)",
       description:
-        "Detecta texto en más de 50 idiomas simultáneamente. Perfecto para documentos en español, inglés, portugués, francés y muchos más.",
+        "La magia del OCR. Transformamos esa imagen estática en un documento vivo donde puedes usar 'Control + F' para encontrar cualquier palabra al instante.",
     },
     {
-      icon: "ScanText",
-      title: "Detección Automática",
+      icon: "Languages",
+      title: "Soporte Multi-idioma",
       description:
-        "El sistema analiza tu PDF y te indica si necesita OCR o si ya tiene texto seleccionable, ahorrándote tiempo de procesamiento innecesario.",
+        "Nuestro motor Tesseract está entrenado para reconocer Español, Inglés, Francés, Alemán y más. Incluso maneja tildes y caracteres especiales perfectamente.",
+    },
+    {
+      icon: "ScanLine",
+      title: "Detección Inteligente",
+      description:
+        "No pierdas tiempo. Nuestra herramienta analiza tu archivo y te avisa si realmente necesita OCR o si ya tiene texto, optimizando tu flujo de trabajo.",
     },
     {
       icon: "Settings2",
-      title: "3 Calidades de Procesamiento",
+      title: "Calidad hasta 600 DPI",
       description:
-        "Elige entre 150 DPI (rápido), 300 DPI (estándar) o 600 DPI (alta calidad) según tus necesidades de precisión y tiempo de procesamiento.",
-    },
-    {
-      icon: "Search",
-      title: "Texto Buscable",
-      description:
-        "El PDF resultante tiene texto seleccionable y buscable. Puedes copiar, pegar y buscar dentro del documento como cualquier PDF digital.",
+        "¿Necesitas máxima precisión para documentos legales? Activa el modo 'Alta Calidad' (600 DPI) para reconocer hasta la letra más pequeña.",
     },
   ],
 
   faqs: [
+    // Preguntas Específicas
     {
-      question: "¿Qué es OCR y para qué sirve?",
+      question: "¿Qué es un PDF 'Searchable' o Buscable?",
       answer:
-        "OCR significa 'Reconocimiento Óptico de Caracteres'. Convierte imágenes de texto (como en PDFs escaneados) en texto digital seleccionable y editable.",
+        "Un PDF escaneado es solo una foto. Un PDF 'Searchable' tiene una capa de texto oculta detrás de esa foto. Esto te permite seleccionar el texto, copiarlo y pegarlo en Word, o buscar palabras clave dentro del documento.",
     },
     {
-      question: "¿Cómo sé si mi PDF necesita OCR?",
+      question: "¿Puedo procesar documentos con varios idiomas?",
       answer:
-        "Nuestra herramienta detecta automáticamente esto. Si ves un badge 'Escaneado' en rojo, tu PDF necesita OCR. Si ves 'Ya tiene texto' en verde, ya tiene texto digital.",
+        "Sí. Puedes seleccionar el idioma principal del documento para ayudar al motor de reconocimiento. Funciona excelente con documentos en español, inglés y la mayoría de idiomas europeos.",
     },
     {
-      question: "¿Puedo seleccionar múltiples idiomas?",
+      question: "¿Qué resolución (DPI) debo elegir?",
       answer:
-        "Sí, puedes seleccionar varios idiomas simultáneamente. Esto es ideal para documentos bilingües o que contienen texto en diferentes idiomas.",
+        "Para la mayoría de documentos, **300 DPI** es el equilibrio perfecto entre velocidad y precisión. Usa **600 DPI** solo si el documento original es muy antiguo, tiene letra muy pequeña o está borroso.",
     },
+    // Preguntas Generales
     {
-      question: "¿Qué calidad de DPI debo usar?",
-      answer:
-        "Usa **150 DPI** para documentos claros y procesamiento rápido. **300 DPI** es estándar y funciona para la mayoría de casos. **600 DPI** es para documentos con texto pequeño o baja calidad de escaneo.",
-    },
-    {
-      question: "¿El procesamiento es gratuito?",
+      question: "¿El uso de esta herramienta es gratuito?",
       answer:
         "Sí, todas nuestras herramientas son 100% gratuitas y de uso ilimitado. No necesitas registrarte ni proporcionar datos de pago.",
     },
     {
       question: "¿Mis archivos están seguros?",
       answer:
-        "Totalmente. Los archivos se procesan en nuestros servidores seguros y se eliminan automáticamente después de la conversión. No almacenamos tus documentos.",
+        "Totalmente. Usamos conexiones encriptadas y tus documentos se eliminan de forma automática y permanente de nuestros servidores tras el procesamiento.",
     },
     {
-      question: "¿Puedo buscar texto en el PDF resultante?",
+      question: "¿Funciona en documentos escritos a mano?",
       answer:
-        "Sí, después de aplicar OCR, el PDF tendrá texto seleccionable y podrás buscar, copiar y pegar texto como cualquier PDF digital nativo.",
+        "El OCR funciona mejor en texto mecanografiado (impreso). El reconocimiento de texto manuscrito es experimental y puede no ser tan preciso dependiendo de la caligrafía.",
     },
   ],
 
   cta: {
-    title: "Convierte tus PDFs escaneados",
-    description: "Haz que tus documentos sean seleccionables y buscables.",
-    buttonLabel: "Aplicar OCR",
+    title: "Digitaliza tus documentos",
+    description: "Haz que el texto de tus escaneos sea útil de nuevo.",
+    buttonLabel: "Aplicar OCR ahora",
   },
 
   jsonLd: {
@@ -121,16 +118,16 @@ export const ocrPdfContent: ToolPageData = {
     "@graph": [
       {
         "@type": "SoftwareApplication",
-        name: "OCR PDF Online - Reconocimiento Óptico de Caracteres",
+        name: "OCR PDF Online Gratis",
         applicationCategory: "ProductivityApplication",
         featureList: [
-          "Detección automática de necesidad de OCR",
-          "Soporte multilenguaje (50+ idiomas)",
-          "3 calidades de procesamiento (150, 300, 600 DPI)",
-          "Texto seleccionable y buscable",
-          "Procesamiento en la nube seguro"
+          "Reconocimiento de texto (OCR)",
+          "Generación de PDF buscable (Searchable)",
+          "Soporte multi-idioma (Español, Inglés, etc.)",
+          "Opciones de alta resolución (600 DPI)",
+          "Detección automática de escaneos"
         ],
-        applicationSubCategory: "OCR Tool",
+        applicationSubCategory: "Text Recognition",
         fileFormat: ["application/pdf"],
         operatingSystem: "Any",
         offers: {
@@ -141,27 +138,27 @@ export const ocrPdfContent: ToolPageData = {
         aggregateRating: {
           "@type": "AggregateRating",
           ratingValue: "4.9",
-          ratingCount: "2100",
+          ratingCount: "890",
         },
       },
       {
         "@type": "HowTo",
-        name: "Cómo aplicar OCR a un PDF escaneado",
+        name: "Cómo convertir PDF imagen a texto",
         step: [
           {
             "@type": "HowToStep",
-            name: "Sube el PDF",
-            text: "Carga tu archivo PDF escaneado en la herramienta.",
+            name: "Carga el PDF",
+            text: "Sube el documento escaneado a la plataforma.",
           },
           {
             "@type": "HowToStep",
-            name: "Configura idiomas",
-            text: "Selecciona los idiomas del documento y la calidad deseada.",
+            name: "Selecciona idioma",
+            text: "Elige el idioma del texto para mejorar la precisión.",
           },
           {
             "@type": "HowToStep",
-            name: "Aplica OCR",
-            text: "Procesa el documento y descarga el PDF con texto seleccionable.",
+            name: "Procesa y Descarga",
+            text: "Aplica el OCR y descarga el PDF con capa de texto.",
           },
         ],
       },

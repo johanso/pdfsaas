@@ -69,7 +69,6 @@ export default function OcrPdfClient() {
 
     // Page operations
     removePage,
-    rotatePage,
     reorderPages,
 
     // Actions
@@ -285,8 +284,8 @@ export default function OcrPdfClient() {
     <>
       <PdfToolLayout
         toolId="ocr-pdf"
-        title="Aplicar OCR a PDFs Escaneados"
-        description="Convierte tus PDFs escaneados en documentos con texto seleccionable y buscable. Detecta automáticamente si necesita OCR y procesa en múltiples idiomas."
+        title="OCR PDF: Reconocimiento de Texto y PDF Buscable"
+        description="Convierte documentos escaneados en PDFs con texto seleccionable. Haz que tus archivos sean buscables (Searchable) y copia el contenido fácilmente."
         hasFiles={hasContent}
         onFilesSelected={handleFilesSelected}
         acceptedFileTypes=".pdf,application/pdf"

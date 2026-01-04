@@ -40,7 +40,12 @@ import {
   Chromium,
   Ghost,
   Layout,
-  Settings
+  Settings,
+  Search,
+  Languages,
+  ScanLine,
+  Cpu,
+  BarChart3
 } from "lucide-react";
 import {
   Accordion,
@@ -100,7 +105,12 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Globe,
   Ghost,
   Layout,
-  Settings
+  Settings,
+  Search,
+  Languages,
+  ScanLine,
+  Cpu,
+  BarChart3
 };
 
 export function ToolPageLayout({
