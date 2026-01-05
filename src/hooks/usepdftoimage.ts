@@ -177,8 +177,9 @@ export function usePdfToImage() {
       const { format, quality, scale = 2.0, onProgress } = options;
 
       try {
-        const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+        // Usar react-pdf en lugar de pdfjs-dist directamente para evitar problemas con canvas
+        const { pdfjs } = await import("react-pdf");
+        pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
@@ -203,7 +204,7 @@ export function usePdfToImage() {
             context.fillRect(0, 0, canvas.width, canvas.height);
           }
 
-          await page.render({ canvasContext: context, viewport }).promise;
+          await page.render({ canvasContext: context, viewport, canvas }).promise;
 
           const mimeType = format === "jpg" ? "image/jpeg" : `image/${format}`;
           const blob = await new Promise<Blob>((resolve, reject) => {

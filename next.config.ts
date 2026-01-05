@@ -1,11 +1,26 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Excluir canvas del bundle del cliente (es un módulo solo para servidor)
+  serverExternalPackages: ['canvas'],
+  
   // Aumentar límite de body para archivos grandes
   experimental: {
     serverActions: {
       bodySizeLimit: '100mb',
     },
+  },
+
+  // Configurar webpack para excluir canvas del bundle del cliente
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Excluir canvas del bundle del cliente
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'canvas': false,
+      };
+    }
+    return config;
   },
 
   async rewrites() {
