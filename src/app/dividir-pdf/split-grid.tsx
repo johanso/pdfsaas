@@ -7,9 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getSplitGroupColor } from "@/lib/split-colors";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
+import { ThumbnailSkeleton } from "@/components/pdf-system/thumbnail-skeleton";
+
 const PdfThumbnail = dynamic(() => import("@/components/pdf-thumbnail").then(mod => mod.PdfThumbnail), {
   ssr: false,
-  loading: () => <div className="w-full h-full bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+  loading: () => <ThumbnailSkeleton />
 });
 
 interface SplitGridProps {

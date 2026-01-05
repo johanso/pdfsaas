@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { PDFDocument, degrees } from "pdf-lib";
+// Import dinámico de pdf-lib para reducir bundle inicial
+// import { PDFDocument, degrees } from "pdf-lib";
 import { useToolProcessor, ProcessingResult, UploadStats } from "./core/useToolProcessor";
 
 // ============================================================================
@@ -172,6 +173,7 @@ export function useImageToPdf() {
       const marginPx = MARGINS[margin];
 
       try {
+        const { PDFDocument, degrees } = await import("pdf-lib");
         const pdfDoc = await PDFDocument.create();
 
         for (let i = 0; i < images.length; i++) {

@@ -1,11 +1,12 @@
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import * as pdfjs from "pdfjs-dist";
+// El import de pdfjs se movió a inside de las funciones que lo usan para lazy loading
+// import * as pdfjs from "pdfjs-dist";
 import JSZip from "jszip";
 import { useToolProcessor, ProcessingResult, UploadStats } from "./core/useToolProcessor";
 
-// Configurar worker de pdfjs
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+// Configurar worker de pdfjs (se hará dinámicamente)
+// pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
 // ============================================================================
 // TYPES
@@ -190,6 +191,9 @@ export function usePdfToImage() {
       const { format, quality, scale = 2.0, onProgress } = options;
 
       try {
+        const pdfjs = await import("pdfjs-dist");
+        pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
         const imageBlobs: { blob: Blob; name: string }[] = [];

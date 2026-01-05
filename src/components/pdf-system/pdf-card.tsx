@@ -17,9 +17,11 @@ const ICONS = {
   x: X,
 };
 
+import { ThumbnailSkeleton } from "./thumbnail-skeleton";
+
 const PdfThumbnail = dynamic(() => import("../pdf-thumbnail").then((mod) => mod.PdfThumbnail), {
   ssr: false,
-  loading: () => <div className="w-full h-full bg-zinc-100 dark:bg-zinc-800 animate-pulse" />,
+  loading: () => <ThumbnailSkeleton />,
 });
 
 // ============================================
