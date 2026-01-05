@@ -4,19 +4,13 @@ import { toast } from "sonner";
 // import * as pdfjs from "pdfjs-dist";
 import JSZip from "jszip";
 import { useToolProcessor, ProcessingResult, UploadStats } from "./core/useToolProcessor";
+import { ImageFormat, DpiOption, FormatInfo } from "@/types";
 
 // Configurar worker de pdfjs (se hará dinámicamente)
 // pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-export type ImageFormat = "jpg" | "png" | "webp" | "tiff" | "bmp";
-export type ProcessingMode = "client" | "server" | "auto";
-export type DpiOption = 72 | 150 | 300 | 600;
-
 export type { UploadStats };
+export type ProcessingMode = "client" | "server" | "auto";
 
 export interface ConvertOptions {
   format: ImageFormat;
@@ -27,14 +21,6 @@ export interface ConvertOptions {
   onProgress?: (current: number, total: number) => void;
   onSuccess?: () => void;
   onError?: (error: Error) => void;
-}
-
-export interface FormatInfo {
-  label: string;
-  description: string;
-  supportsQuality: boolean;
-  requiresServer: boolean;
-  recommended?: boolean;
 }
 
 // ============================================================================

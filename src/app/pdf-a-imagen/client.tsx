@@ -39,10 +39,9 @@ import { usePdfPages } from "@/hooks/usePdfPages";
 import {
   usePdfToImage,
   shouldUseServer,
-  getFormatInfo,
-  type ImageFormat,
-  type DpiOption
+  getFormatInfo
 } from "@/hooks/usePdfToImage";
+import { ImageFormat, DpiOption } from "@/types";
 
 // Configuración de formatos
 const FORMATS: {
