@@ -1,23 +1,42 @@
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { PDFDocument } from "pdf-lib";
-import { useProcessingPipeline, type ProcessingResult } from "./useProcessingPipeline";
+import { PDFDocument, degrees } from "pdf-lib";
+import { useToolProcessor, ProcessingResult, UploadStats } from "./core/useToolProcessor";
 
-// Tipos
+// ============================================================================
+// TYPES
+// ============================================================================
+
 export type PageSize = "a4" | "letter" | "legal" | "fit";
 export type PageOrientation = "auto" | "portrait" | "landscape";
 export type MarginPreset = "none" | "small" | "normal";
 export type ImageQuality = "original" | "compressed";
 
-import { getApiUrl } from "@/lib/api";
+export type { UploadStats };
 
-// Re-export UploadStats
-export type { UploadStats } from "./useProcessingPipeline";
+export interface ImageItem {
+  id: string;
+  file: File;
+  rotation: number;
+  preview?: string;
+}
 
-// Límites
+export interface ConvertOptions {
+  pageSize: PageSize;
+  orientation: PageOrientation;
+  margin: MarginPreset;
+  quality: ImageQuality;
+  onProgress?: (current: number, total: number) => void;
+  onSuccess?: () => void;
+  onError?: (error: Error) => void;
+}
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
 const CLIENT_LIMIT = 50;
 
-// Dimensiones de página en puntos (72 DPI)
 const PAGE_SIZES = {
   a4: { width: 595.28, height: 841.89 },
   letter: { width: 612, height: 792 },
@@ -30,38 +49,23 @@ const MARGINS = {
   normal: 40,
 };
 
-interface ConvertOptions {
-  pageSize: PageSize;
-  orientation: PageOrientation;
-  margin: MarginPreset;
-  quality: ImageQuality;
-  onProgress?: (current: number, total: number) => void;
-  onSuccess?: () => void;
-  onError?: (error: Error) => void;
-}
+// ============================================================================
+// HELPERS
+// ============================================================================
 
-interface ImageItem {
-  id: string;
-  file: File;
-  rotation: number;
-  preview?: string;
-}
-
-// Detectar si debe usar servidor
 export function shouldUseServer(imageCount: number): {
   useServer: boolean;
-  reason?: string
+  reason?: string;
 } {
   if (imageCount >= CLIENT_LIMIT) {
     return {
       useServer: true,
-      reason: `Más de ${CLIENT_LIMIT} imágenes, procesando en servidor`
+      reason: `Más de ${CLIENT_LIMIT} imágenes, procesando en servidor`,
     };
   }
   return { useServer: false };
 }
 
-// Obtener dimensiones de imagen
 async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -74,61 +78,96 @@ async function getImageDimensions(file: File): Promise<{ width: number; height: 
   });
 }
 
-// Convertir imagen a bytes
 async function imageToBytes(file: File, quality: ImageQuality): Promise<Uint8Array> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async () => {
-      if (quality === "compressed" && !file.type.includes("png")) {
-        // Comprimir usando canvas
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext("2d")!;
-          ctx.drawImage(img, 0, 0);
+  const buf = await file.arrayBuffer();
+  if (quality === "compressed" && !file.type.includes("png")) {
+    return convertToJpeg(file, 0.8);
+  }
+  return new Uint8Array(buf);
+}
 
-          canvas.toBlob(
-            (blob) => {
-              if (blob) {
-                blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
-              } else {
-                resolve(new Uint8Array(reader.result as ArrayBuffer));
-              }
-            },
-            "image/jpeg",
-            0.8
-          );
-          URL.revokeObjectURL(img.src);
-        };
-        img.onerror = () => resolve(new Uint8Array(reader.result as ArrayBuffer));
-        img.src = URL.createObjectURL(file);
-      } else {
-        resolve(new Uint8Array(reader.result as ArrayBuffer));
-      }
+async function convertToJpeg(file: File, quality = 0.9): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)));
+          } else {
+            reject(new Error("Error convirtiendo imagen"));
+          }
+        },
+        "image/jpeg",
+        quality
+      );
+
+      URL.revokeObjectURL(img.src);
     };
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
   });
 }
 
-export function useImageToPdf() {
-  const pipeline = useProcessingPipeline();
-  const { state: pipelineState, cancel: cancelPipeline } = pipeline;
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
+// ============================================================================
+// HOOK
+// ============================================================================
+
+export function useImageToPdf() {
   const [processingMode, setProcessingMode] = useState<"client" | "server" | null>(null);
   const [clientProgress, setClientProgress] = useState({ current: 0, total: 0 });
   const [isInternalComplete, setIsInternalComplete] = useState(false);
-  const [downloadData, setDownloadData] = useState<{ blob: Blob; fileName: string } | null>(null);
 
-  // Conversión en cliente
+  const processor = useToolProcessor<
+    { images: ImageItem[]; options: ConvertOptions },
+    ProcessingResult
+  >({
+    toolId: "image-to-pdf",
+    endpoint: "/api/worker/image-to-pdf",
+    operationName: "Creando PDF...",
+    responseType: "blob",
+
+    prepareFormData: async (_, { images, options }) => {
+      const formData = new FormData();
+      for (let i = 0; i < images.length; i++) {
+        formData.append("images", images[i].file);
+        formData.append("rotations", images[i].rotation.toString());
+      }
+      formData.append("pageSize", options.pageSize);
+      formData.append("orientation", options.orientation);
+      formData.append("margin", options.margin);
+      formData.append("quality", options.quality);
+      return formData;
+    },
+  });
+
+  // -- Conversión en cliente --
   const convertOnClient = useCallback(
     async (
       images: ImageItem[],
       fileName: string,
       options: ConvertOptions
-    ): Promise<{ success: boolean; blob?: Blob; fileName?: string }> => {
+    ): Promise<ProcessingResult> => {
       const { pageSize, orientation, margin, quality, onProgress } = options;
       const marginPx = MARGINS[margin];
 
@@ -141,48 +180,32 @@ export function useImageToPdf() {
           setClientProgress({ current: i + 1, total: images.length });
           onProgress?.(i + 1, images.length);
 
-          // Obtener dimensiones originales
           const dimensions = await getImageDimensions(file);
           let imgWidth = dimensions.width;
           let imgHeight = dimensions.height;
 
-          // Ajustar por rotación
+          // Ajustar dimensiones si hay rotación
           if (rotation === 90 || rotation === 270) {
             [imgWidth, imgHeight] = [imgHeight, imgWidth];
           }
 
-          // Determinar tamaño de página
           let pageWidth: number;
           let pageHeight: number;
 
           if (pageSize === "fit") {
-            // Ajustar página a imagen + márgenes
             pageWidth = imgWidth + marginPx * 2;
             pageHeight = imgHeight + marginPx * 2;
           } else {
             const size = PAGE_SIZES[pageSize];
+            const usePortrait =
+              orientation === "portrait" ||
+              (orientation === "auto" && imgHeight >= imgWidth);
 
-            // Determinar orientación
-            let usePortrait = true;
-            if (orientation === "landscape") {
-              usePortrait = false;
-            } else if (orientation === "auto") {
-              usePortrait = imgHeight >= imgWidth;
-            }
-
-            if (usePortrait) {
-              pageWidth = size.width;
-              pageHeight = size.height;
-            } else {
-              pageWidth = size.height;
-              pageHeight = size.width;
-            }
+            pageWidth = usePortrait ? size.width : size.height;
+            pageHeight = usePortrait ? size.height : size.width;
           }
 
-          // Crear página
           const page = pdfDoc.addPage([pageWidth, pageHeight]);
-
-          // Calcular dimensiones de imagen para que quepa
           const availableWidth = pageWidth - marginPx * 2;
           const availableHeight = pageHeight - marginPx * 2;
 
@@ -190,22 +213,19 @@ export function useImageToPdf() {
           let drawHeight = imgHeight;
 
           if (pageSize !== "fit") {
-            // Escalar para que quepa manteniendo proporción
-            const scaleX = availableWidth / imgWidth;
-            const scaleY = availableHeight / imgHeight;
-            const scale = Math.min(scaleX, scaleY, 1); // No escalar hacia arriba
-
+            const scale = Math.min(
+              availableWidth / imgWidth,
+              availableHeight / imgHeight,
+              1
+            );
             drawWidth = imgWidth * scale;
             drawHeight = imgHeight * scale;
           }
 
-          // Centrar imagen
           const x = marginPx + (availableWidth - drawWidth) / 2;
           const y = marginPx + (availableHeight - drawHeight) / 2;
 
-          // Cargar imagen
           const imageBytes = await imageToBytes(file, quality);
-
           let pdfImage;
           const fileType = file.type.toLowerCase();
 
@@ -214,42 +234,27 @@ export function useImageToPdf() {
           } else if (fileType.includes("jpeg") || fileType.includes("jpg")) {
             pdfImage = await pdfDoc.embedJpg(imageBytes);
           } else {
-            // Convertir otros formatos a JPEG
             const converted = await convertToJpeg(file);
             pdfImage = await pdfDoc.embedJpg(converted);
           }
 
-          // Dibujar imagen con rotación
           if (rotation === 0) {
-            page.drawImage(pdfImage, {
-              x,
-              y,
-              width: drawWidth,
-              height: drawHeight,
-            });
+            page.drawImage(pdfImage, { x, y, width: drawWidth, height: drawHeight });
           } else {
-            // Manejar rotación
-            const centerX = x + drawWidth / 2;
-            const centerY = y + drawHeight / 2;
-            const radians = (rotation * Math.PI) / 180;
-
             page.drawImage(pdfImage, {
-              x: centerX,
-              y: centerY,
-              width: rotation === 90 || rotation === 270 ? drawHeight : drawWidth,
-              height: rotation === 90 || rotation === 270 ? drawWidth : drawHeight,
-              rotate: { angle: radians, type: 'radians' as any },
+              x: x + drawWidth / 2,
+              y: y + drawHeight / 2,
+              width: rotation % 180 === 0 ? drawWidth : drawHeight,
+              height: rotation % 180 === 0 ? drawHeight : drawWidth,
+              rotate: degrees(rotation),
             });
           }
         }
 
-        // Guardar PDF
         const pdfBytes = await pdfDoc.save();
         const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
-        const finalName = `${fileName}.pdf`;
-        downloadBlob(blob, finalName);
 
-        return { success: true, blob, fileName: finalName };
+        return { success: true, blob, fileName: `${fileName}.pdf` };
       } catch (error) {
         console.error("Client conversion error:", error);
         throw error;
@@ -258,64 +263,18 @@ export function useImageToPdf() {
     []
   );
 
-  // Conversión en servidor usando Pipeline
-  const convertOnServer = useCallback(
-    async (
-      images: ImageItem[],
-      fileName: string,
-      options: ConvertOptions
-    ): Promise<{ success: boolean; blob?: Blob; fileName?: string }> => {
-      const { pageSize, orientation, margin, quality, onProgress } = options;
-
-      const result = await pipeline.start({
-        files: images.map(i => i.file), // Note: UploadStats uses file list for stats
-        endpoint: "/api/worker/image-to-pdf",
-        operationName: "Creando PDF...",
-        responseType: "blob",
-        createFormData: async (files) => {
-          const formData = new FormData();
-          // Agregar imágenes (re-iterating images array from closure)
-          for (let i = 0; i < images.length; i++) {
-            formData.append("images", images[i].file);
-            formData.append(`rotations`, images[i].rotation.toString());
-          }
-          formData.append("pageSize", pageSize);
-          formData.append("orientation", orientation);
-          formData.append("margin", margin);
-          formData.append("quality", quality);
-          return formData;
-        }
-      });
-
-      if (result && result.blob) {
-        const finalName = `${fileName}.pdf`;
-        downloadBlob(result.blob, finalName);
-        return { success: true, blob: result.blob, fileName: finalName };
-      } else {
-        throw new Error("No result from server");
-      }
-    },
-    [pipeline]
-  );
-
-  // Función principal
+  // -- Método principal de conversión --
   const convertAndDownload = useCallback(
     async (
       images: ImageItem[],
       fileName: string,
       options: ConvertOptions
-    ): Promise<{ success: boolean; blob?: Blob; fileName?: string }> => {
-      const { onSuccess, onError } = options;
-
+    ): Promise<ProcessingResult> => {
       if (images.length === 0) {
         toast.error("Agrega al menos una imagen");
         return { success: false };
       }
 
-
-      setClientProgress({ current: 0, total: images.length });
-
-      // Determinar si usar servidor
       const { useServer, reason } = shouldUseServer(images.length);
       setProcessingMode(useServer ? "server" : "client");
 
@@ -324,121 +283,75 @@ export function useImageToPdf() {
       }
 
       try {
-        let result: { success: boolean; blob?: Blob; fileName?: string };
+        let result: ProcessingResult | null;
 
         if (useServer) {
-          result = await convertOnServer(images, fileName, options);
+          result = await processor.process(
+            images.map((i) => i.file),
+            { images, options },
+            `${fileName}.pdf`
+          );
         } else {
           result = await convertOnClient(images, fileName, options);
+          if (result.success && result.blob && result.fileName) {
+            downloadBlob(result.blob, result.fileName);
+          }
         }
 
-        if (result.success && result.blob && result.fileName) {
+        if (result?.success) {
           setIsInternalComplete(true);
-          setDownloadData({ blob: result.blob, fileName: result.fileName });
-          if (!useServer) toast.success("¡PDF creado correctamente!");
-          onSuccess?.();
-        } else {
-          throw new Error("Error en la conversión");
+          if (!useServer) {
+            toast.success("¡PDF creado correctamente!");
+          }
+          options.onSuccess?.();
+          return result;
         }
 
-        return result;
+        throw new Error("Error en la conversión");
       } catch (error) {
-        console.error("Conversion error:", error);
-        const errorMessage = error instanceof Error ? error.message : "Error al crear PDF";
-        if (!useServer) toast.error(errorMessage);
-        onError?.(error instanceof Error ? error : new Error(errorMessage));
-
-        // Reset on error
-
-        setClientProgress({ current: 0, total: 0 });
+        const err = error instanceof Error ? error : new Error("Error al crear PDF");
+        if (processingMode === "client") {
+          toast.error(err.message);
+        }
+        options.onError?.(err);
         setProcessingMode(null);
-
+        setClientProgress({ current: 0, total: 0 });
         return { success: false };
       }
     },
-    [convertOnClient, convertOnServer]
+    [convertOnClient, processor, processingMode]
   );
 
-  const handleDownloadAgain = useCallback(() => {
-    if (downloadData) {
-      downloadBlob(downloadData.blob, downloadData.fileName);
-      toast.success("Archivo descargado nuevamente");
-    }
-  }, [downloadData]);
-
+  // -- Reset --
   const handleStartNew = useCallback(() => {
     setIsInternalComplete(false);
-    setDownloadData(null);
     setProcessingMode(null);
     setClientProgress({ current: 0, total: 0 });
-    cancelPipeline();
-  }, [cancelPipeline]);
+    processor.reset();
+  }, [processor]);
 
+  // -- Progreso combinado --
   const progress = useMemo(() => {
     if (processingMode === "server") {
-      return { current: pipelineState.progress, total: 100 };
+      return { current: processor.progress, total: 100 };
     }
     return clientProgress;
-  }, [processingMode, pipelineState.progress, clientProgress]);
-
-  const isProcessing = processingMode === "server"
-    ? pipelineState.isProcessing
-    : (clientProgress.total > 0 && !isInternalComplete);
-
-  const isComplete = isInternalComplete || pipelineState.phase === "complete";
+  }, [processingMode, processor.progress, clientProgress]);
 
   return {
-    isProcessing,
-    isComplete,
+    // Estado
+    isProcessing: processor.isProcessing || (clientProgress.total > 0 && !isInternalComplete),
+    isComplete: isInternalComplete || processor.isComplete,
     progress,
     processingMode,
+
+    // Acciones
     convertAndDownload,
-    handleDownloadAgain,
+    handleDownloadAgain: processor.downloadAgain,
     handleStartNew,
+
+    // Utilidades
     shouldUseServer,
     CLIENT_LIMIT,
   };
-}
-
-// Convertir imagen a JPEG
-async function convertToJpeg(file: File): Promise<Uint8Array> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d")!;
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
-          } else {
-            reject(new Error("Error convirtiendo imagen"));
-          }
-        },
-        "image/jpeg",
-        0.9
-      );
-      URL.revokeObjectURL(img.src);
-    };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
-  });
-}
-
-// Descargar blob
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }

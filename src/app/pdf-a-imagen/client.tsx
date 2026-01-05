@@ -42,7 +42,7 @@ import {
   getFormatInfo,
   type ImageFormat,
   type DpiOption
-} from "@/hooks/usepdftoimage";
+} from "@/hooks/usePdfToImage";
 
 // Configuración de formatos
 const FORMATS: {
