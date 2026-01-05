@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { Nunito_Sans, Roboto } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { ToastContainer } from "@/components/ui/toast";
 import { Navbar } from "@/components/layout/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FileContextProvider } from "@/context/FileContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Footer from "@/components/layout/footer";
 
 const nunitoSans = Nunito_Sans({
@@ -38,12 +40,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <FileContextProvider>
-            <Navbar />
-            {children}
-            <Footer />
-            <Toaster />
-          </FileContextProvider>
+          <ErrorBoundary level="app">
+            <FileContextProvider>
+              <Navbar />
+              {children}
+              <Footer />
+              <Toaster />
+              <ToastContainer position="bottom-right" maxVisible={5} />
+            </FileContextProvider>
+          </ErrorBoundary>
         </ThemeProvider>
       </body>
     </html>

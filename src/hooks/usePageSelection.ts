@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 
 export function usePageSelection(totalPages: number = 0) {
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
@@ -18,12 +18,12 @@ export function usePageSelection(totalPages: number = 0) {
     if (totalPages === 0) return;
     const all = Array.from({ length: totalPages }, (_, i) => i + 1);
     setSelectedPages(all);
-    toast.info("Todas las páginas seleccionadas");
+    notify.info("Todas las páginas seleccionadas");
   };
 
   const deselectAll = () => {
     setSelectedPages([]);
-    toast.info("Selección limpiada");
+    notify.info("Selección limpiada");
   };
 
   const invertSelection = () => {
@@ -33,7 +33,7 @@ export function usePageSelection(totalPages: number = 0) {
       const newSelection = all.filter(p => !prev.includes(p));
       return newSelection;
     });
-    toast.info("Selección invertida");
+    notify.info("Selección invertida");
   };
 
   const selectByRange = (rangeInput: string) => {

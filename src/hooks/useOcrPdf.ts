@@ -1,9 +1,23 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
+import { createError } from "@/lib/errors/error-types";
 import { getApiUrl } from "@/lib/api";
 import { Loader2, Check, Info } from "lucide-react";
 import { usePdfFiles } from "./usePdfFiles";
 import { useToolProcessor, ProcessingResult, UploadStats } from "./core/useToolProcessor";
+
+let isWorkerConfigured = false;
+
+// Función auxiliar para configurar pdfjs
+async function setupPdfjs() {
+  if (typeof window === "undefined") return;
+  
+  if (!isWorkerConfigured) {
+    const pdfjs = await import("pdfjs-dist");
+    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+    isWorkerConfigured = true;
+  }
+}
 
 // ============================================================================
 // TYPES
@@ -213,8 +227,12 @@ export function useOcrPdf() {
   // -- Cargar páginas del PDF --
   const loadPdfPages = useCallback(async (pdfFile: File, currentFileId: number) => {
     try {
-      const { pdfjs } = await import("react-pdf");
-      pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+      if (typeof window === "undefined") {
+        throw new Error("PDF loading only works in browser");
+      }
+
+      await setupPdfjs();
+      const pdfjs = await import("pdfjs-dist");
 
       const arrayBuffer = await pdfFile.arrayBuffer();
       const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
@@ -240,9 +258,11 @@ export function useOcrPdf() {
 
       const err = error as { name?: string };
       if (err.name === "PasswordException") {
-        toast.error("Este PDF está protegido.");
+        const protectedError = createError.fileProtected(file.name);
+        notify.error(protectedError.userMessage.description);
       } else {
-        toast.error("Error al leer el PDF");
+        const appError = createError.fromUnknown(error, { context: "ocr-pdf-loader" });
+        notify.error(appError.userMessage.description);
       }
       setPages([]);
       if (isMounted.current && fileIdRef.current === currentFileId) {
@@ -307,7 +327,8 @@ export function useOcrPdf() {
         return;
       }
       if (newFile.type !== "application/pdf") {
-        toast.error("Por favor selecciona un archivo PDF válido");
+        const error = createError.fileInvalidType(newFile.name, newFile.type, ["application/pdf"]);
+        notify.error(error.userMessage.description);
         return;
       }
       addFiles([newFile]);

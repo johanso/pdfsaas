@@ -1,13 +1,22 @@
 import { useState, useCallback, useMemo } from "react";
-import { toast } from "sonner";
-// El import de pdfjs se movió a inside de las funciones que lo usan para lazy loading
-// import * as pdfjs from "pdfjs-dist";
+import { notify } from "@/lib/errors/notifications";
+import { createError } from "@/lib/errors/error-types";
 import JSZip from "jszip";
 import { useToolProcessor, ProcessingResult, UploadStats } from "./core/useToolProcessor";
 import { ImageFormat, DpiOption, FormatInfo } from "@/types";
 
-// Configurar worker de pdfjs (se hará dinámicamente)
-// pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+let isWorkerConfigured = false;
+
+// Función auxiliar para configurar pdfjs
+async function setupPdfjs() {
+  if (typeof window === "undefined") return;
+  
+  if (!isWorkerConfigured) {
+    const pdfjs = await import("pdfjs-dist");
+    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+    isWorkerConfigured = true;
+  }
+}
 
 export type { UploadStats };
 export type ProcessingMode = "client" | "server" | "auto";
@@ -177,9 +186,12 @@ export function usePdfToImage() {
       const { format, quality, scale = 2.0, onProgress } = options;
 
       try {
-        // Usar react-pdf en lugar de pdfjs-dist directamente para evitar problemas con canvas
-        const { pdfjs } = await import("react-pdf");
-        pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        if (typeof window === "undefined") {
+          throw new Error("PDF conversion only works in browser");
+        }
+
+        await setupPdfjs();
+        const pdfjs = await import("pdfjs-dist");
 
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
@@ -204,7 +216,7 @@ export function usePdfToImage() {
             context.fillRect(0, 0, canvas.width, canvas.height);
           }
 
-          await page.render({ canvasContext: context, viewport, canvas }).promise;
+          await page.render({ canvasContext: context, viewport }).promise;
 
           const mimeType = format === "jpg" ? "image/jpeg" : `image/${format}`;
           const blob = await new Promise<Blob>((resolve, reject) => {
@@ -256,7 +268,7 @@ export function usePdfToImage() {
       options: ConvertOptions
     ): Promise<ProcessingResult> => {
       if (selectedPageIndices.length === 0) {
-        toast.error("Selecciona al menos una página");
+        notify.error("Debes seleccionar al menos una página");
         return { success: false };
       }
 
@@ -278,7 +290,7 @@ export function usePdfToImage() {
         );
         useServer = check.useServer;
         if (check.reason) {
-          toast.info(check.reason);
+          notify.info(check.reason);
         }
       }
 
@@ -307,7 +319,7 @@ export function usePdfToImage() {
         if (result?.success) {
           setIsInternalComplete(true);
           if (!useServer) {
-            toast.success("¡Conversión completada!");
+            notify.success("¡Conversión completada!");
           }
           options.onSuccess?.();
           return result;
@@ -315,11 +327,11 @@ export function usePdfToImage() {
 
         throw new Error("Error en la conversión");
       } catch (error) {
-        const err = error instanceof Error ? error : new Error("Error en conversión");
+        const appError = createError.fromUnknown(error, { context: "pdf-to-image" });
         if (processingMode === "client") {
-          toast.error(err.message);
+          notify.error(appError.userMessage.description);
         }
-        options.onError?.(err);
+        options.onError?.(appError);
         setProcessingMode(null);
         setClientProgress({ current: 0, total: 0 });
         return { success: false };

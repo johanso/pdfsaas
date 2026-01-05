@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
+import { createError } from "@/lib/errors/error-types";
 // Import dinámico de pdf-lib para reducir bundle inicial
 // import { PDFDocument, degrees } from "pdf-lib";
 import { useToolProcessor, ProcessingResult, UploadStats } from "./core/useToolProcessor";
@@ -273,7 +274,7 @@ export function useImageToPdf() {
       options: ConvertOptions
     ): Promise<ProcessingResult> => {
       if (images.length === 0) {
-        toast.error("Agrega al menos una imagen");
+        notify.error("Debes agregar al menos una imagen");
         return { success: false };
       }
 
@@ -281,7 +282,7 @@ export function useImageToPdf() {
       setProcessingMode(useServer ? "server" : "client");
 
       if (reason) {
-        toast.info(reason);
+        notify.info(reason);
       }
 
       try {
@@ -303,7 +304,7 @@ export function useImageToPdf() {
         if (result?.success) {
           setIsInternalComplete(true);
           if (!useServer) {
-            toast.success("¡PDF creado correctamente!");
+            notify.success("¡PDF creado correctamente!");
           }
           options.onSuccess?.();
           return result;
@@ -311,11 +312,11 @@ export function useImageToPdf() {
 
         throw new Error("Error en la conversión");
       } catch (error) {
-        const err = error instanceof Error ? error : new Error("Error al crear PDF");
+        const appError = createError.fromUnknown(error, { context: "image-to-pdf" });
         if (processingMode === "client") {
-          toast.error(err.message);
+          notify.error(appError.userMessage.description);
         }
-        options.onError?.(err);
+        options.onError?.(appError);
         setProcessingMode(null);
         setClientProgress({ current: 0, total: 0 });
         return { success: false };

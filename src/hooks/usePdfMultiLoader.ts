@@ -1,7 +1,23 @@
 import { useState, useCallback } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
+import { createError } from "@/lib/errors/error-types";
 
 let isWorkerConfigured = false;
+
+// Función auxiliar para configurar pdfjs
+async function setupPdfjs() {
+  if (typeof window === "undefined") return;
+  
+  if (!isWorkerConfigured) {
+    const pdfjs = await import("pdfjs-dist");
+    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+    // @ts-ignore - cMapUrl might be missing in types but is valid in pdfjs-dist
+    pdfjs.GlobalWorkerOptions.cMapUrl = `//unpkg.com/pdfjs-dist@3.11.174/cmaps/`;
+    // @ts-ignore
+    pdfjs.GlobalWorkerOptions.cMapPacked = true;
+    isWorkerConfigured = true;
+  }
+}
 
 export function usePdfMultiLoader() {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,16 +26,12 @@ export function usePdfMultiLoader() {
     setIsLoading(true);
 
     try {
-      const { pdfjs } = await import("react-pdf");
-
-      if (!isWorkerConfigured) {
-        pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-        // @ts-ignore - cMapUrl might be missing in types but is valid in pdfjs-dist
-        pdfjs.GlobalWorkerOptions.cMapUrl = `//unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`;
-        // @ts-ignore
-        pdfjs.GlobalWorkerOptions.cMapPacked = true;
-        isWorkerConfigured = true;
+      if (typeof window === "undefined") {
+        throw new Error("PDF loading only works in browser");
       }
+
+      await setupPdfjs();
+      const pdfjs = await import("pdfjs-dist");
 
       const allPages: Array<{
         id: string;
@@ -31,7 +43,8 @@ export function usePdfMultiLoader() {
 
       for (const file of files) {
         if (file.type !== "application/pdf") {
-          toast.error(`${file.name} no es un archivo PDF válido`);
+          const error = createError.fileInvalidType(file.name, file.type, ["application/pdf"]);
+          notify.error(error.userMessage.description);
           continue;
         }
 
@@ -56,16 +69,12 @@ export function usePdfMultiLoader() {
         } catch (error: any) {
           console.error(`Error loading ${file.name}:`, error);
           if (error.name === "PasswordException") {
-            toast.error(`${file.name} está protegido. Usa "Desbloquear PDF" primero.`, {
-              action: {
-                label: "Desbloquear",
-                onClick: () => window.location.href = "/desbloquear-pdf"
-              },
-              duration: 6000
-            });
+            const protectedError = createError.fileProtected(file.name);
+            notify.error(protectedError.userMessage.description);
             // We continue to the next file, this one is skipped as we don't push to allPages
           } else {
-            toast.error(`Error al cargar ${file.name}`);
+            const appError = createError.fromUnknown(error, { context: "pdf-multi-loader" });
+            notify.error(appError.userMessage.description);
           }
         } finally {
           if (objectUrl) {
@@ -77,7 +86,8 @@ export function usePdfMultiLoader() {
       return allPages;
     } catch (error) {
       console.error("Error in loadPdfPages:", error);
-      toast.error("Error al procesar los archivos PDF");
+      const appError = createError.fromUnknown(error, { context: "pdf-multi-loader" });
+      notify.error(appError.userMessage.description);
       return [];
     } finally {
       setIsLoading(false);

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 import { getOfficePageCount } from "@/lib/office-utils";
 import { FILE_SIZE_LIMITS, formatBytes } from "@/lib/config";
 
@@ -93,12 +93,8 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
       // ... same logic
       const oversizedFiles = newFiles.filter(f => f.size > FILE_SIZE_LIMITS.max);
       if (oversizedFiles.length > 0) {
-        toast.error(
-          `${oversizedFiles.length} archivo${oversizedFiles.length > 1 ? 's exceden' : ' excede'} el límite de ${formatBytes(FILE_SIZE_LIMITS.max)}`,
-          {
-            description: oversizedFiles.map(f => f.name).slice(0, 3).join(", ") + (oversizedFiles.length > 3 ? "..." : ""),
-            duration: 5000
-          }
+        notify.error(
+          `${oversizedFiles.length} archivo${oversizedFiles.length > 1 ? 's exceden' : ' excede'} el límite de ${formatBytes(FILE_SIZE_LIMITS.max)}`
         );
       }
 
@@ -110,10 +106,9 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
 
       if (currentTotalSize + newTotalSize > FILE_SIZE_LIMITS.maxBatch) {
         const availableSpace = FILE_SIZE_LIMITS.maxBatch - currentTotalSize;
-        toast.error("Límite total excedido", {
-          description: `Máximo ${formatBytes(FILE_SIZE_LIMITS.maxBatch)} por lote. Espacio disponible: ${formatBytes(availableSpace)}`,
-          duration: 5000
-        });
+        notify.error(
+          `Máximo ${formatBytes(FILE_SIZE_LIMITS.maxBatch)} por lote. Espacio disponible: ${formatBytes(availableSpace)}`
+        );
         return;
       }
 
@@ -122,7 +117,7 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
         : sizedFiles.filter(f => f.type === "application/pdf");
 
       if (!skipPdfValidation && validFiles.length < sizedFiles.length) {
-        toast.error("Algunos archivos no eran PDF y fueron ignorados.");
+        notify.warning("Algunos archivos no eran PDF y fueron ignorados.");
       }
 
       if (validFiles.length === 0) return;
@@ -134,12 +129,16 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
 
         if (f.type === "application/pdf") {
           try {
-            const { pdfjs } = await import("react-pdf");
-            pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+            // Use dynamic import for browser-only pdfjs
+            if (typeof window !== "undefined") {
+              const pdfjs = await import("pdfjs-dist");
+              pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
-            const buffer = await f.arrayBuffer();
-            const pdf = await pdfjs.getDocument(buffer).promise;
-            pageCount = pdf.numPages;
+              const buffer = await f.arrayBuffer();
+              const pdf = await pdfjs.getDocument(buffer).promise;
+              pageCount = pdf.numPages;
+              await pdf.destroy();
+            }
           } catch (error: any) {
             if (error.name === "PasswordException") {
               protectedCount++;
@@ -168,16 +167,8 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
       const mappedFiles = resolvedFiles.filter((f): f is PdfFile => f !== null);
 
       if (protectedCount > 0) {
-        toast.error(
-          `${protectedCount} archivo${protectedCount > 1 ? 's' : ''} protegido${protectedCount > 1 ? 's' : ''} detectado${protectedCount > 1 ? 's' : ''} y descartado${protectedCount > 1 ? 's' : ''}.`,
-          {
-            description: "Por favor, desbloquéalos primero.",
-            action: {
-              label: "Desbloquear PDF",
-              onClick: () => window.location.href = "/desbloquear-pdf"
-            },
-            duration: 6000
-          }
+        notify.error(
+          `${protectedCount} archivo${protectedCount > 1 ? 's' : ''} protegido${protectedCount > 1 ? 's' : ''} detectado${protectedCount > 1 ? 's' : ''} y descartado${protectedCount > 1 ? 's' : ''}.`
         );
       }
 
@@ -208,12 +199,12 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
 
   const sortAZ = useCallback(() => {
     setFiles(prev => [...prev].sort((a, b) => a.name.localeCompare(b.name)));
-    toast.success("Archivos ordenados alfabéticamente (A-Z).");
+    notify.success("Archivos ordenados alfabéticamente (A-Z).");
   }, []);
 
   const sortZA = useCallback(() => {
     setFiles(prev => [...prev].sort((a, b) => b.name.localeCompare(a.name)));
-    toast.success("Archivos ordenados alfabéticamente (Z-A).");
+    notify.success("Archivos ordenados alfabéticamente (Z-A).");
   }, []);
 
   const reset = useCallback(() => {

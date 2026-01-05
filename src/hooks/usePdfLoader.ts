@@ -1,9 +1,34 @@
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
+import { createError } from "@/lib/errors/error-types";
 
 interface UsePdfLoaderOptions {
   onLoad?: (numPages: number) => void;
   onError?: (error: Error) => void;
+}
+
+// Función auxiliar para cargar pdfjs solo en el cliente
+async function loadPdfInfo(file: File): Promise<number> {
+  if (typeof window === "undefined") {
+    throw new Error("PDF loading only works in browser");
+  }
+
+  try {
+    // Importar dinámicamente para evitar que sea empaquetado en build-time
+    const pdfjs = await import("pdfjs-dist");
+    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+
+    const objectUrl = URL.createObjectURL(file);
+    const pdf = await pdfjs.getDocument(objectUrl).promise;
+    const numPages = pdf.numPages;
+
+    await pdf.destroy();
+    URL.revokeObjectURL(objectUrl);
+
+    return numPages;
+  } catch (error) {
+    throw error;
+  }
 }
 
 export function usePdfLoader(file: File | null, options?: UsePdfLoaderOptions) {
@@ -18,28 +43,16 @@ export function usePdfLoader(file: File | null, options?: UsePdfLoaderOptions) {
 
     const loadPdf = async () => {
       setIsLoading(true);
-      let objectUrl: string | null = null;
       try {
-        const { pdfjs } = await import("react-pdf");
-        pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-
-        objectUrl = URL.createObjectURL(file);
-        const pdf = await pdfjs.getDocument(objectUrl).promise;
-
-        setNumPages(pdf.numPages);
-        options?.onLoad?.(pdf.numPages);
-
-        // Cleanup document
-        await pdf.destroy();
+        const pages = await loadPdfInfo(file);
+        setNumPages(pages);
+        options?.onLoad?.(pages);
       } catch (err) {
         console.error(err);
-        const error = err instanceof Error ? err : new Error("Error al leer el archivo PDF");
-        toast.error(error.message);
-        options?.onError?.(error);
+        const appError = createError.fromUnknown(err, { context: "pdf-loader" });
+        notify.error(appError.userMessage.description);
+        options?.onError?.(appError);
       } finally {
-        if (objectUrl) {
-          URL.revokeObjectURL(objectUrl);
-        }
         setIsLoading(false);
       }
     };
