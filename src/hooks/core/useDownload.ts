@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { getApiUrl } from "@/lib/api";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 
 export function useDownload() {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -28,7 +28,7 @@ export function useDownload() {
         return blob;
       } catch (error) {
         console.error("Download error:", error);
-        toast.error("Error al descargar el archivo");
+        notify.error("Error al descargar el archivo");
         throw error;
       } finally {
         setIsDownloading(false);

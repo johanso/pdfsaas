@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 import { Scissors, Layers, X } from "lucide-react";
 
 // Components
@@ -48,7 +48,7 @@ export default function SplitPdfClient() {
     if (files.length > 0) {
       const f = files[0];
       if (f.type !== "application/pdf") {
-        toast.error("Por favor selecciona un archivo PDF válido");
+        notify.error("Por favor selecciona un archivo PDF válido");
         return;
       }
       handleReset();
@@ -107,11 +107,11 @@ export default function SplitPdfClient() {
   const handlePreSubmit = () => {
     if (!file) return;
     if (mode === "ranges" && ranges.length === 0) {
-      toast.error("Define al menos un punto de división");
+      notify.error("Define al menos un punto de división");
       return;
     }
     if (mode === "fixed" && (fixedSize < 1 || fixedSize >= numPages)) {
-      toast.error("El tamaño de división debe ser válido");
+      notify.error("El tamaño de división debe ser válido");
       return;
     }
     setShowSaveDialog(true);

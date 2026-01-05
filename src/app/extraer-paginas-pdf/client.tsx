@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 import { CheckCircle2, Circle } from "lucide-react";
 
 // Components
@@ -71,15 +71,12 @@ export default function ExtractPdfClient() {
     if (files.length === 0) return;
 
     if (files.length > 1) {
-      toast.warning("Solo se procesará el primer archivo", {
-        description: "Esta herramienta solo acepta un archivo PDF a la vez",
-        duration: 4000
-      });
+      notify.warning("Solo se procesará el primer archivo");
     }
 
     const f = files[0];
     if (f.type !== "application/pdf") {
-      toast.error("Por favor selecciona un archivo PDF válido");
+      notify.error("Por favor selecciona un archivo PDF válido");
       return;
     }
     resetSelection();
@@ -102,7 +99,7 @@ export default function ExtractPdfClient() {
   const handlePreSubmit = () => {
     if (!file) return;
     if (selectedPages.length === 0) {
-      toast.error("Selecciona al menos una página para extraer");
+      notify.error("Selecciona al menos una página para extraer");
       return;
     }
     setShowSaveDialog(true);

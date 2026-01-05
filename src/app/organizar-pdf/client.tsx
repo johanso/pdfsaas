@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 
 // Components
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
@@ -60,12 +60,12 @@ export default function OrganizePdfClient() {
       const newPages = await loadPdfPages(files);
       if (newPages.length > 0) {
         setPages(prev => [...newPages, ...prev]);
-        toast.success(`${newPages.length} página(s) añadida(s)`);
+        notify.success(`${newPages.length} página(s) añadida(s)`);
       } else {
-        toast.error("No se pudieron cargar archivos PDF");
+        notify.error("No se pudieron cargar archivos PDF");
       }
     } catch (error) {
-      toast.error("Error al cargar los archivos");
+      notify.error("Error al cargar los archivos");
     } finally {
       setIsGridLoading(false);
     }
@@ -81,7 +81,7 @@ export default function OrganizePdfClient() {
     const count = selectedIds.length;
     setPages(prev => prev.filter(p => !selectedIds.includes(p.id)));
     setSelectedIds([]);
-    toast.success(`${count} página(s) eliminada(s)`);
+    notify.success(`${count} página(s) eliminada(s)`);
   }, [selectedIds]);
 
   const handleRotateBulk = useCallback((degrees: number) => {
@@ -109,7 +109,7 @@ export default function OrganizePdfClient() {
       }
       return newPages;
     });
-    toast.success(`${selectedIds.length} página(s) duplicada(s)`);
+    notify.success(`${selectedIds.length} página(s) duplicada(s)`);
     setSelectedIds([]);
   }, [selectedIds]);
 
@@ -133,7 +133,7 @@ export default function OrganizePdfClient() {
       newPages.splice(idx + 1, 0, { ...prev[idx], id: crypto.randomUUID() });
       return newPages;
     });
-    toast.success("Página duplicada");
+    notify.success("Página duplicada");
   }, []);
 
   const handleInsertBlank = useCallback((id: string) => {
@@ -144,7 +144,7 @@ export default function OrganizePdfClient() {
       newPages.splice(idx + 1, 0, { id: crypto.randomUUID(), file: undefined as any, originalIndex: 0, rotation: 0, isBlank: true });
       return newPages;
     });
-    toast.success("Página en blanco insertada");
+    notify.success("Página en blanco insertada");
   }, []);
 
   const handleRemove = useCallback((id: string) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 import { Info, FileText, Loader2, Check, X } from "lucide-react";
 
 // UI Components
@@ -94,9 +94,7 @@ export default function OcrPdfClient() {
     if (files.length === 0) return;
 
     if (files.length > 1) {
-      toast.warning("Solo se procesará el primer archivo", {
-        description: "Esta herramienta solo acepta un archivo PDF a la vez",
-      });
+      notify.warning("Solo se procesará el primer archivo");
     }
 
     setFile(files[0]);

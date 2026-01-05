@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 
 // Components
 import { Input } from "@/components/ui/input";
@@ -85,11 +85,11 @@ export default function DeletePagesClient() {
 
   const handleOpenSaveDialog = () => {
     if (!file || pages.length === 0) {
-      toast.error("No hay páginas para procesar");
+      notify.error("No hay páginas para procesar");
       return;
     }
     if (selectedPages.length === pages.length) {
-      toast.error("No puedes eliminar todas las páginas.");
+      notify.error("No puedes eliminar todas las páginas.");
       return;
     }
     setIsDialogOpen(true);

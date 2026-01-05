@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 
 // Components
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
@@ -51,7 +51,7 @@ export default function UnirPdfClient() {
 
   const handleSubmit = useCallback(async (outputName: string) => {
     if (files.length < 2) {
-      toast.error("Por favor sube al menos 2 archivos para unir.");
+      notify.error("Por favor sube al menos 2 archivos para unir.");
       return;
     }
 

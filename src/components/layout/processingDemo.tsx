@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, RotateCcw } from "lucide-react";
 import ProcessingScreen from "../processing-screen";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 
 const ProcessingDemo = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -38,30 +38,22 @@ const ProcessingDemo = () => {
   };
 
   const handleDownload = () => {
-    toast.info("Descarga iniciada", {
-      description: "Tu archivo está listo para descargar",
-    })
+    notify.info("Descarga iniciada");
     resetDemo();
   }
 
   const handleEditAgain = () => {
-    toast.info("Volviendo a editar", {
-      description: "Puedes seguir editando tu archivo",
-    })
+    notify.info("Volviendo a editar");
     resetDemo();
   }
 
   const handleDelete = () => {
-    toast.error("Archivo eliminado", {
-      description: "Tu archivo ha sido eliminado",
-    })
+    notify.error("Archivo eliminado");
     resetDemo();
   }
 
   const handleStartNew = () => {
-    toast.info("Proceso reiniciado", {
-      description: "Puedes subir un nuevo archivo",
-    })
+    notify.info("Proceso reiniciado");
     resetDemo();
   }
 

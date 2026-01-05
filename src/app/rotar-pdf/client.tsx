@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 
 // Components
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
@@ -40,17 +40,17 @@ export default function RotatePdfClient() {
 
   const handleRotateRight = () => {
     rotateAllPages(90);
-    toast.success("Documento rotado a la derecha");
+    notify.success("Documento rotado a la derecha");
   };
 
   const handleRotateLeft = () => {
     rotateAllPages(-90);
-    toast.success("Documento rotado a la izquierda");
+    notify.success("Documento rotado a la izquierda");
   };
 
   const handleResetRotation = () => {
     resetRotation();
-    toast.info("Rotación restablecida");
+    notify.info("Rotación restablecida");
   };
 
   const handleSave = async (outputName: string) => {

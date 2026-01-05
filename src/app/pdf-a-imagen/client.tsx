@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 import {
   Camera,
   Image as ImageIcon,
@@ -117,7 +117,7 @@ export default function PdfToImageClient() {
     if (files.length > 0) {
       const f = files[0];
       if (f.type !== "application/pdf") {
-        toast.error("Por favor selecciona un archivo PDF válido");
+        notify.error("Por favor selecciona un archivo PDF válido");
         return;
       }
       setIsInitialLoading(true);
@@ -190,7 +190,7 @@ export default function PdfToImageClient() {
 
     if (newPages.length === 0) {
       handleReset();
-      toast.success("Todas las páginas eliminadas, puedes subir un nuevo archivo");
+      notify.success("Todas las páginas eliminadas, puedes subir un nuevo archivo");
       return;
     }
 
@@ -198,7 +198,7 @@ export default function PdfToImageClient() {
 
     // Limpiar selección
     deselectAll();
-    toast.success(`${idsToRemove.length} páginas eliminadas de la selección`);
+    notify.success(`${idsToRemove.length} páginas eliminadas de la selección`);
   };
 
   const handlePreSubmit = () => {

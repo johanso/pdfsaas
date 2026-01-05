@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 import {
   Zap,
   CheckCircle2,
@@ -92,7 +92,7 @@ export default function CompressPdfClient() {
     if (newFiles.length > 0) {
       const f = newFiles[0];
       if (f.type !== "application/pdf") {
-        toast.error("Por favor selecciona un archivo PDF válido");
+        notify.error("Por favor selecciona un archivo PDF válido");
         return;
       }
       addFiles([f]);

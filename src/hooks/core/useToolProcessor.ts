@@ -3,7 +3,7 @@ import { useXhrUpload, UploadStats as BaseUploadStats } from "./useXhrUpload";
 import { useDownload } from "./useDownload";
 import { useProcessingTimer } from "./useProcessingTimer";
 import { gzipSync } from "fflate";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 
 // ============================================================================
 // TYPES
@@ -322,7 +322,7 @@ export function useToolProcessor<TOptions, TResult = ProcessingResult>(
       }));
 
       config.onSuccess?.(finalResult);
-      toast.success("¡Proceso completado!");
+      notify.success("¡Proceso completado!");
 
       return finalResult;
 
@@ -342,14 +342,14 @@ export function useToolProcessor<TOptions, TResult = ProcessingResult>(
           result: null,
           uploadStats: null
         });
-        toast.info("Operación cancelada");
+        notify.info("Operación cancelada");
         return null;
       }
 
       setPhase("error");
       setState(s => ({ ...s, error: err }));
       config.onError?.(err);
-      toast.error(err.message || "Error al procesar archivo");
+      notify.error(err.message || "Error al procesar archivo");
 
       return null;
     }
@@ -380,7 +380,7 @@ export function useToolProcessor<TOptions, TResult = ProcessingResult>(
     if (lastDownloadRef.current) {
       const { blob, fileName } = lastDownloadRef.current;
       downloadHook.downloadBlob(blob, fileName);
-      toast.success("Descarga iniciada");
+      notify.success("Descarga iniciada");
     } else if (state.result && (state.result as any).fileId) {
       const res = state.result as any;
       const url = `/api/worker/download/${res.fileId}`;

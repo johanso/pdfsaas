@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { toast } from "sonner";
+import { notify } from "@/lib/errors/notifications";
 import {
   Maximize,
   RectangleHorizontal,
@@ -142,11 +142,11 @@ export default function ImageToPdfClient() {
     const validFiles = files.filter(f => ACCEPTED_TYPES.includes(f.type));
 
     if (validFiles.length !== files.length) {
-      toast.warning("Algunos archivos no son imágenes válidas");
+      notify.warning("Algunos archivos no son imágenes válidas");
     }
 
     if (images.length + validFiles.length > MAX_IMAGES) {
-      toast.error(`Máximo ${MAX_IMAGES} imágenes`);
+      notify.error(`Máximo ${MAX_IMAGES} imágenes`);
       return;
     }
 
@@ -215,7 +215,7 @@ export default function ImageToPdfClient() {
 
     if (remainingImages.length === 0) {
       handleReset();
-      toast.success("Todas las imágenes eliminadas");
+      notify.success("Todas las imágenes eliminadas");
       return;
     }
 
@@ -225,7 +225,7 @@ export default function ImageToPdfClient() {
 
     setImages(remainingImages);
     deselectAll();
-    toast.success(`${selectedIds.length} imágenes eliminadas`);
+    notify.success(`${selectedIds.length} imágenes eliminadas`);
   }, [selectedIds, images, handleReset, deselectAll]);
 
   // Reordenar (DnD)
@@ -245,7 +245,7 @@ export default function ImageToPdfClient() {
   // Pre-submit
   const handlePreSubmit = useCallback(() => {
     if (images.length === 0) {
-      toast.error("Agrega al menos una imagen");
+      notify.error("Agrega al menos una imagen");
       return;
     }
     setIsDialogOpen(true);
