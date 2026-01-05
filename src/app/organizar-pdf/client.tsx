@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 
@@ -53,7 +53,7 @@ export default function OrganizePdfClient() {
     new Set(pages.map(p => p.file).filter(f => f !== undefined))
   ) as File[];
 
-  const handleAddFiles = async (files: File[]) => {
+  const handleAddFiles = useCallback(async (files: File[]) => {
     if (files.length === 0) return;
     setIsGridLoading(true);
     try {
@@ -69,36 +69,36 @@ export default function OrganizePdfClient() {
     } finally {
       setIsGridLoading(false);
     }
-  };
+  }, [loadPdfPages]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setPages([]);
     setSelectedIds([]);
-  };
+  }, []);
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = useCallback(() => {
     if (selectedIds.length === 0) return;
     const count = selectedIds.length;
     setPages(prev => prev.filter(p => !selectedIds.includes(p.id)));
     setSelectedIds([]);
     toast.success(`${count} página(s) eliminada(s)`);
-  };
+  }, [selectedIds]);
 
-  const handleRotateBulk = (degrees: number) => {
+  const handleRotateBulk = useCallback((degrees: number) => {
     if (selectedIds.length === 0) return;
     setPages(prev => prev.map(p =>
       selectedIds.includes(p.id) ? { ...p, rotation: p.rotation + degrees } : p
     ));
-  };
+  }, [selectedIds]);
 
-  const handleResetRotationBulk = () => {
+  const handleResetRotationBulk = useCallback(() => {
     if (selectedIds.length === 0) return;
     setPages(prev => prev.map(p =>
       selectedIds.includes(p.id) ? { ...p, rotation: 0 } : p
     ));
-  };
+  }, [selectedIds]);
 
-  const handleDuplicateSelected = () => {
+  const handleDuplicateSelected = useCallback(() => {
     if (selectedIds.length === 0) return;
     setPages(prev => {
       const newPages = [...prev];
@@ -111,7 +111,58 @@ export default function OrganizePdfClient() {
     });
     toast.success(`${selectedIds.length} página(s) duplicada(s)`);
     setSelectedIds([]);
-  };
+  }, [selectedIds]);
+
+  const handleToggle = useCallback((id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]);
+  }, []);
+
+  const handleGridRotateLeft = useCallback((id: string) => {
+    setPages(prev => prev.map(p => p.id === id ? { ...p, rotation: p.rotation - 90 } : p));
+  }, []);
+
+  const handleGridRotateRight = useCallback((id: string) => {
+    setPages(prev => prev.map(p => p.id === id ? { ...p, rotation: p.rotation + 90 } : p));
+  }, []);
+
+  const handleDuplicate = useCallback((id: string) => {
+    setPages(prev => {
+      const idx = prev.findIndex(p => p.id === id);
+      if (idx === -1) return prev;
+      const newPages = [...prev];
+      newPages.splice(idx + 1, 0, { ...prev[idx], id: crypto.randomUUID() });
+      return newPages;
+    });
+    toast.success("Página duplicada");
+  }, []);
+
+  const handleInsertBlank = useCallback((id: string) => {
+    setPages(prev => {
+      const idx = prev.findIndex(p => p.id === id);
+      if (idx === -1) return prev;
+      const newPages = [...prev];
+      newPages.splice(idx + 1, 0, { id: crypto.randomUUID(), file: undefined as any, originalIndex: 0, rotation: 0, isBlank: true });
+      return newPages;
+    });
+    toast.success("Página en blanco insertada");
+  }, []);
+
+  const handleRemove = useCallback((id: string) => {
+    setPages(prev => prev.filter(p => p.id !== id));
+    setSelectedIds(prev => prev.filter(pid => pid !== id));
+  }, []);
+
+  const extractCardData = useCallback((page: any) => ({
+    id: page.id,
+    file: page.file,
+    pageNumber: page.originalIndex,
+    rotation: page.rotation,
+    isBlank: page.isBlank
+  }), []);
+
+  const handleSelectAll = useCallback(() => setSelectedIds(pages.map(p => p.id)), [pages]);
+  const handleDeselectAll = useCallback(() => setSelectedIds([]), []);
+  const handleInvertSelection = useCallback(() => setSelectedIds(pages.map(p => p.id).filter(id => !selectedIds.includes(id))), [pages, selectedIds]);
 
   const handleSave = async (outputName: string) => {
     if (pages.length === 0) return;
@@ -168,9 +219,9 @@ export default function OrganizePdfClient() {
           bulkActions: true,
         }}
         actions={{
-          onSelectAll: () => setSelectedIds(pages.map(p => p.id)),
-          onDeselectAll: () => setSelectedIds([]),
-          onInvertSelection: () => setSelectedIds(pages.map(p => p.id).filter(id => !selectedIds.includes(id))),
+          onSelectAll: handleSelectAll,
+          onDeselectAll: handleDeselectAll,
+          onInvertSelection: handleInvertSelection,
           onRotateRights: () => handleRotateBulk(90),
           onRotateLefts: () => handleRotateBulk(-90),
           onResetOrientation: handleResetRotationBulk,
@@ -207,37 +258,14 @@ export default function OrganizePdfClient() {
           addCardText="Añadir PDF"
           addCardSubtext="Arrastra o haz clic"
           addCardDisabled={isProcessing || isGridLoading}
-          extractCardData={(page) => ({
-            id: page.id,
-            file: page.file,
-            pageNumber: page.originalIndex,
-            rotation: page.rotation,
-            isBlank: page.isBlank
-          })}
+          extractCardData={extractCardData}
           onReorder={setPages}
-          onToggle={(id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id])}
-          onRotateLeft={(id) => setPages(prev => prev.map(p => p.id === id ? { ...p, rotation: p.rotation - 90 } : p))}
-          onRotateRight={(id) => setPages(prev => prev.map(p => p.id === id ? { ...p, rotation: p.rotation + 90 } : p))}
-          onDuplicate={(id) => {
-            const idx = pages.findIndex(p => p.id === id);
-            if (idx === -1) return;
-            const newPages = [...pages];
-            newPages.splice(idx + 1, 0, { ...pages[idx], id: crypto.randomUUID() });
-            setPages(newPages);
-            toast.success("Página duplicada");
-          }}
-          onInsertBlank={(id) => {
-            const idx = pages.findIndex(p => p.id === id);
-            if (idx === -1) return;
-            const newPages = [...pages];
-            newPages.splice(idx + 1, 0, { id: crypto.randomUUID(), file: undefined as any, originalIndex: 0, rotation: 0, isBlank: true });
-            setPages(newPages);
-            toast.success("Página en blanco insertada");
-          }}
-          onRemove={(id) => {
-            setPages(prev => prev.filter(p => p.id !== id));
-            setSelectedIds(prev => prev.filter(pid => pid !== id));
-          }}
+          onToggle={handleToggle}
+          onRotateLeft={handleGridRotateLeft}
+          onRotateRight={handleGridRotateRight}
+          onDuplicate={handleDuplicate}
+          onInsertBlank={handleInsertBlank}
+          onRemove={handleRemove}
         />
         <input
           ref={fileInputRef}
@@ -250,20 +278,22 @@ export default function OrganizePdfClient() {
             e.target.value = "";
           }}
         />
-      </PdfToolLayout>
+      </PdfToolLayout >
 
       {/* Processing Screen */}
-      {(isProcessing || isComplete) && (
-        <ProcessingScreen
-          fileName={fileName}
-          operation={operation}
-          progress={progress}
-          isComplete={isComplete}
-          onDownload={handleDownloadAgain}
-          onEditAgain={() => handleContinueEditing()}
-          onStartNew={() => handleStartNew(handleReset)}
-        />
-      )}
+      {
+        (isProcessing || isComplete) && (
+          <ProcessingScreen
+            fileName={fileName}
+            operation={operation}
+            progress={progress}
+            isComplete={isComplete}
+            onDownload={handleDownloadAgain}
+            onEditAgain={() => handleContinueEditing()}
+            onStartNew={() => handleStartNew(handleReset)}
+          />
+        )
+      }
     </>
   );
 }

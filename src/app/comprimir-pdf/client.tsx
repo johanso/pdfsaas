@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import {
   Zap,
@@ -88,7 +88,7 @@ export default function CompressPdfClient() {
 
   const file = files[0]?.file || null;
 
-  const handleFilesSelected = (newFiles: File[]) => {
+  const handleFilesSelected = useCallback((newFiles: File[]) => {
     if (newFiles.length > 0) {
       const f = newFiles[0];
       if (f.type !== "application/pdf") {
@@ -97,7 +97,16 @@ export default function CompressPdfClient() {
       }
       addFiles([f]);
     }
-  };
+  }, [addFiles]);
+
+  const extractCardData = useCallback((f: any) => ({
+    id: f.id,
+    file: f.file,
+    name: f.name,
+    size: f.file.size,
+    pageCount: f.pageCount,
+    rotation: f.rotation,
+  }), []);
 
   const handleReset = () => {
     resetFiles();
@@ -274,14 +283,7 @@ export default function CompressPdfClient() {
           items={files}
           config={PDF_CARD_PRESETS.compress}
           layout="list"
-          extractCardData={(f) => ({
-            id: f.id,
-            file: f.file,
-            name: f.name,
-            size: f.file.size,
-            pageCount: f.pageCount,
-            rotation: f.rotation,
-          })}
+          extractCardData={extractCardData}
           onRemove={removeFile}
         />
       </PdfToolLayout>
@@ -336,8 +338,8 @@ function PresetCard({
   return (
     <Card
       className={`relative cursor-pointer transition-all ${selected
-          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-          : "hover:border-zinc-300 dark:hover:border-zinc-700 bg-transparent"
+        ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+        : "hover:border-zinc-300 dark:hover:border-zinc-700 bg-transparent"
         }`}
       onClick={onClick}
     >

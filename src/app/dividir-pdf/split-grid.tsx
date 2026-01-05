@@ -1,4 +1,4 @@
-"use client";
+import { memo } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { Scissors } from "lucide-react";
@@ -23,7 +23,7 @@ interface SplitGridProps {
   onRangeClick: (pageIndex: number) => void;
 }
 
-export function SplitGrid({
+export const SplitGrid = memo(function SplitGrid({
   file,
   numPages,
   mode,
@@ -125,4 +125,4 @@ export function SplitGrid({
       })}
     </div>
   );
-}
+});

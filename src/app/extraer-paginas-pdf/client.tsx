@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { CheckCircle2, Circle } from "lucide-react";
@@ -56,7 +56,18 @@ export default function ExtractPdfClient() {
     handleContinueEditing,
     handleStartNew } = usePdfProcessing();
 
-  const handleFilesSelected = (files: File[]) => {
+  const selectedIds = useMemo(() => pages
+    .filter(p => selectedPages.includes(p.originalIndex))
+    .map(p => p.id),
+    [pages, selectedPages]
+  );
+
+  const handleToggle = useCallback((id: string) => {
+    const page = pages.find(p => p.id === id);
+    if (page) togglePage(page.originalIndex);
+  }, [pages, togglePage]);
+
+  const handleFilesSelected = useCallback((files: File[]) => {
     if (files.length === 0) return;
 
     if (files.length > 1) {
@@ -73,7 +84,15 @@ export default function ExtractPdfClient() {
     }
     resetSelection();
     setFile(f);
-  };
+  }, [resetSelection]);
+
+  const extractCardData = useCallback((p: any) => ({
+    id: p.id,
+    file: p.file,
+    pageNumber: p.originalIndex,
+    rotation: p.rotation,
+    isBlank: p.isBlank
+  }), []);
 
   const handleReset = () => {
     setFile(null);
@@ -213,21 +232,9 @@ export default function ExtractPdfClient() {
         <PdfGrid
           items={pages}
           config={PDF_CARD_PRESETS.extract}
-          extractCardData={(p) => ({
-            id: p.id,
-            file: p.file,
-            pageNumber: p.originalIndex,
-            rotation: p.rotation,
-            isBlank: p.isBlank
-          })}
-          selectedIds={pages
-            .filter(p => selectedPages.includes(p.originalIndex))
-            .map(p => p.id)
-          }
-          onToggle={(id) => {
-            const page = pages.find(p => p.id === id);
-            if (page) togglePage(page.originalIndex);
-          }}
+          extractCardData={extractCardData}
+          selectedIds={selectedIds}
+          onToggle={handleToggle}
           onReorder={reorderPages}
         />
       </PdfToolLayout>

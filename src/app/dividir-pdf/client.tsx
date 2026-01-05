@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { Scissors, Layers, X } from "lucide-react";
 
@@ -44,7 +44,7 @@ export default function SplitPdfClient() {
     setFixedSize(2);
   };
 
-  const handleFilesSelected = (files: File[]) => {
+  const handleFilesSelected = useCallback((files: File[]) => {
     if (files.length > 0) {
       const f = files[0];
       if (f.type !== "application/pdf") {
@@ -54,9 +54,9 @@ export default function SplitPdfClient() {
       handleReset();
       setFile(f);
     }
-  };
+  }, []);
 
-  const handleRangeClick = (pageNumber: number) => {
+  const handleRangeClick = useCallback((pageNumber: number) => {
     setRanges(prev => {
       if (prev.includes(pageNumber)) {
         return prev.filter(p => p !== pageNumber).sort((a, b) => a - b);
@@ -64,9 +64,9 @@ export default function SplitPdfClient() {
         return [...prev, pageNumber].sort((a, b) => a - b);
       }
     });
-  };
+  }, []);
 
-  const handleDeleteGroup = (groupIndex: number) => {
+  const handleDeleteGroup = useCallback((groupIndex: number) => {
     const sortedRanges = [...ranges].sort((a, b) => a - b);
     if (groupIndex === sortedRanges.length) {
       if (sortedRanges.length > 0) {
@@ -77,7 +77,7 @@ export default function SplitPdfClient() {
       const splitToRemove = sortedRanges[groupIndex];
       setRanges(prev => prev.filter(p => p !== splitToRemove));
     }
-  };
+  }, [ranges]);
 
   const getIsZip = () => {
     if (mode === "ranges") return ranges.length > 0;
@@ -85,7 +85,7 @@ export default function SplitPdfClient() {
     return false;
   };
 
-  const getRangeGroups = () => {
+  const rangeGroups = useMemo(() => {
     if (mode !== "ranges" || numPages === 0) return [];
     const groups: { start: number; end: number; color: string }[] = [];
     const sortedRanges = [...ranges].sort((a, b) => a - b);
@@ -102,7 +102,7 @@ export default function SplitPdfClient() {
       groups.push({ start, end: numPages, color: colorObj.dot });
     }
     return groups;
-  };
+  }, [mode, numPages, ranges]);
 
   const handlePreSubmit = () => {
     if (!file) return;
@@ -139,7 +139,7 @@ export default function SplitPdfClient() {
     });
   };
 
-  const rangeGroups = getRangeGroups();
+  // const rangeGroups = getRangeGroups(); // Moved to useMemo above
 
   return (
     <>

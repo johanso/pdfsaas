@@ -201,11 +201,13 @@ export const PDF_CARD_PRESETS = {
 
 import { FileText } from "lucide-react";
 
+import { memo } from "react";
+
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
 
-export function PdfCard({
+export const PdfCard = memo(function PdfCard({
   data,
   config = {},
   isSelected = false,
@@ -585,4 +587,4 @@ export function PdfCard({
       </Card>
     </div>
   );
-}
+});

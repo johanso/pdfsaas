@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { getOfficePageCount } from "@/lib/office-utils";
@@ -86,11 +86,11 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
   // User request: "Manejar un estado global".
   // Let's modify addFiles to accept options.
 
-  const addFiles = async (newFiles: File[], skipPdfValidation: boolean = false) => {
+  const addFiles = useCallback(async (newFiles: File[], skipPdfValidation: boolean = false) => {
     setIsLoading(true);
 
     try {
-      // ===== VALIDACIÓN 1: Tamaño individual =====
+      // ... same logic
       const oversizedFiles = newFiles.filter(f => f.size > FILE_SIZE_LIMITS.max);
       if (oversizedFiles.length > 0) {
         toast.error(
@@ -105,7 +105,6 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
       const sizedFiles = newFiles.filter(f => f.size <= FILE_SIZE_LIMITS.max);
       if (sizedFiles.length === 0) return;
 
-      // ===== VALIDACIÓN 2: Tamaño total del batch =====
       const currentTotalSize = files.reduce((acc, f) => acc + f.file.size, 0);
       const newTotalSize = sizedFiles.reduce((acc, f) => acc + f.size, 0);
 
@@ -118,7 +117,6 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // ===== VALIDACIÓN 3: Tipo de archivo =====
       const validFiles = skipPdfValidation
         ? sizedFiles
         : sizedFiles.filter(f => f.type === "application/pdf");
@@ -150,7 +148,6 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
             console.error("Error extracting PDF page count:", error);
           }
         } else if (skipPdfValidation) {
-          // Office files logic
           const ext = f.name.toLowerCase().split('.').pop();
           const officeExtensions = ['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'];
           if (ext && officeExtensions.includes(ext)) {
@@ -190,44 +187,38 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [files]);
 
-  const rotateFile = (id: string, degrees: number = 90) => {
+  const rotateFile = useCallback((id: string, degrees: number = 90) => {
     setFiles(files => files.map(f => {
       if (f.id === id) {
         return { ...f, rotation: (f.rotation + degrees) % 360 };
       }
       return f;
     }));
-  };
+  }, []);
 
-  const removeFile = (id: string) => {
+  const removeFile = useCallback((id: string) => {
     setFiles(files => files.filter(f => f.id !== id));
-  };
+  }, []);
 
-  const reorderFiles = (newFiles: PdfFile[]) => {
+  const reorderFiles = useCallback((newFiles: PdfFile[]) => {
     setFiles(newFiles);
-  };
+  }, []);
 
-  const sortAZ = () => {
+  const sortAZ = useCallback(() => {
     setFiles(prev => [...prev].sort((a, b) => a.name.localeCompare(b.name)));
     toast.success("Archivos ordenados alfabéticamente (A-Z).");
-  };
+  }, []);
 
-  const sortZA = () => {
+  const sortZA = useCallback(() => {
     setFiles(prev => [...prev].sort((a, b) => b.name.localeCompare(a.name)));
     toast.success("Archivos ordenados alfabéticamente (Z-A).");
-  };
+  }, []);
 
-  const reset = () => {
-    // Clean up object URLs to free memory
-    files.forEach(f => {
-      // Note: We're not creating object URLs in FileContext, but if any component does,
-      // they should clean up. This is a placeholder for future memory management.
-    });
+  const reset = useCallback(() => {
     setFiles([]);
-    // toast.success("Archivos restablecidos."); // Optional, might be annoying on nav
-  };
+  }, []);
 
   const getTotalSize = () => {
     return files.reduce((acc, f) => acc + f.file.size, 0);

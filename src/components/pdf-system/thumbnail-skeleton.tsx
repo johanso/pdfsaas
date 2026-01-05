@@ -21,7 +21,7 @@ export function ThumbnailSkeleton({ className }: ThumbnailSkeletonProps) {
       </div>
 
       {/* Shimmer effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/5 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
+      <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 dark:via-white/5 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
 
       <div className="relative flex flex-col items-center gap-2">
         <div className="p-3 rounded-full bg-white dark:bg-zinc-800 shadow-sm border border-zinc-100 dark:border-zinc-700">

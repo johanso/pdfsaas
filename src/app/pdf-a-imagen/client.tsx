@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import {
   Camera,
@@ -103,6 +103,44 @@ export default function PdfToImageClient() {
     handleStartNew
   } = usePdfToImage();
 
+  const selectedIds = useMemo(() => pages
+    .filter(p => selectedPages.includes(p.originalIndex))
+    .map(p => p.id),
+    [pages, selectedPages]
+  );
+
+  const handleToggle = useCallback((id: string) => {
+    const page = pages.find(p => p.id === id);
+    if (page) togglePage(page.originalIndex);
+  }, [pages, togglePage]);
+
+  const handleFilesSelected = useCallback((files: File[]) => {
+    if (files.length > 0) {
+      const f = files[0];
+      if (f.type !== "application/pdf") {
+        toast.error("Por favor selecciona un archivo PDF válido");
+        return;
+      }
+      setIsInitialLoading(true);
+      setFile(f);
+      resetSelection();
+    }
+  }, [resetSelection]);
+
+  const extractCardData = useCallback((p: any) => ({
+    id: p.id,
+    file: p.file,
+    pageNumber: p.originalIndex,
+    rotation: p.rotation,
+    isBlank: p.isBlank
+  }), []);
+
+  const handleSelectAll = useCallback(() => setSelectedPages(pages.map(p => p.originalIndex)), [pages, setSelectedPages]);
+  const handleInvertSelection = useCallback(() => {
+    const currentIndices = pages.map(p => p.originalIndex);
+    setSelectedPages(prev => currentIndices.filter(idx => !prev.includes(idx)));
+  }, [pages, setSelectedPages]);
+
   // Información del formato actual
   const currentFormatInfo = useMemo(() => getFormatInfo(format), [format]);
 
@@ -127,18 +165,7 @@ export default function PdfToImageClient() {
     }
   }, [pages.length]);
 
-  const handleFilesSelected = (files: File[]) => {
-    if (files.length > 0) {
-      const f = files[0];
-      if (f.type !== "application/pdf") {
-        toast.error("Por favor selecciona un archivo PDF válido");
-        return;
-      }
-      setIsInitialLoading(true);
-      setFile(f);
-      resetSelection();
-    }
-  };
+  // handleFilesSelected is now a useCallback defined above
 
   const handleReset = () => {
     setFile(null);
@@ -375,21 +402,9 @@ export default function PdfToImageClient() {
         <PdfGrid
           items={pages}
           config={PDF_IMAGE_CONFIG}
-          extractCardData={(p) => ({
-            id: p.id,
-            file: p.file,
-            pageNumber: p.originalIndex,
-            rotation: p.rotation,
-            isBlank: p.isBlank
-          })}
-          selectedIds={pages
-            .filter(p => selectedPages.includes(p.originalIndex))
-            .map(p => p.id)
-          }
-          onToggle={(id) => {
-            const page = pages.find(p => p.id === id);
-            if (page) togglePage(page.originalIndex);
-          }}
+          extractCardData={extractCardData}
+          selectedIds={selectedIds}
+          onToggle={handleToggle}
           onReorder={reorderPages}
         />
       </PdfToolLayout>

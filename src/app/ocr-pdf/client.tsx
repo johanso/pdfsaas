@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { Info, FileText, Loader2, Check, X } from "lucide-react";
 
@@ -119,6 +119,23 @@ export default function OcrPdfClient() {
     setIsDialogOpen(false);
     await applyOcr(`${fileName}.pdf`);
   }, [applyOcr]);
+
+  const gridItems = useMemo(() => pages.map(p => ({
+    ...p,
+    id: p.id,
+    file: file!,
+    originalIndex: p.pageNumber,
+    rotation: p.rotation,
+    isBlank: false,
+  })), [pages, file]);
+
+  const extractCardData = useCallback((p: any) => ({
+    id: p.id,
+    file: p.file,
+    pageNumber: p.originalIndex,
+    rotation: p.rotation,
+    isBlank: p.isBlank,
+  }), []);
 
   // ---------------------------------------------------------------------------
   // Status Badge
@@ -320,22 +337,9 @@ export default function OcrPdfClient() {
         }}
       >
         <PdfGrid
-          items={pages.map(p => ({
-            ...p,
-            id: p.id,
-            file: file!,
-            originalIndex: p.pageNumber,
-            rotation: p.rotation,
-            isBlank: false,
-          }))}
+          items={gridItems}
           config={PDF_CARD_PRESETS.ocr}
-          extractCardData={(p) => ({
-            id: p.id,
-            file: p.file,
-            pageNumber: p.originalIndex,
-            rotation: p.rotation,
-            isBlank: p.isBlank,
-          })}
+          extractCardData={extractCardData}
           onRemove={handleRemovePage}
           onReorder={handleReorderPages}
         />

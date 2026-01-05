@@ -158,7 +158,16 @@ export default function ImageToPdfClient() {
     }));
 
     setImages(prev => [...newImages, ...prev]);
-  }, [images.length]);
+  }, []);
+
+  const extractCardData = useCallback((img: any) => ({
+    id: img.id,
+    file: img.file,
+    previewUrl: img.preview,
+    rotation: img.rotation,
+    name: img.file.name, // Asegurar que pasamos el nombre
+    size: img.file.size
+  }), []);
 
   // Rotar imagen
   const handleRotate = useCallback((id: string) => {
@@ -459,14 +468,7 @@ export default function ImageToPdfClient() {
           addCardSubtext="Arrastra o haz clic"
           addCardDisabled={isProcessing}
           addCardAccept={ACCEPTED_TYPES.join(",")}
-          extractCardData={(img) => ({
-            id: img.id,
-            file: img.file,
-            previewUrl: img.preview,
-            rotation: img.rotation,
-            name: img.file.name, // Asegurar que pasamos el nombre
-            size: img.file.size
-          })}
+          extractCardData={extractCardData}
         />
 
         {/* Input oculto para añadir más imágenes */}

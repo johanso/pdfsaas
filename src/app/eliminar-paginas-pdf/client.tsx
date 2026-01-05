@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 
 // Components
@@ -45,21 +45,31 @@ export default function DeletePagesClient() {
   } = usePdfProcessing();
 
   // Convertir selectedPages (números) a IDs para el PdfGrid
-  const selectedIds = pages
+  const selectedIds = useMemo(() => pages
     .filter(p => selectedPages.includes(p.originalIndex))
-    .map(p => p.id);
+    .map(p => p.id),
+    [pages, selectedPages]
+  );
 
-  const handleToggle = (id: string) => {
+  const handleToggle = useCallback((id: string) => {
     const page = pages.find(p => p.id === id);
     if (page) togglePage(page.originalIndex);
-  };
+  }, [pages, togglePage]);
 
-  const handleFilesSelected = (files: File[]) => {
+  const handleFilesSelected = useCallback((files: File[]) => {
     if (files.length > 0) {
       setFile(files[0]);
       resetSelection();
     }
-  };
+  }, [resetSelection]);
+
+  const extractCardData = useCallback((p: any) => ({
+    id: p.id,
+    file: p.file,
+    pageNumber: p.originalIndex,
+    rotation: p.rotation,
+    isBlank: p.isBlank
+  }), []);
 
   const handleRangeChange = (input: string) => {
     const sanitized = input
@@ -174,13 +184,7 @@ export default function DeletePagesClient() {
           items={pages}
           config={PDF_CARD_PRESETS.delete}
           selectedIds={selectedIds}
-          extractCardData={(p) => ({
-            id: p.id,
-            file: p.file,
-            pageNumber: p.originalIndex,
-            rotation: p.rotation,
-            isBlank: p.isBlank
-          })}
+          extractCardData={extractCardData}
           onReorder={reorderPages}
           onToggle={handleToggle}
         />

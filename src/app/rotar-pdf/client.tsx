@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 
 // Components
@@ -92,14 +92,24 @@ export default function RotatePdfClient() {
     }
   };
 
-  const handleRemovePage = (id: string) => {
+  const handleRemovePage = useCallback((id: string) => {
     const newPages = pages.filter(p => p.id !== id);
     if (newPages.length === 0) {
       handleReset();
     } else {
       reorderPages(newPages);
     }
-  };
+  }, [pages, reorderPages, handleReset]);
+
+  const extractCardData = useCallback((page: any) => ({
+    id: page.id,
+    file: page.file,
+    pageNumber: page.originalIndex,
+    rotation: page.rotation
+  }), []);
+
+  const handleGridRotateLeft = useCallback((id: string) => rotatePage(id, -90), [rotatePage]);
+  const handleGridRotateRight = useCallback((id: string) => rotatePage(id, 90), [rotatePage]);
 
   const hasModifications = pages.some(p => (p.rotation % 360) !== 0);
 
@@ -153,16 +163,11 @@ export default function RotatePdfClient() {
         <PdfGrid
           items={pages}
           config={PDF_CARD_PRESETS.rotate}
-          extractCardData={(page) => ({
-            id: page.id,
-            file: page.file,
-            pageNumber: page.originalIndex,
-            rotation: page.rotation
-          })}
+          extractCardData={extractCardData}
           onReorder={reorderPages}
           onRotate={rotatePage}
-          onRotateLeft={(id) => rotatePage(id, -90)}
-          onRotateRight={(id) => rotatePage(id, 90)}
+          onRotateLeft={handleGridRotateLeft}
+          onRotateRight={handleGridRotateRight}
           onRemove={handleRemovePage}
         />
       </PdfToolLayout>

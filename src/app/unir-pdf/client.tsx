@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 
 // Components
@@ -42,20 +42,19 @@ export default function UnirPdfClient() {
     cancelProcess
   } = usePdfProcessing();
 
-  const handleFiles = async (newFiles: File[]) => {
+  const handleFiles = useCallback(async (newFiles: File[]) => {
     await addFiles(newFiles);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  };
+  }, [addFiles]);
 
-  const handleSubmit = async (outputName: string) => {
+  const handleSubmit = useCallback(async (outputName: string) => {
     if (files.length < 2) {
       toast.error("Por favor sube al menos 2 archivos para unir.");
       return;
     }
 
-    // Close dialog immediately
     setIsDialogOpen(false);
 
     const formData = new FormData();
@@ -72,7 +71,16 @@ export default function UnirPdfClient() {
         // Keep files, just close processing screen
       }
     });
-  };
+  }, [files, processAndDownload]);
+
+  const extractCardData = useCallback((f: any) => ({
+    id: f.id,
+    file: f.file,
+    name: f.name,
+    size: f.file.size,
+    pageCount: f.pageCount,
+    rotation: f.rotation
+  }), []);
 
   return (
     <>
@@ -120,14 +128,7 @@ export default function UnirPdfClient() {
           items={files}
           config={PDF_CARD_PRESETS.merge}
           layout="list"
-          extractCardData={(f) => ({
-            id: f.id,
-            file: f.file,
-            name: f.name,
-            size: f.file.size,
-            pageCount: f.pageCount,
-            rotation: f.rotation
-          })}
+          extractCardData={extractCardData}
           onReorder={reorderFiles}
           onRemove={removeFile}
           showAddCard={true}

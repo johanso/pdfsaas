@@ -1,5 +1,4 @@
-"use client";
-
+import { useMemo, useCallback, memo } from "react";
 import {
   DndContext,
   closestCenter,
@@ -99,14 +98,11 @@ export function PdfGrid<T extends { id: string }>({
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
-      // Activation constraint for mouse: 5px movement
       activationConstraint: {
         distance: 5,
       },
     }),
     useSensor(TouchSensor, {
-      // Activation constraint for touch: 250ms press to start dragging
-      // This allows the user to scroll without accidentally dragging
       activationConstraint: {
         delay: 250,
         tolerance: 5,
@@ -117,7 +113,7 @@ export function PdfGrid<T extends { id: string }>({
     })
   );
 
-  function handleDragEnd(event: DragEndEvent) {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id && onReorder) {
@@ -125,7 +121,7 @@ export function PdfGrid<T extends { id: string }>({
       const newIndex = items.findIndex((item) => item.id === over.id);
       onReorder(arrayMove(items, oldIndex, newIndex));
     }
-  }
+  }, [items, onReorder]);
 
   const getCardData = (item: T): PdfGridItem => {
     if (extractCardData) {
@@ -147,25 +143,23 @@ export function PdfGrid<T extends { id: string }>({
           layout={layout}
         />
       )}
-      {items.map((item) => {
-        const cardData = getCardData(item);
-        return (
-          <PdfCard
-            key={item.id}
-            data={cardData}
-            config={finalConfig}
-            isSelected={selectedIds.includes(item.id)}
-            onToggle={onToggle ? () => onToggle(item.id) : undefined}
-            onRotate={onRotate ? () => onRotate(item.id) : undefined}
-            onRotateLeft={onRotateLeft ? () => onRotateLeft(item.id) : undefined}
-            onRotateRight={onRotateRight ? () => onRotateRight(item.id) : undefined}
-            onDuplicate={onDuplicate ? () => onDuplicate(item.id) : undefined}
-            onInsertBlank={onInsertBlank ? () => onInsertBlank(item.id) : undefined}
-            onRemove={onRemove ? () => onRemove(item.id) : undefined}
-            customActions={renderCardActions?.(item)}
-          />
-        );
-      })}
+      {items.map((item) => (
+        <MemoizedPdfGridCard
+          key={item.id}
+          item={item}
+          data={getCardData(item)}
+          config={finalConfig}
+          isSelected={selectedIds.includes(item.id)}
+          onToggle={onToggle}
+          onRotate={onRotate}
+          onRotateLeft={onRotateLeft}
+          onRotateRight={onRotateRight}
+          onDuplicate={onDuplicate}
+          onInsertBlank={onInsertBlank}
+          onRemove={onRemove}
+          renderCardActions={renderCardActions}
+        />
+      ))}
 
     </div>
   );
@@ -188,3 +182,63 @@ export function PdfGrid<T extends { id: string }>({
     </DndContext>
   );
 }
+
+// ============================================
+// COMPONENTE INTERNO MEMOIZADO
+// ============================================
+
+interface MemoizedPdfGridCardProps<T> {
+  item: T;
+  data: PdfGridItem;
+  config: PdfCardConfig;
+  isSelected: boolean;
+  onToggle?: (id: string) => void;
+  onRotate?: (id: string) => void;
+  onRotateLeft?: (id: string) => void;
+  onRotateRight?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
+  onInsertBlank?: (id: string) => void;
+  onRemove?: (id: string) => void;
+  renderCardActions?: (item: T) => React.ReactNode;
+}
+
+function PdfGridCard<T extends { id: string }>({
+  item,
+  data,
+  config,
+  isSelected,
+  onToggle,
+  onRotate,
+  onRotateLeft,
+  onRotateRight,
+  onDuplicate,
+  onInsertBlank,
+  onRemove,
+  renderCardActions,
+}: MemoizedPdfGridCardProps<T>) {
+  const handleToggle = useMemo(() => onToggle ? () => onToggle(item.id) : undefined, [onToggle, item.id]);
+  const handleRotate = useMemo(() => onRotate ? () => onRotate(item.id) : undefined, [onRotate, item.id]);
+  const handleRotateLeft = useMemo(() => onRotateLeft ? () => onRotateLeft(item.id) : undefined, [onRotateLeft, item.id]);
+  const handleRotateRight = useMemo(() => onRotateRight ? () => onRotateRight(item.id) : undefined, [onRotateRight, item.id]);
+  const handleDuplicate = useMemo(() => onDuplicate ? () => onDuplicate(item.id) : undefined, [onDuplicate, item.id]);
+  const handleInsertBlank = useMemo(() => onInsertBlank ? () => onInsertBlank(item.id) : undefined, [onInsertBlank, item.id]);
+  const handleRemove = useMemo(() => onRemove ? () => onRemove(item.id) : undefined, [onRemove, item.id]);
+
+  return (
+    <PdfCard
+      data={data}
+      config={config}
+      isSelected={isSelected}
+      onToggle={handleToggle}
+      onRotate={handleRotate}
+      onRotateLeft={handleRotateLeft}
+      onRotateRight={handleRotateRight}
+      onDuplicate={handleDuplicate}
+      onInsertBlank={handleInsertBlank}
+      onRemove={handleRemove}
+      customActions={renderCardActions?.(item)}
+    />
+  );
+}
+
+const MemoizedPdfGridCard = memo(PdfGridCard) as typeof PdfGridCard;

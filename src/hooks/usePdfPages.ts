@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { PageData } from "@/types";
 
@@ -58,30 +58,30 @@ export function usePdfPages(file: File | null) {
     loadPages();
   }, [file]);
 
-  const rotatePage = (id: string, degrees: number = 90) => {
+  const rotatePage = useCallback((id: string, degrees: number = 90) => {
     setPages(prev => prev.map(p =>
       p.id === id ? { ...p, rotation: p.rotation + degrees } : p
     ));
-  };
+  }, []);
 
-  const rotateAllPages = (degrees: number) => {
+  const rotateAllPages = useCallback((degrees: number) => {
     setPages(prev => prev.map(p => ({
       ...p,
       rotation: p.rotation + degrees
     })));
-  };
+  }, []);
 
-  const resetRotation = () => {
+  const resetRotation = useCallback(() => {
     setPages(prev => prev.map(p => ({ ...p, rotation: 0 })));
-  };
+  }, []);
 
-  const reorderPages = (newPages: PageData[]) => {
+  const reorderPages = useCallback((newPages: PageData[]) => {
     setPages(newPages);
-  };
+  }, []);
 
-  const removePage = (id: string) => {
+  const removePage = useCallback((id: string) => {
     setPages(prev => prev.filter(p => p.id !== id));
-  };
+  }, []);
 
   return {
     pages,
