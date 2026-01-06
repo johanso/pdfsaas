@@ -42,6 +42,7 @@ import {
   getFormatInfo
 } from "@/hooks/usePdfToImage";
 import { ImageFormat, DpiOption } from "@/types";
+import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 
 // Configuración de formatos
 const FORMATS: {
@@ -66,15 +67,6 @@ const DPI_OPTIONS: { value: DpiOption; label: string; description: string }[] = 
   { value: 600, label: "600 DPI", description: "Alta calidad" },
 ];
 
-const PDF_IMAGE_CONFIG = {
-  draggable: true,
-  selectable: true,
-  rotatable: false,
-  removable: false,
-  showPageNumber: true,
-  selectedColorName: "green" as const,
-  iconSelectedName: "check" as const,
-};
 
 export default function PdfToImageClient() {
   const [file, setFile] = useState<File | null>(null);
@@ -133,12 +125,6 @@ export default function PdfToImageClient() {
     rotation: p.rotation,
     isBlank: p.isBlank
   }), []);
-
-  const handleSelectAll = useCallback(() => setSelectedPages(pages.map(p => p.originalIndex)), [pages, setSelectedPages]);
-  const handleInvertSelection = useCallback(() => {
-    const currentIndices = pages.map(p => p.originalIndex);
-    setSelectedPages(prev => currentIndices.filter(idx => !prev.includes(idx)));
-  }, [pages, setSelectedPages]);
 
   // Información del formato actual
   const currentFormatInfo = useMemo(() => getFormatInfo(format), [format]);
@@ -400,7 +386,7 @@ export default function PdfToImageClient() {
       >
         <PdfGrid
           items={pages}
-          config={PDF_IMAGE_CONFIG}
+          config={PDF_CARD_PRESETS.pdftoImg}
           extractCardData={extractCardData}
           selectedIds={selectedIds}
           onToggle={handleToggle}

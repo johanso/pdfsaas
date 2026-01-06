@@ -8,9 +8,10 @@ let isWorkerConfigured = false;
 // Función auxiliar para configurar pdfjs
 async function setupPdfjs() {
   if (typeof window === "undefined") return;
-  
+
   if (!isWorkerConfigured) {
-    const pdfjs = await import("pdfjs-dist");
+    const pdfjsModule = await import("pdfjs-dist");
+    const pdfjs = pdfjsModule.default || pdfjsModule;
     pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
     isWorkerConfigured = true;
   }
@@ -33,7 +34,8 @@ export function usePdfPages(file: File | null) {
         }
 
         await setupPdfjs();
-        const pdfjs = await import("pdfjs-dist");
+        const pdfjsModule = await import("pdfjs-dist");
+        const pdfjs = pdfjsModule.default || pdfjsModule;
 
         objectUrl = URL.createObjectURL(file);
         const pdf = await pdfjs.getDocument(objectUrl).promise;

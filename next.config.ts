@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Excluir canvas del bundle del cliente (es un módulo solo para servidor)
   serverExternalPackages: ['canvas', 'pdfjs-dist'],
-  
+
   // Aumentar límite de body para archivos grandes
   experimental: {
     serverActions: {
@@ -14,22 +14,30 @@ const nextConfig: NextConfig = {
   // Configurar webpack para excluir canvas y pdfjs-dist del bundle del cliente
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // Marcar pdfjs-dist como external para que se cargue desde node_modules en runtime
+      // No marcar pdfjs-dist como external en el cliente para que Webpack lo empaquete
       config.externals = {
         ...config.externals,
-        'pdfjs-dist': 'pdfjs-dist',
       };
-      
-      // Ignorar archivos .node
+
+      // Corregir problemas de empaquetado de pdfjs-dist v4/v5
+      // Aliaseamos a la versión .js para evitar problemas con .mjs en Next.js
       config.resolve.alias = {
         ...config.resolve.alias,
+        'pdfjs-dist': 'pdfjs-dist/build/pdf.js',
         'canvas': false,
       };
-      
+
       // No procesar archivos .node binarios
       config.module.rules.push({
         test: /\.node$/,
         loader: 'null-loader',
+      });
+
+      // Manejar archivos .mjs de node_modules correctamente
+      config.module.rules.push({
+        test: /\.mjs$/,
+        include: /node_modules/,
+        type: 'javascript/auto',
       });
     }
     return config;

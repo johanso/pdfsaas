@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { canvasToOptimizedDataURL } from "@/lib/canvas-utils";
 
 // Configure worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 // @ts-ignore
 pdfjs.GlobalWorkerOptions.cMapUrl = `//unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`;
 // @ts-ignore

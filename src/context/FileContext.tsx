@@ -131,7 +131,8 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
           try {
             // Use dynamic import for browser-only pdfjs
             if (typeof window !== "undefined") {
-              const pdfjs = await import("pdfjs-dist");
+              const pdfjsModule = await import("pdfjs-dist");
+              const pdfjs = pdfjsModule.default || pdfjsModule;
               pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
               const buffer = await f.arrayBuffer();

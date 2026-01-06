@@ -15,7 +15,8 @@ async function loadPdfInfo(file: File): Promise<number> {
 
   try {
     // Importar dinámicamente para evitar que sea empaquetado en build-time
-    const pdfjs = await import("pdfjs-dist");
+    const pdfjsModule = await import("pdfjs-dist");
+    const pdfjs = pdfjsModule.default || pdfjsModule;
     pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
     const objectUrl = URL.createObjectURL(file);

@@ -7,9 +7,10 @@ let isWorkerConfigured = false;
 // Función auxiliar para configurar pdfjs
 async function setupPdfjs() {
   if (typeof window === "undefined") return;
-  
+
   if (!isWorkerConfigured) {
-    const pdfjs = await import("pdfjs-dist");
+    const pdfjsModule = await import("pdfjs-dist");
+    const pdfjs = pdfjsModule.default || pdfjsModule;
     pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
     // @ts-ignore - cMapUrl might be missing in types but is valid in pdfjs-dist
     pdfjs.GlobalWorkerOptions.cMapUrl = `//unpkg.com/pdfjs-dist@3.11.174/cmaps/`;
@@ -31,7 +32,8 @@ export function usePdfMultiLoader() {
       }
 
       await setupPdfjs();
-      const pdfjs = await import("pdfjs-dist");
+      const pdfjsModule = await import("pdfjs-dist");
+      const pdfjs = pdfjsModule.default || pdfjsModule;
 
       const allPages: Array<{
         id: string;

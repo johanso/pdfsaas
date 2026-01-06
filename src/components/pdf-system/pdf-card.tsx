@@ -172,6 +172,17 @@ export const PDF_CARD_PRESETS = {
     iconSelectedName: "check",
   } as PdfCardConfig,
 
+  pdftoImg: {
+    draggable: false,
+    selectable: true,
+    rotatable: false,
+    removable: false,
+    showPageNumber: true,
+    selectedColorName: "green",
+    iconSelectedName: "check",
+  } as PdfCardConfig,
+  
+
   // Para OCR PDF (archivos escaneados)
   ocr: {
     draggable: true,
