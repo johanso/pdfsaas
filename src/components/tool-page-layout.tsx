@@ -50,7 +50,9 @@ import {
   Contrast,
   FileDown,
   ScanEye,
-  FileCheck
+  FileCheck,
+  Stethoscope,
+  Hammer
 } from "lucide-react";
 import {
   Accordion,
@@ -120,7 +122,9 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Contrast,
   FileDown,
   ScanEye,
-  FileCheck
+  FileCheck,
+  Stethoscope,
+  Hammer
 };
 
 export function ToolPageLayout({

@@ -333,7 +333,7 @@ export const TOOLS: Record<string, Tool> = {
   path: '/reparar-pdf',
   icon: 'Wrench',
   category: 'optimize',
-  isAvailable: false,
-  comingSoon: true
+  isAvailable: true,
+  comingSoon: false
 }
 };
