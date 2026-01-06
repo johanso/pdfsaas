@@ -45,7 +45,11 @@ import {
   Languages,
   ScanLine,
   Cpu,
-  BarChart3
+  BarChart3,
+  Droplets,
+  Contrast,
+  FileDown,
+  ScanEye
 } from "lucide-react";
 import {
   Accordion,
@@ -110,7 +114,11 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Languages,
   ScanLine,
   Cpu,
-  BarChart3
+  BarChart3,
+  Droplets,
+  Contrast,
+  FileDown,
+  ScanEye
 };
 
 export function ToolPageLayout({

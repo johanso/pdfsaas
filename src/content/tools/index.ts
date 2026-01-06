@@ -12,4 +12,5 @@ export { htmlToPdfContent } from "./html-to-pdf";
 export { pdfToImageContent } from "./pdf-to-image";
 export { ocrPdfContent } from "./ocr-pdf";
 export { compressPdfContent } from "./compress-pdf";
+export { grayscalePdfContent } from "./grayscale-pdf";
 

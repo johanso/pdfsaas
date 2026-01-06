@@ -313,8 +313,8 @@ export const TOOLS: Record<string, Tool> = {
   path: '/pdf-escala-grises',
   icon: 'Contrast',
   category: 'optimize',
-  isAvailable: false,
-  comingSoon: true
+  isAvailable: true,
+  comingSoon: false
 },
 'flatten-pdf': {
   id: 'flatten-pdf',
