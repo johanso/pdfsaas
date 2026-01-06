@@ -308,7 +308,7 @@ export const TOOLS: Record<string, Tool> = {
 },
 'pdf-to-grayscale': {
   id: 'pdf-to-grayscale',
-  name: 'PDF a Escala de Grises',
+  name: 'Escala de Grises',
   description: 'Convierte a blanco y negro para ahorrar tinta',
   path: '/pdf-escala-grises',
   icon: 'Contrast',
@@ -323,8 +323,8 @@ export const TOOLS: Record<string, Tool> = {
   path: '/aplanar-pdf',
   icon: 'Layers',
   category: 'optimize',
-  isAvailable: false,
-  comingSoon: true
+  isAvailable: true,
+  comingSoon: false
 },
 'repair-pdf': {
   id: 'repair-pdf',

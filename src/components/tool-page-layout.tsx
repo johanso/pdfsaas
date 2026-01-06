@@ -49,7 +49,8 @@ import {
   Droplets,
   Contrast,
   FileDown,
-  ScanEye
+  ScanEye,
+  FileCheck
 } from "lucide-react";
 import {
   Accordion,
@@ -118,7 +119,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Droplets,
   Contrast,
   FileDown,
-  ScanEye
+  ScanEye,
+  FileCheck
 };
 
 export function ToolPageLayout({

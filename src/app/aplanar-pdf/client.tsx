@@ -4,6 +4,9 @@ import { useState, useCallback } from "react";
 import { notify } from "@/lib/errors/notifications";
 import {
   Info,
+  FileText,
+  MessageSquare,
+  Layers,
 } from "lucide-react";
 
 // Components
@@ -15,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
@@ -24,40 +28,33 @@ import { Separator } from "@/components/ui/separator";
 // Hooks
 import { usePdfFiles } from "@/hooks/usePdfFiles";
 import {
-  useGrayscalePdf,
-  type GrayscaleContrast,
-} from "@/hooks/useGrayscalePdf";
+  useFlattenPdf,
+  formatBytes,
+  type FlattenMode,
+} from "@/hooks/useFlattenPdf";
 
-// Información de los niveles de contraste
-const CONTRAST_INFO = {
-  light: {
-    title: "Claro",
-    description: "Documentos con fondos oscuros, los aclara",
-    badge: null,
-    explanation: "Ideal para documentos con fondos oscuros que dificultan la lectura. Aclara el documento manteniendo la legibilidad.",
+// Información de los modos de aplanado
+const MODE_INFO = {
+  all: {
+    title: "Aplanar todo",
+    description: "Formularios, anotaciones, comentarios y capas",
+    explanation: "Convierte todos los elementos interactivos (formularios, anotaciones, comentarios y capas) en contenido estático. Opción más completa.",
   },
-  normal: {
-    title: "Normal",
-    description: "Conversión estándar (por defecto)",
-    badge: "RECOMENDADO",
-    explanation: "Conversión estándar a escala de grises. Balance perfecto entre calidad y tamaño. Opción más utilizada.",
+  forms: {
+    title: "Solo formularios",
+    description: "Convierte campos editables en texto fijo",
+    explanation: "Convierte únicamente los campos de formulario editables en texto fijo. Mantiene anotaciones y comentarios intactos.",
   },
-  high: {
-    title: "Alto contraste",
-    description: "Textos más nítidos, negros más intensos",
-    badge: null,
-    explanation: "Aumenta el contraste para textos más nítidos. Los negros son más intensos y los blancos más puros. Perfecto para lectura.",
-  },
-  extreme: {
-    title: "Máximo",
-    description: "Casi blanco/negro puro, ideal para escaneos sucios",
-    badge: null,
-    explanation: "Conversión casi a blanco/negro puro. Ideal para limpiar escaneos sucios o documentos con colores no deseados.",
+  annotations: {
+    title: "Solo anotaciones",
+    description: "Aplana comentarios, notas adhesivas y marcas",
+    explanation: "Convierte únicamente anotaciones, notas adhesivas y marcas en contenido estático. Mantiene los formularios editables.",
   },
 };
 
-export default function GrayscalePdfClient() {
-  const [contrast, setContrast] = useState<GrayscaleContrast>("normal");
+export default function FlattenPdfClient() {
+  const [mode, setMode] = useState<FlattenMode>("all");
+  const [compress, setCompress] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const {
@@ -76,11 +73,11 @@ export default function GrayscalePdfClient() {
     operation,
     uploadStats,
     result,
-    convert,
+    flatten,
     handleDownloadAgain,
     handleStartNew,
     cancelOperation,
-  } = useGrayscalePdf();
+  } = useFlattenPdf();
 
   const file = files[0]?.file || null;
 
@@ -106,7 +103,8 @@ export default function GrayscalePdfClient() {
 
   const handleReset = () => {
     resetFiles();
-    setContrast("normal");
+    setMode("all");
+    setCompress(true);
     setIsDialogOpen(false);
     handleStartNew();
   };
@@ -120,30 +118,35 @@ export default function GrayscalePdfClient() {
     if (!file) return;
     setIsDialogOpen(false);
 
-    await convert(file, {
-      contrast,
+    await flatten(file, {
+      mode,
+      compress,
       fileName,
     });
   };
 
-  const contrastInfo = CONTRAST_INFO[contrast];
+  const modeInfo = MODE_INFO[mode];
 
   return (
     <>
       <PdfToolLayout
-        toolId="grayscale-pdf"
-        title="PDF a Escala de Grises: Blanco y Negro"
-        description="Elimina el color de tus documentos PDF para ahorrar tinta y reducir el tamaño. Ajusta el contraste para mejorar la legibilidad de textos escaneados."
+        toolId="flatten-pdf"
+        title="Aplanar PDF: Unir Capas y Bloquear Edición"
+        description="Convierte formularios rellenables y comentarios en contenido permanente. Evita la edición de tus documentos y asegura una impresión correcta uniendo todas las capas."
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
         summaryItems={[
           {
-            label: "Contraste",
-            value: contrastInfo.title,
+            label: "Modo",
+            value: modeInfo.title,
+          },
+          {
+            label: "Optimizar",
+            value: compress ? "Sí" : "No",
           },
         ]}
-        downloadButtonText="Convertir a escala de grises"
+        downloadButtonText="Aplanar PDF"
         isDownloadDisabled={isProcessing || files.length === 0}
         onDownload={handlePreSubmit}
         isGridLoading={isFilesLoading && files.length === 0}
@@ -151,24 +154,19 @@ export default function GrayscalePdfClient() {
           <div className="space-y-2">
             <div className="space-y-3 mb-4">
               <Label className="block text-sm font-semibold">
-                Nivel de Contraste
+                Modo de Aplanado
               </Label>
 
-              <Select value={contrast} onValueChange={(value) => setContrast(value as GrayscaleContrast)}>
+              <Select value={mode} onValueChange={(value) => setMode(value as FlattenMode)}>
                 <SelectTrigger className="w-full shadow-none">
-                  <SelectValue placeholder="Selecciona un nivel de contraste" />
+                  <SelectValue placeholder="Selecciona un modo de aplanado" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(CONTRAST_INFO) as GrayscaleContrast[]).map((key) => (
+                  {(Object.keys(MODE_INFO) as FlattenMode[]).map((key) => (
                     <SelectItem key={key} value={key}>
                       <div className="flex items-center gap-2">
                         <div className="flex-1">
-                          <span className="font-medium">{CONTRAST_INFO[key].title}</span>
-                          {CONTRAST_INFO[key].badge && (
-                            <span className="ml-2 text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded-full">
-                              {CONTRAST_INFO[key].badge}
-                            </span>
-                          )}
+                          <span className="font-medium">{MODE_INFO[key].title}</span>
                         </div>
                       </div>
                     </SelectItem>
@@ -180,10 +178,23 @@ export default function GrayscalePdfClient() {
                 <div className="flex gap-2">
                   <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
                   <p className="text-xs text-blue-700 dark:text-blue-300">
-                    {contrastInfo.explanation}
+                    {modeInfo.explanation}
                   </p>
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Optimizar tamaño</Label>
+                <Switch
+                  checked={compress}
+                  onCheckedChange={setCompress}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Comprime el archivo después de aplanar para reducir aún más el peso del documento.
+              </p>
             </div>
 
             <Separator className="my-4" />
@@ -192,11 +203,11 @@ export default function GrayscalePdfClient() {
         saveDialogProps={{
           isOpen: isDialogOpen,
           onOpenChange: setIsDialogOpen,
-          defaultName: file ? file.name.replace(".pdf", "") : "grayscale",
+          defaultName: file ? file.name.replace(".pdf", "") : "aplanado",
           onSave: handleSubmit,
           isProcessing,
-          title: "Guardar PDF en escala de grises",
-          description: `Se aplicará contraste ${contrastInfo.title.toLowerCase()}. ${CONTRAST_INFO[contrast].explanation}`,
+          title: "Guardar PDF aplanado",
+          description: `Se aplicará modo ${modeInfo.title.toLowerCase()}. ${compress ? "El archivo será comprimido automáticamente." : ""}`,
           extension: "pdf",
         }}
         successDialogProps={{
@@ -232,8 +243,8 @@ export default function GrayscalePdfClient() {
               ? {
                 originalSize: result.originalSize,
                 compressedSize: result.resultSize,
-                reductionPercentage: (result.savings / result.originalSize) * 100,
-                savedBytes: result.savings,
+                reductionPercentage: (result.reduction / result.originalSize) * 100,
+                savedBytes: result.reduction,
               }
               : undefined
           }
@@ -242,4 +253,3 @@ export default function GrayscalePdfClient() {
     </>
   );
 }
-
