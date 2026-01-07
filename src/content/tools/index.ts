@@ -15,4 +15,5 @@ export { compressPdfContent } from "./compress-pdf";
 export { grayscalePdfContent } from "./grayscale-pdf";
 export { flattenPdfContent } from "./flatten-pdf";
 export { repairPdfContent } from "./repair-pdf";
+export { protectPdfContent } from "./protect-pdf";
 

@@ -52,7 +52,8 @@ import {
   ScanEye,
   FileCheck,
   Stethoscope,
-  Hammer
+  Hammer,
+  MonitorSmartphone
 } from "lucide-react";
 import {
   Accordion,
@@ -124,7 +125,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   ScanEye,
   FileCheck,
   Stethoscope,
-  Hammer
+  Hammer,
+  MonitorSmartphone
 };
 
 export function ToolPageLayout({

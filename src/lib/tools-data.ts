@@ -241,8 +241,8 @@ export const TOOLS: Record<string, Tool> = {
     path: '/proteger-pdf',
     icon: 'Lock',
     category: 'security',
-    isAvailable: false,
-    comingSoon: true
+    isAvailable: true,
+    comingSoon: false
   },
   'unlock-pdf': {
     id: 'unlock-pdf',
