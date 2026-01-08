@@ -1,9 +1,23 @@
+/**
+ * Hook para convertir Imágenes a PDF
+ * Refactorizado: Lógica compleja extraída a lib/image-to-pdf-utils.ts
+ */
+
 import { useState, useCallback, useMemo } from "react";
 import { notify } from "@/lib/errors/notifications";
 import { createError } from "@/lib/errors/error-types";
-// Import dinámico de pdf-lib para reducir bundle inicial
-// import { PDFDocument, degrees } from "pdf-lib";
 import { useToolProcessor, ProcessingResult, UploadStats } from "./core/useToolProcessor";
+import {
+  shouldUseServer,
+  getImageDimensions,
+  imageToBytes,
+  convertToJpeg,
+  downloadBlob,
+  CLIENT_LIMIT,
+  PAGE_SIZES,
+  MARGINS,
+  type ImageQuality
+} from "@/lib/image-to-pdf-utils";
 
 // ============================================================================
 // TYPES
@@ -12,9 +26,11 @@ import { useToolProcessor, ProcessingResult, UploadStats } from "./core/useToolP
 export type PageSize = "a4" | "letter" | "legal" | "fit";
 export type PageOrientation = "auto" | "portrait" | "landscape";
 export type MarginPreset = "none" | "small" | "normal";
-export type ImageQuality = "original" | "compressed";
 
-export type { UploadStats };
+export type { UploadStats, ImageQuality };
+
+// Re-exports for compatibility
+export { shouldUseServer, CLIENT_LIMIT };
 
 export interface ImageItem {
   id: string;
@@ -31,104 +47,6 @@ export interface ConvertOptions {
   onProgress?: (current: number, total: number) => void;
   onSuccess?: () => void;
   onError?: (error: Error) => void;
-}
-
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
-const CLIENT_LIMIT = 50;
-
-const PAGE_SIZES = {
-  a4: { width: 595.28, height: 841.89 },
-  letter: { width: 612, height: 792 },
-  legal: { width: 612, height: 1008 },
-};
-
-const MARGINS = {
-  none: 0,
-  small: 20,
-  normal: 40,
-};
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-export function shouldUseServer(imageCount: number): {
-  useServer: boolean;
-  reason?: string;
-} {
-  if (imageCount >= CLIENT_LIMIT) {
-    return {
-      useServer: true,
-      reason: `Más de ${CLIENT_LIMIT} imágenes, procesando en servidor`,
-    };
-  }
-  return { useServer: false };
-}
-
-async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      resolve({ width: img.width, height: img.height });
-      URL.revokeObjectURL(img.src);
-    };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
-  });
-}
-
-async function imageToBytes(file: File, quality: ImageQuality): Promise<Uint8Array> {
-  const buf = await file.arrayBuffer();
-  if (quality === "compressed" && !file.type.includes("png")) {
-    return convertToJpeg(file, 0.8);
-  }
-  return new Uint8Array(buf);
-}
-
-async function convertToJpeg(file: File, quality = 0.9): Promise<Uint8Array> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-
-      const ctx = canvas.getContext("2d")!;
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)));
-          } else {
-            reject(new Error("Error convirtiendo imagen"));
-          }
-        },
-        "image/jpeg",
-        quality
-      );
-
-      URL.revokeObjectURL(img.src);
-    };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
-  });
-}
-
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
 // ============================================================================

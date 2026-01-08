@@ -1,37 +1,31 @@
+/**
+ * Hook para OCR PDF
+ * Refactorizado: Extraídas constantes y configuración pdf-js
+ */
+
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { notify } from "@/lib/errors/notifications";
 import { createError } from "@/lib/errors/error-types";
 import { getApiUrl } from "@/lib/api";
-import { Loader2, Check, Info } from "lucide-react";
 import { usePdfFiles } from "./usePdfFiles";
 import { useToolProcessor, ProcessingResult, UploadStats } from "./core/useToolProcessor";
-
-let isWorkerConfigured = false;
-
-// Función auxiliar para configurar pdfjs
-async function setupPdfjs() {
-  if (typeof window === "undefined") return;
-
-  if (!isWorkerConfigured) {
-    const pdfjsModule = await import("pdfjs-dist");
-    const pdfjs = pdfjsModule.default || pdfjsModule;
-    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
-    isWorkerConfigured = true;
-  }
-}
+import { setupPdfjs } from "@/lib/pdfjs-config";
+import {
+  DPI_OPTIONS,
+  DEFAULT_LANGUAGES,
+  OPERATION_MESSAGES,
+  PROCESSING_TIPS,
+  OCR_FUN_FACTS,
+  OCR_TIPS
+} from "@/lib/ocr-constants";
+import type { DpiOption, Language } from "@/lib/ocr-constants";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export type DpiOption = 150 | 300 | 600;
 export type OcrStatus = "idle" | "detecting" | "scanned" | "has-text" | "error";
 export type ProcessingPhase = "idle" | "compressing" | "uploading" | "processing" | "ready" | "error";
-
-export interface Language {
-  code: string;
-  name: string;
-}
 
 export interface PageInfo {
   id: string;
@@ -42,55 +36,19 @@ export interface PageInfo {
 export type { UploadStats };
 
 // ============================================================================
-// CONSTANTS
+// RE-EXPORTS CONSTANTS (Compatibility)
 // ============================================================================
 
-export const DPI_OPTIONS: { value: DpiOption; label: string; description: string }[] = [
-  { value: 150, label: "150 DPI", description: "Rápido" },
-  { value: 300, label: "300 DPI", description: "Estándar" },
-  { value: 600, label: "600 DPI", description: "Alta calidad" },
-];
+export {
+  DPI_OPTIONS,
+  DEFAULT_LANGUAGES,
+  OCR_FUN_FACTS,
+  OCR_TIPS,
+  OPERATION_MESSAGES,
+  PROCESSING_TIPS,
+} from "@/lib/ocr-constants";
 
-const DEFAULT_LANGUAGES: Language[] = [
-  { code: "spa", name: "Español" },
-  { code: "eng", name: "English" },
-  { code: "fra", name: "Français" },
-  { code: "deu", name: "Deutsch" },
-  { code: "por", name: "Português" },
-  { code: "ita", name: "Italiano" },
-];
-
-const OPERATION_MESSAGES = {
-  processing: [
-    "Reconociendo texto...",
-    "Analizando documento...",
-    "Procesando páginas...",
-    "Aplicando OCR...",
-    "Extrayendo contenido...",
-  ],
-};
-
-const PROCESSING_TIPS = [
-  "No cierres el navegador mientras se procesa el archivo.",
-  "El tiempo depende del número de páginas y la calidad seleccionada.",
-  "Los documentos escaneados pueden tardar más en procesarse.",
-  "Estamos convirtiendo tu PDF en texto seleccionable.",
-  "Casi listo... finalizando el procesamiento.",
-];
-
-export const OCR_FUN_FACTS = [
-  "El OCR (Reconocimiento Óptico de Caracteres) fue inventado en 1914 por Emanuel Goldberg.",
-  "Ray Kurzweil desarrolló el primer sistema OCR capaz de leer cualquier tipo de letra en 1974.",
-  "El OCR es fundamental para digitalizar bibliotecas enteras en Google Books.",
-  "La tecnología OCR moderna usa redes neuronales profundas para mejorar la precisión.",
-  "Tesseract es uno de los motores OCR de código abierto más populares en la actualidad.",
-];
-
-export const OCR_TIPS = [
-  { icon: Loader2, text: "Un PDF más nítido resulta en un OCR más preciso." },
-  { icon: Check, text: "Seleccionar el idioma correcto mejora drásticamente los resultados." },
-  { icon: Info, text: "300 DPI es la resolución recomendada para la mayoría de documentos." },
-];
+export type { DpiOption, Language } from "@/lib/ocr-constants";
 
 // ============================================================================
 // HOOK
@@ -260,7 +218,7 @@ export function useOcrPdf() {
 
       const err = error as { name?: string };
       if (err.name === "PasswordException") {
-        const protectedError = createError.fileProtected(file.name);
+        const protectedError = createError.fileProtected(file!.name);
         notify.error(protectedError.userMessage.description);
       } else {
         const appError = createError.fromUnknown(error, { context: "ocr-pdf-loader" });
@@ -271,7 +229,7 @@ export function useOcrPdf() {
         setOcrStatus("error");
       }
     }
-  }, []);
+  }, [file]); // added file dependency for name
 
   // -- Detectar si necesita OCR --
   const detectOcrStatus = useCallback(async (pdfFile: File, currentFileId: number) => {
@@ -319,7 +277,7 @@ export function useOcrPdf() {
     const currentFileId = fileIdRef.current;
     loadPdfPages(file, currentFileId);
     detectOcrStatus(file, currentFileId);
-  }, [file, loadPdfPages, detectOcrStatus]);
+  }, [file, loadPdfPages, detectOcrStatus, processor.reset]); // added reset here
 
   // -- Setear archivo --
   const setFile = useCallback(
