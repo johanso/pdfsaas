@@ -1,7 +1,15 @@
-import { useState, useCallback } from "react";
-import { useToolProcessor } from "./core/useToolProcessor";
+/**
+ * Hook para proteger PDFs con contraseña
+ * Refactorizado usando createPdfToolHook factory
+ */
 
-// Types
+import { createPdfToolHook } from "./factories/createPdfToolHook";
+import type { ProcessingResult } from "./core/useToolProcessor";
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
 export type EncryptionLevel = "128" | "256";
 
 export interface ProtectOptions {
@@ -10,7 +18,7 @@ export interface ProtectOptions {
   fileName: string;
 }
 
-export interface ProtectResult {
+export interface ProtectResult extends ProcessingResult {
   fileId: string;
   fileName: string;
   originalSize: number;
@@ -18,82 +26,47 @@ export interface ProtectResult {
   encryption: string;
 }
 
-// Helper function
-export const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
-};
+// Re-exports para compatibilidad
+export { formatBytes, formatTime } from "./core/useToolProcessor";
+export type { UploadStats } from "./core/useToolProcessor";
 
-export const useProtectPdf = () => {
-  const [result, setResult] = useState<ProtectResult | null>(null);
+// ============================================================================
+// HOOK
+// ============================================================================
 
-  const {
-    isProcessing,
-    isComplete,
-    progress,
-    phase,
-    operation,
-    uploadStats,
-    process,
-    cancel,
-    downloadAgain,
-    reset,
-  } = useToolProcessor<ProtectOptions, ProtectResult>({
-    toolId: "protect-pdf",
-    endpoint: "/api/worker/protect-pdf",
-    operationName: "Protegiendo PDF...",
-    prepareFormData: async (files, options) => {
-      const formData = new FormData();
-      formData.append("file", files[0]);
-      formData.append("password", options.userPassword);
-      formData.append("encryption", options.encryption);
-      return formData;
-    },
-    responseType: "json",
-    getResultFileName: (result, originalName) => result.fileName,
-  });
+/**
+ * Hook base creado con factory
+ */
+const useProtectPdfBase = createPdfToolHook<ProtectOptions, ProtectResult>({
+  toolId: "protect-pdf",
+  endpoint: "/api/worker/protect-pdf",
+  operationName: "Protegiendo PDF...",
 
-  const protect = useCallback(
-    async (file: File, options: ProtectOptions): Promise<ProtectResult> => {
-      const data = await process([file], options, options.fileName);
-      if (data) {
-        setResult(data);
-        return data;
-      }
-      throw new Error("Error al proteger el PDF");
-    },
-    [process]
-  );
+  buildFormData: (file, options) => [
+    ["password", options.userPassword],
+    ["encryption", options.encryption],
+  ],
 
-  const handleDownloadAgain = useCallback(() => {
-    downloadAgain();
-  }, [downloadAgain]);
+  getFileName: (result, original) => result.fileName,
 
-  const handleStartNew = useCallback(() => {
-    reset();
-    setResult(null);
-  }, [reset]);
+  progressWeights: {
+    preparing: 5,
+    uploading: 35,
+    processing: 50,
+    downloading: 10,
+  },
+});
 
-  const cancelOperation = useCallback(() => {
-    cancel();
-  }, [cancel]);
+/**
+ * Hook público con compatibilidad legacy
+ * Mantiene el método 'protect' usado por componentes existentes
+ */
+export function useProtectPdf() {
+  const hook = useProtectPdfBase();
 
   return {
-    // State
-    result,
-    isProcessing,
-    isComplete,
-    progress,
-    phase,
-    operation,
-    uploadStats,
-    // Actions
-    protect,
-    handleDownloadAgain,
-    handleStartNew,
-    cancelOperation,
+    ...hook,
+    // Alias para compatibilidad con código existente
+    protect: hook.process,
   };
-};
+}
