@@ -16,4 +16,5 @@ export { grayscalePdfContent } from "./grayscale-pdf";
 export { flattenPdfContent } from "./flatten-pdf";
 export { repairPdfContent } from "./repair-pdf";
 export { protectPdfContent } from "./protect-pdf";
+export { unlockPdfContent } from "./unlock-pdf";
 

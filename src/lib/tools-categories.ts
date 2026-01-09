@@ -65,7 +65,6 @@ export const TOOL_CATEGORIES = {
     tools: [
       'protect-pdf',
       'unlock-pdf',
-      'remove-password',
       'sign-pdf',
       'redact-pdf'
     ]

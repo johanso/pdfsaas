@@ -62,7 +62,12 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
         path.startsWith('/rotar-pdf') ||
         path.startsWith('/pdf-a-imagen') ||
         path.startsWith('/comprimir-pdf') ||
-        path.startsWith('/ocr-pdf');
+        path.startsWith('/ocr-pdf') ||
+        path.startsWith('/proteger-pdf') ||
+        path.startsWith('/pdf-escala-grises') ||
+        path.startsWith('/aplanar-pdf') ||
+        path.startsWith('/reparar-pdf') ||
+        path.startsWith('/desbloquear-pdf');
 
       const wasToolRoute = isToolRoute(previousPathname.current);
       const isNowToolRoute = isToolRoute(pathname);
@@ -90,6 +95,9 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
 
     try {
+      // Verificar si estamos en la herramienta de desbloqueo
+      const isUnlockTool = pathname.startsWith('/desbloquear-pdf');
+
       // ... same logic
       const oversizedFiles = newFiles.filter(f => f.size > FILE_SIZE_LIMITS.max);
       if (oversizedFiles.length > 0) {
@@ -142,10 +150,18 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
             }
           } catch (error: any) {
             if (error.name === "PasswordException") {
-              protectedCount++;
-              return null;
+              // Si estamos en la herramienta de desbloqueo, permitir archivos protegidos
+              if (isUnlockTool) {
+                // No contar el pageCount pero permitir el archivo
+                pageCount = undefined;
+              } else {
+                // En otras herramientas, descartar archivos protegidos
+                protectedCount++;
+                return null;
+              }
+            } else {
+              console.error("Error extracting PDF page count:", error);
             }
-            console.error("Error extracting PDF page count:", error);
           }
         } else if (skipPdfValidation) {
           const ext = f.name.toLowerCase().split('.').pop();
@@ -179,7 +195,7 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [files]);
+  }, [files, pathname]);
 
   const rotateFile = useCallback((id: string, degrees: number = 90) => {
     setFiles(files => files.map(f => {

@@ -72,7 +72,7 @@ export class PdfWorkerClient {
     formData.append('file', file);
     formData.append('password', password);
 
-    return this.convert(formData, '/api/unlock-pdf');
+    return this.convert(formData, '/api/worker/unlock-pdf');
   }
 
   // ===== MÉTODO GENÉRICO =====
@@ -118,16 +118,3 @@ export class PdfWorkerClient {
 
 // Singleton instance
 export const pdfWorkerClient = new PdfWorkerClient();
-
-
-// Endpoints Disponibles
-// ✅ POST /api/word-to-pdf       - Word → PDF
-// ✅ POST /api/pdf-to-word       - PDF → Word
-// ✅ POST /api/excel-to-pdf      - Excel → PDF
-// ✅ POST /api/pdf-to-excel      - PDF → Excel
-// ✅ POST /api/ppt-to-pdf        - PowerPoint → PDF
-// ✅ POST /api/pdf-to-ppt        - PDF → PowerPoint
-// ✅ POST /api/compress-pdf      - Comprimir PDF
-// ✅ POST /api/pdf-to-image      - PDF → Imagen
-// ✅ POST /api/protect-pdf       - Proteger con contraseña
-// ✅ POST /api/unlock-pdf        - Desbloquear PDF

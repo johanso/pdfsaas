@@ -251,18 +251,8 @@ export const TOOLS: Record<string, Tool> = {
     path: '/desbloquear-pdf',
     icon: 'Unlock',
     category: 'security',
-    isAvailable: false,
-    comingSoon: true
-  },
-  'remove-password': {
-    id: 'remove-password',
-    name: 'Quitar Contraseña',
-    description: 'Elimina el password olvidado',
-    path: '/quitar-password',
-    icon: 'Key',
-    category: 'security',
-    isAvailable: false,
-    comingSoon: true
+    isAvailable: true,
+    comingSoon: false
   },
   'sign-pdf': {
     id: 'sign-pdf',
