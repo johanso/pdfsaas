@@ -14,7 +14,7 @@ import ProcessingScreen from "@/components/processing-screen";
 // Hooks
 import { usePageSelection } from "@/hooks/usePageSelection";
 import { usePdfPages } from "@/hooks/usePdfPages";
-import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { useExtractPages } from "@/hooks/useExtractPages";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 
@@ -46,15 +46,19 @@ export default function ExtractPdfClient() {
     previousPathname.current = pathname;
   }, [pathname, resetSelection]);
 
-  const { isProcessing,
+  const {
+    isProcessing,
     progress,
     isComplete,
-    fileName,
+    phase,
     operation,
-    processAndDownload,
+    uploadStats,
+    result,
+    extract,
     handleDownloadAgain,
-    handleContinueEditing,
-    handleStartNew } = usePdfProcessing();
+    handleStartNew,
+    cancelOperation,
+  } = useExtractPages();
 
   const selectedIds = useMemo(() => pages
     .filter(p => selectedPages.includes(p.originalIndex))
@@ -110,28 +114,20 @@ export default function ExtractPdfClient() {
 
     setShowSaveDialog(false);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("mode", "extract");
-
     const orderedSelectedPages = pages
       .filter(p => selectedPages.includes(p.originalIndex))
       .map(p => p.originalIndex);
 
-    const config = {
-      pages: orderedSelectedPages,
-      merge: extractMode === "merge"
-    };
-    formData.append("config", JSON.stringify(config));
+    const isZip = extractMode === "separate" && selectedPages.length > 1;
 
-    await processAndDownload(fileName, formData, {
-      endpoint: "/api/worker/split-pdf",
-      extension: extractMode === "separate" && selectedPages.length > 1 ? "zip" : "pdf",
-      operation: "Extrayendo páginas",
-      successMessage: "¡Páginas extraídas correctamente!",
-      onContinueEditing: () => {
-        // Keep state
-      }
+    await extract(file, {
+      mode: extractMode,
+      config: {
+        pages: orderedSelectedPages,
+        merge: extractMode === "merge"
+      },
+      fileName,
+      isZip,
     });
   };
 
@@ -209,7 +205,7 @@ export default function ExtractPdfClient() {
           </>
         }
         saveDialogProps={{
-          isOpen: showSaveDialog,
+          open: showSaveDialog,
           onOpenChange: setShowSaveDialog,
           defaultName: "paginas-extraidas",
           onSave: handleSubmit,
@@ -239,13 +235,32 @@ export default function ExtractPdfClient() {
       {/* Processing Screen */}
       {(isProcessing || isComplete) && (
         <ProcessingScreen
-          fileName={fileName}
+          fileName={result?.fileName || "documento.pdf"}
           operation={operation}
           progress={progress}
           isComplete={isComplete}
+          phase={phase}
+          uploadStats={uploadStats}
           onDownload={handleDownloadAgain}
-          onEditAgain={() => handleContinueEditing()}
-          onStartNew={() => handleStartNew(handleReset)}
+          onEditAgain={handleStartNew}
+          onStartNew={() => {
+            handleStartNew();
+            handleReset();
+          }}
+          onCancel={cancelOperation}
+          toolMetrics={
+            result
+              ? {
+                  type: "pages",
+                  data: {
+                    pagesProcessed: selectedPages.length,
+                    pagesTotal: pages.length,
+                    operation: "Extraídas",
+                    resultSize: result.resultSize,
+                  }
+                }
+              : undefined
+          }
         />
       )}
     </>

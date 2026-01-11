@@ -284,7 +284,7 @@ export default function RepairPdfClient() {
           </div>
         }
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: file ? file.name.replace(".pdf", "") : "reparado",
           onSave: handleSubmit,

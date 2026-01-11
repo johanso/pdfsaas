@@ -186,7 +186,7 @@ export default function ProtectPdfClient() {
           </div>
         }
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: file ? file.name.replace(".pdf", "") : "protegido",
           onSave: handleSubmit,

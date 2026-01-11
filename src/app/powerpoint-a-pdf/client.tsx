@@ -10,7 +10,7 @@ import ProcessingScreen from "@/components/processing-screen";
 
 // Hooks
 import { usePdfFiles } from "@/hooks/usePdfFiles";
-import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { usePowerPointToPdf } from "@/hooks/usePowerPointToPdf";
 
 export default function PowerPointToPdfClient() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -25,15 +25,17 @@ export default function PowerPointToPdfClient() {
 
   const {
     isProcessing,
-    progress,
     isComplete,
-    fileName,
+    progress,
+    phase,
     operation,
-    processAndDownload,
+    uploadStats,
+    result,
+    convert,
     handleDownloadAgain,
-    handleContinueEditing,
-    handleStartNew
-  } = usePdfProcessing();
+    handleStartNew,
+    cancelOperation,
+  } = usePowerPointToPdf();
 
   const handleFilesSelected = (newFiles: File[]) => {
     // Validar extensión
@@ -59,18 +61,7 @@ export default function PowerPointToPdfClient() {
     // Close dialog immediately
     setIsDialogOpen(false);
 
-    const formData = new FormData();
-    formData.append("file", files[0].file);
-
-    await processAndDownload(fileName, formData, {
-      endpoint: "/api/worker/ppt-to-pdf",
-      extension: "pdf",
-      operation: "Convirtiendo PowerPoint a PDF",
-      successMessage: "¡Presentación convertida a PDF correctamente!",
-      onContinueEditing: () => {
-        // Keep files, just close processing screen
-      }
-    });
+    await convert(files[0].file, { fileName });
   };
 
   return (
@@ -103,7 +94,7 @@ export default function PowerPointToPdfClient() {
         onDownload={() => setIsDialogOpen(true)}
         isGridLoading={isLoading && files.length === 0}
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: files[0]?.name.replace(/\.(pptx|ppt)$/i, "") || "presentacion",
           onSave: handleSubmit,
@@ -142,13 +133,31 @@ export default function PowerPointToPdfClient() {
       {/* Processing Screen */}
       {(isProcessing || isComplete) && (
         <ProcessingScreen
-          fileName={fileName}
+          fileName={result?.fileName || "documento.pdf"}
           operation={operation}
           progress={progress}
           isComplete={isComplete}
+          phase={phase}
+          uploadStats={uploadStats}
           onDownload={handleDownloadAgain}
-          onEditAgain={() => handleContinueEditing()}
-          onStartNew={() => handleStartNew(reset)}
+          onEditAgain={handleStartNew}
+          onStartNew={() => {
+            handleStartNew();
+            reset();
+          }}
+          onCancel={cancelOperation}
+          toolMetrics={
+            result
+              ? {
+                  type: "convert",
+                  data: {
+                    originalFormat: files[0]?.name.split('.').pop()?.toUpperCase() || "PPT",
+                    slides: result.slides,
+                    resultSize: result.resultSize,
+                  }
+                }
+              : undefined
+          }
         />
       )}
     </>

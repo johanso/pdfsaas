@@ -72,12 +72,35 @@ pdfsaas/
 │   ├── hooks/                 # 🟣 Custom Hooks
 │   │   ├── index.ts           # Re-exports públicos
 │   │   ├── core/              # Hooks internos base
-│   │   │   ├── useToolProcessor.ts  # Procesador genérico
+│   │   │   ├── useToolProcessor.ts  # Procesador genérico (core)
+│   │   │   ├── phase-mapper.ts      # Mapeo de fases interno→UI
 │   │   │   ├── useXhrUpload.ts      # Upload con progreso
 │   │   │   └── useDownload.ts       # Descargas
 │   │   ├── factories/         # Factory hooks
-│   │   │   └── createPdfToolHook.ts # Genera hooks de herramientas
-│   │   └── use[Tool].ts       # Hooks específicos por herramienta
+│   │   │   └── createPdfToolHook.ts # Genera hooks simples (1 archivo)
+│   │   │
+│   │   │   # Hooks especializados por herramienta:
+│   │   ├── useCompressPdf.ts       # Compresión (factory)
+│   │   ├── useProtectPdf.ts        # Proteger con contraseña (factory)
+│   │   ├── useUnlockPdf.ts         # Desbloquear PDF (factory)
+│   │   ├── useFlattenPdf.ts        # Aplanar PDF (factory)
+│   │   ├── useGrayscalePdf.ts      # Escala de grises (factory)
+│   │   ├── useRepairPdf.ts         # Reparar PDF (factory)
+│   │   ├── useOcrPdf.ts            # OCR (factory)
+│   │   ├── usePdfToImage.ts        # PDF a imagen (factory)
+│   │   ├── useImageToPdf.ts        # Imagen a PDF (factory)
+│   │   │
+│   │   │   # Hooks complejos (multi-archivo, useToolProcessor directo):
+│   │   ├── useMergePdf.ts          # Unir PDFs
+│   │   ├── useSplitPdf.ts          # Dividir PDF
+│   │   ├── useRotatePdf.ts         # Rotar páginas
+│   │   ├── useOrganizePdf.ts       # Organizar páginas
+│   │   ├── useExtractPages.ts      # Extraer páginas
+│   │   ├── useDeletePages.ts       # Eliminar páginas
+│   │   ├── useWordToPdf.ts         # Word a PDF
+│   │   ├── useExcelToPdf.ts        # Excel a PDF
+│   │   ├── usePowerPointToPdf.ts   # PowerPoint a PDF
+│   │   └── useHtmlToPdf.ts         # HTML/URL a PDF
 │   │
 │   ├── lib/                   # 🟠 Utilidades y configuración
 │   │   ├── utils.ts           # cn() helper de Tailwind
@@ -113,9 +136,36 @@ pdfsaas/
 | `components/ui/` | Primitivos de shadcn/ui. **NO modificar directamente** | Solo vía `npx shadcn add` |
 | `components/pdf-system/` | Sistema de visualización PDF unificado | Al cambiar comportamiento de cards |
 | `content/tools/` | Contenido SEO/marketing por herramienta | Al crear nueva herramienta |
-| `hooks/core/` | Lógica base reutilizable. **Alta estabilidad** | Con precaución |
-| `hooks/factories/` | Generadores de hooks. **Crítico** | Solo si se necesita nuevo patrón |
+| `hooks/core/` | Lógica base (`useToolProcessor`, `phase-mapper`). **Alta estabilidad** | Con precaución |
+| `hooks/factories/` | Factory para hooks simples (1 archivo). **Crítico** | Solo si se necesita nuevo patrón |
+| `hooks/use*.ts` | Hooks especializados por herramienta | Al crear nueva herramienta |
 | `lib/errors/` | Sistema centralizado de errores | Al agregar nuevos tipos de error |
+
+### Catálogo de Hooks Especializados
+
+Todos los hooks de herramientas están en `hooks/` y exportados desde `hooks/index.ts`:
+
+| Hook | Herramienta | Patrón | Características |
+|------|-------------|--------|-----------------|
+| `useCompressPdf` | Comprimir PDF | Factory | Modos: baja/recomendada/extrema |
+| `useProtectPdf` | Proteger PDF | Factory | Encriptación con contraseña |
+| `useUnlockPdf` | Desbloquear PDF | Factory | Requiere contraseña |
+| `useFlattenPdf` | Aplanar PDF | Factory | Elimina capas editables |
+| `useGrayscalePdf` | Escala de grises | Factory | Conversión a B/N |
+| `useRepairPdf` | Reparar PDF | Factory | Corrección de errores |
+| `useOcrPdf` | OCR | Factory | Reconocimiento de texto |
+| `usePdfToImage` | PDF a imagen | Factory | Exportar como PNG/JPG |
+| `useImageToPdf` | Imagen a PDF | Factory | Convertir imágenes |
+| `useMergePdf` | Unir PDFs | Directo | Multi-archivo, reordenable |
+| `useSplitPdf` | Dividir PDF | Directo | Por rangos o cantidad fija |
+| `useRotatePdf` | Rotar páginas | Directo | Rotación por página |
+| `useOrganizePdf` | Organizar | Directo | Multi-archivo, páginas en blanco |
+| `useExtractPages` | Extraer páginas | Directo | Selección múltiple |
+| `useDeletePages` | Eliminar páginas | Directo | Selección por rango |
+| `useWordToPdf` | Word a PDF | Directo | .doc, .docx |
+| `useExcelToPdf` | Excel a PDF | Directo | .xls, .xlsx |
+| `usePowerPointToPdf` | PowerPoint a PDF | Directo | .ppt, .pptx |
+| `useHtmlToPdf` | HTML/URL a PDF | Directo | Archivo o URL |
 
 ---
 
@@ -197,6 +247,76 @@ export const useCompressPdf = createPdfToolHook<CompressOptions, CompressResult>
 ```
 
 **Regla**: Para crear una nueva herramienta de procesamiento, usar SIEMPRE `createPdfToolHook`.
+
+### 2.1 **Hooks Especializados vs Factory Pattern**
+
+Existen dos patrones para crear hooks de herramientas:
+
+#### A) Factory Pattern (operaciones simples de 1 archivo)
+
+Para herramientas que procesan un solo archivo con opciones simples:
+
+```typescript
+// hooks/useProtectPdf.ts
+import { createPdfToolHook } from "./factories/createPdfToolHook";
+
+export const useProtectPdf = createPdfToolHook<ProtectOptions, ProtectResult>({
+  toolId: "protect-pdf",
+  endpoint: "/api/worker/protect-pdf",
+  operationName: "Protegiendo PDF",
+  buildFormData: (file, options) => [
+    ["password", options.password],
+  ],
+});
+```
+
+#### B) useToolProcessor Directo (operaciones complejas/multi-archivo)
+
+Para herramientas con lógica compleja, múltiples archivos, o necesidades especiales:
+
+```typescript
+// hooks/useMergePdf.ts
+import { useToolProcessor } from "./core/useToolProcessor";
+import { mapProcessorPhaseToLegacy } from "./core/phase-mapper";
+
+export interface MergeResult extends ProcessingResult {
+  filesCount: number;
+  totalPages: number;
+}
+
+export function useMergePdf() {
+  const processor = useToolProcessor<MergeResult>({
+    endpoint: "/api/worker/merge-pdf",
+  });
+
+  const merge = useCallback(async (
+    files: File[],
+    options: MergeOptions
+  ) => {
+    // Construcción manual de FormData para múltiples archivos
+    const formData = new FormData();
+    files.forEach((file, i) => formData.append(`file${i}`, file));
+    formData.append("fileName", options.fileName);
+    
+    await processor.process(formData, options.fileName);
+  }, [processor]);
+
+  return {
+    ...processor,
+    phase: mapProcessorPhaseToLegacy(processor.phase),
+    merge,
+  };
+}
+```
+
+#### Cuándo usar cada patrón:
+
+| Característica | Factory (`createPdfToolHook`) | Directo (`useToolProcessor`) |
+|----------------|-------------------------------|-----------------------------|
+| Archivos | 1 solo archivo | Múltiples archivos |
+| FormData | Automático vía `buildFormData` | Construcción manual |
+| Complejidad | Baja | Media-Alta |
+| Ejemplos | compress, protect, unlock, flatten | merge, split, organize, extract |
 
 ### 3. **Composition Pattern** (PdfToolLayout)
 
@@ -477,7 +597,18 @@ export default function GrayscalePdfClient() {
 
   // Hooks de archivos y procesamiento
   const { files, addFiles, removeFile, reset: resetFiles } = usePdfFiles();
-  const { isProcessing, isComplete, progress, phase, convert, ... } = useGrayscalePdf();
+  const {
+    isProcessing,
+    isComplete,
+    progress,
+    phase,
+    result,
+    uploadStats,
+    convert,
+    handleDownloadAgain,
+    handleStartNew,
+    cancelOperation,
+  } = useGrayscalePdf();
 
   const file = files[0]?.file || null;
 
@@ -506,7 +637,6 @@ export default function GrayscalePdfClient() {
       <PdfToolLayout
         toolId="grayscale-pdf"
         title="Convertir PDF a Escala de Grises"
-        description="Ahorra tinta convirtiendo tu documento a blanco y negro."
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
@@ -514,7 +644,7 @@ export default function GrayscalePdfClient() {
         downloadButtonText="Convertir a Grises"
         onDownload={() => setIsDialogOpen(true)}
         sidebarCustomControls={/* Controles de opciones */}
-        saveDialogProps={{ isOpen: isDialogOpen, ... }}
+        saveDialogProps={{ open: isDialogOpen, ... }}
       >
         <PdfGrid
           items={files}
@@ -524,12 +654,104 @@ export default function GrayscalePdfClient() {
         />
       </PdfToolLayout>
 
+      {/* ProcessingScreen con toolMetrics específicas */}
       {(isProcessing || isComplete) && (
-        <ProcessingScreen progress={progress} phase={phase} ... />
+        <ProcessingScreen
+          fileName={result?.fileName || "documento.pdf"}
+          operation="Convirtiendo a escala de grises"
+          progress={progress}
+          isComplete={isComplete}
+          phase={phase}
+          uploadStats={uploadStats}
+          onDownload={handleDownloadAgain}
+          onEditAgain={handleStartNew}
+          onStartNew={() => {
+            handleStartNew();
+            handleReset();
+          }}
+          onCancel={cancelOperation}
+          toolMetrics={
+            result
+              ? {
+                  type: "simple",
+                  data: {
+                    originalSize: result.originalSize,
+                    resultSize: result.resultSize,
+                  }
+                }
+              : undefined
+          }
+        />
       )}
     </>
   );
 }
+```
+
+### 3.1 Sistema de ToolMetrics
+
+El `ProcessingScreen` soporta métricas específicas por tipo de herramienta:
+
+```typescript
+// Tipos de métricas disponibles
+interface ToolMetrics {
+  type: "compression" | "merge" | "split" | "pages" | "convert" | "protect" | "repair" | "simple";
+  data?: {
+    // compression
+    originalSize?: number;
+    resultSize?: number;
+    reduction?: number;
+    
+    // merge
+    filesCount?: number;
+    totalPages?: number;
+    
+    // split
+    outputFiles?: number;
+    
+    // pages (rotate, extract, delete, organize)
+    pagesProcessed?: number;
+    pagesTotal?: number;
+    operation?: string;  // "Rotadas", "Extraídas", "Eliminadas"
+    
+    // convert (Word, Excel, PowerPoint, HTML)
+    originalFormat?: string;
+    sheets?: number;
+    slides?: number;
+    
+    // protect
+    encryption?: string;
+    
+    // repair
+    fullyRepaired?: boolean;
+    repairActions?: string[];
+  };
+}
+```
+
+**Ejemplos de uso por herramienta:**
+
+```tsx
+// Unir PDFs
+toolMetrics={{ type: "merge", data: { filesCount: 3, totalPages: 45 } }}
+
+// Dividir PDF
+toolMetrics={{ type: "split", data: { outputFiles: 5, totalPages: 20 } }}
+
+// Rotar páginas
+toolMetrics={{ type: "pages", data: { pagesProcessed: 3, pagesTotal: 10, operation: "Rotadas" } }}
+
+// Eliminar páginas
+toolMetrics={{ type: "pages", data: { pagesProcessed: 2, pagesTotal: 8, operation: "Eliminadas" } }}
+
+// Word a PDF
+toolMetrics={{ type: "convert", data: { originalFormat: "DOCX", resultSize: 1024000 } }}
+
+// Excel a PDF
+toolMetrics={{ type: "convert", data: { originalFormat: "XLSX", sheets: 3 } }}
+
+// PowerPoint a PDF
+toolMetrics={{ type: "convert", data: { originalFormat: "PPTX", slides: 15 } }}
 ```
 
 ### 4. Sistema de Notificaciones (`lib/errors/notifications.ts`)
@@ -792,6 +1014,20 @@ export function CustomButton() {
 const useGrayscalePdf = createPdfToolHook({ ... });
 ```
 
+### 2.1 ❌ NO usar hooks genéricos cuando existe uno especializado
+
+```typescript
+// ❌ MAL: Usar usePdfProcessing genérico (DEPRECADO)
+import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+const { process } = usePdfProcessing("/api/worker/merge-pdf");
+
+// ✅ BIEN: Usar el hook especializado
+import { useMergePdf } from "@/hooks/useMergePdf";
+const { merge, result, phase } = useMergePdf();
+```
+
+**Regla**: Cada herramienta tiene su hook especializado con tipos específicos. No usar hooks genéricos.
+
 ### 3. ❌ NO usar `any` sin justificación
 
 ```typescript
@@ -900,6 +1136,34 @@ export function usePdfProcessor() { ... }
 // O si no es un hook, que sea claramente una utilidad:
 export function processPdf() { ... }  // En lib/
 ```
+
+### 11. ❌ NO usar successDetails cuando toolMetrics es más apropiado
+
+```tsx
+// ❌ MAL: Usar successDetails para herramientas que no son de compresión
+<ProcessingScreen
+  successDetails={{
+    originalSize: 1000,
+    compressedSize: 500,    // ¡Dice "comprimido" pero es merge!
+    reductionPercentage: 50,
+    savedBytes: 500,
+  }}
+/>
+
+// ✅ BIEN: Usar toolMetrics con el tipo correcto
+<ProcessingScreen
+  toolMetrics={{
+    type: "merge",
+    data: {
+      filesCount: 3,
+      totalPages: 45,
+      resultSize: 2048000,
+    }
+  }}
+/>
+```
+
+**Regla**: `successDetails` es solo para compresión (legacy). Usar `toolMetrics` para todas las demás herramientas.
 
 ---
 

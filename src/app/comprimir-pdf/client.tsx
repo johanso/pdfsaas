@@ -261,7 +261,7 @@ export default function CompressPdfClient() {
           </div>
         }
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: file ? file.name.replace(".pdf", "") : "comprimido",
           onSave: handleSubmit,

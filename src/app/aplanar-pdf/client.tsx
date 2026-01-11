@@ -201,7 +201,7 @@ export default function FlattenPdfClient() {
           </div>
         }
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: file ? file.name.replace(".pdf", "") : "aplanado",
           onSave: handleSubmit,
