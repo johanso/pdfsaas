@@ -109,10 +109,9 @@ export function PdfToolLayout({
   const hasFeatures = features && Object.values(features).some(v => v === true);
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl pb-16">
+    <div className="container mx-auto px-4 max-w-7xl pt-4 pb-16">
       <div className="space-y-6">
-        <ToolBreadcrumb toolId={toolId} />
-        <HeadingPage titlePage={title} descriptionPage={description} />
+        {/* <ToolBreadcrumb toolId={toolId} /> */}
 
         {headerContent && (
           <div className="w-full flex justify-center lg:justify-start mb-6">
@@ -123,23 +122,29 @@ export function PdfToolLayout({
         <div className="w-full">
           {!hasFiles ? (
             customEmptyState || (
-              <Dropzone
-                onFilesSelected={onFilesSelected}
-                multiple={dropzoneMultiple}
-                accept={acceptedFileTypes}
-                className="h-80 bg-white/60 dark:bg-zinc-900/50"
-              />
+              <>
+                <div className="w-full mb-6">
+                  <HeadingPage titlePage={title} descriptionPage={description} />
+                </div>
+                <Dropzone
+                  onFilesSelected={onFilesSelected}
+                  multiple={dropzoneMultiple}
+                  accept={acceptedFileTypes}
+                  className="h-80 bg-white/60 dark:bg-zinc-900/50"
+                />
+              </>
             )
           ) : (
             <div className="space-y-2">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div className="lg:col-span-3 space-y-2 relative">
+                  <ToolBreadcrumb toolId={toolId} />
+                  <HeadingPage titlePage={title} descriptionPage={description} />
                   {isMobile && (
                     <PdfToolbar onReset={onReset} onAdd={onAdd} textAdd={textAdd} />
                   )}
-
                   {!isMobile && hasFeatures && (
-                    <section className="py-0">
+                    <section className="py-0 sticky top-0 z-2">
                       <GlobalToolbar
                         features={features}
                         actions={actions}
@@ -151,7 +156,7 @@ export function PdfToolLayout({
                   <section className={cn(
                     "rounded-lg transition-all duration-200",
                     layout === "grid"
-                      ? "bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed border-zinc-300 dark:border-zinc-800 p-4 md:p-6 min-h-[320px]"
+                      ? "bg-zinc-200/30 dark:bg-zinc-700/20 p-4 min-h-[320px]"
                       : "p-0 bg-transparent border-0 min-h-0",
                     hasFeatures && ""
                   )}>
@@ -179,7 +184,7 @@ export function PdfToolLayout({
                       "z-50 transition-transform duration-300 ease-in-out space-y-6",
                       isMobile
                         ? "fixed bottom-0 left-0 right-0 rounded-t-3xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)] bg-white dark:bg-zinc-900 p-6 border-t dark:border-zinc-800"
-                        : "sticky top-4 block",
+                        : "sticky top-4 mt-12 block",
                       isMobile && (isOptionsOpen ? "translate-y-0" : "translate-y-full")
                     )}
                   >
@@ -301,7 +306,6 @@ export function PdfToolLayout({
 
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-hero z-[-1] h-max" />
-      {/* Floating elements */}
       <div className="absolute bottom-10 right-10 w-100 min-h-100 bg-primary/8 rounded-full blur-3xl animate-pulse z-[-1]" style={{ animationDelay: '1s' }} />
     </div>
   );

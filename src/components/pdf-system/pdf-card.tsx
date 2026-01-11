@@ -181,7 +181,7 @@ export const PDF_CARD_PRESETS = {
     selectedColorName: "green",
     iconSelectedName: "check",
   } as PdfCardConfig,
-  
+
 
   // Para OCR PDF (archivos escaneados)
   ocr: {
@@ -395,7 +395,7 @@ export const PdfCard = memo(function PdfCard({
           {/* Header */}
           <div
             className={cn(
-              "h-8 border-b flex items-center justify-between px-3",
+              "h-8 border-b flex items-center justify-between px-2",
               isSelected && selectedColorName
                 ? `bg-${selectedColorName}-50 dark:bg-${selectedColorName}-950/30 border-${selectedColorName}-200 dark:border-${selectedColorName}-900`
                 : "bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700"
@@ -423,17 +423,20 @@ export const PdfCard = memo(function PdfCard({
 
             <div className="flex items-center gap-1 shrink-0">
               {customActions}
-              {selectable && (
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={onToggle}
-                  className={cn(
-                    "w-4 h-4 border border-zinc-300 cursor-pointer bg-white shadow-none rounded-full",
-                    selectedColorName === "green" && "data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700",
-                    selectedColorName === "red" && "data-[state=checked]:border-red-600 data-[state=checked]:bg-red-600 data-[state=checked]:text-white dark:data-[state=checked]:border-red-700 dark:data-[state=checked]:bg-red-700",
-                    !selectedColorName && 'data-[state=checked]:border-zinc-400 data-[state=checked]:bg-zinc-100 data-[state=checked]:text-white dark:data-[state=checked]:border-zinc-700 dark:data-[state=checked]:bg-zinc-700'
-                  )}
-                />
+              {/* Delete Action */}
+              {(allowDelete || removable) && onRemove && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 text-zinc-500 hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove();
+                  }}
+                  title="Eliminar"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
               )}
             </div>
           </div>
@@ -446,6 +449,20 @@ export const PdfCard = memo(function PdfCard({
             )}
             onClick={handleCardClick}
           >
+            {selectable && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={onToggle}
+                onClick={handleCardClick}
+                className={cn(
+                  "absolute top-2 right-2 z-10 w-5 h-5 border border-zinc-300 cursor-pointer bg-white shadow-none rounded-full",
+                  selectedColorName === "green" && "data-[state=checked]:border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:text-white dark:data-[state=checked]:border-green-700 dark:data-[state=checked]:bg-green-700",
+                  selectedColorName === "red" && "data-[state=checked]:border-red-600 data-[state=checked]:bg-red-600 data-[state=checked]:text-white dark:data-[state=checked]:border-red-700 dark:data-[state=checked]:bg-red-700",
+                  !selectedColorName && 'data-[state=checked]:border-zinc-400 data-[state=checked]:bg-zinc-100 data-[state=checked]:text-white dark:data-[state=checked]:border-zinc-700 dark:data-[state=checked]:bg-zinc-700'
+                )}
+              />
+            )}
+
             <div
               className={cn(
                 "relative transition-all duration-300 ease-in-out origin-center flex flex-col items-center justify-center w-full h-full",
@@ -502,8 +519,8 @@ export const PdfCard = memo(function PdfCard({
           </div>
 
           {/* Footer Actions */}
-          {(rotatable || allowRotateLeft || allowRotateRight || subtitle || removable || allowDelete) && (
-            <div className="h-10 border-t flex items-center justify-between px-2 bg-white dark:bg-zinc-900">
+          {(rotatable || allowRotateLeft || allowRotateRight || subtitle) && (
+            <div className="w-max  absolute left-1/2 -translate-x-1/2 bottom-3 rounded-full shadow-sm h-8 flex items-center justify-center gap-2 px-3 bg-white dark:bg-zinc-900">
 
               {/* Left Rotation */}
               {allowRotateLeft && onRotateLeft && (
@@ -529,7 +546,6 @@ export const PdfCard = memo(function PdfCard({
                   className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Prioritize specific handler, fallback to generic
                     if (onRotateRight) onRotateRight();
                     else if (onRotate) onRotate();
                   }}
@@ -569,28 +585,11 @@ export const PdfCard = memo(function PdfCard({
                 </Button>
               )}
 
-
               {subtitle && (
-                <div className="text-[10px] flex items-center gap-2 text-zinc-400 font-mono">
+                <div className="text-[10px] flex items-center gap-1 text-zinc-600 dark:text-zinc-300 font-mono">
                   <InfoIcon className="w-3 h-3 inline" />
                   <span className="leading-none">{subtitle}</span>
                 </div>
-              )}
-
-              {/* Delete Action */}
-              {(allowDelete || removable) && onRemove && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-zinc-500 hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemove();
-                  }}
-                  title="Eliminar"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </Button>
               )}
             </div>
           )}

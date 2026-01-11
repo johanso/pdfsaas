@@ -49,7 +49,8 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (previousPathname.current && previousPathname.current !== pathname) {
       // Only reset if we're navigating between different tools
-      const isToolRoute = (path: string) => path.startsWith('/unir-pdf') ||
+      const isToolRoute = (path: string) =>
+        path.startsWith('/unir-pdf') ||
         path.startsWith('/imagen-a-pdf') ||
         path.startsWith('/organizar-pdf') ||
         path.startsWith('/excel-a-pdf') ||

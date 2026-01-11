@@ -143,7 +143,7 @@ export function AddPdfCard({
             "flex items-center justify-center w-12 h-12 rounded-full transition-all duration-200",
             isDragging
               ? "bg-primary text-primary-foreground scale-110"
-              : "bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400"
+              : "bg-primary text-white hover:bg-primary/80"
           )}
         >
           {isDragging ? (

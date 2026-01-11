@@ -47,117 +47,118 @@ export function GlobalToolbar({
 
   // Desktop implementation
   const DesktopToolbar = () => (
-    <div className="hidden lg:flex justify-end items-center gap-2 overflow-x-auto">
+    <div className="hidden lg:flex justify-start items-center gap-2 overflow-x-auto mb-4">
+      <div className="flex relative left-1 gap-1 bg-white border dark:bg-card px-2 py-1 my-0.5 rounded-lg">
+        {/* Grupo Selección */}
+        {features.selection && (
+          <>
+            <TooltipButton
+              icon="check-square"
+              variant="secondary"
+              side="top"
+              disabled={!actions.onSelectAll}
+              tooltip="Seleccionar todos"
+              onClick={actions.onSelectAll}
+            />
 
-      {/* Grupo Selección */}
-      {features.selection && (
-        <>
-          <TooltipButton
-            icon="check-square"
-            variant="secondary"
-            side="top"
-            disabled={!actions.onSelectAll}
-            tooltip="Seleccionar todos"
-            onClick={actions.onSelectAll}
-          />
+            <TooltipButton
+              icon="square"
+              variant="secondary"
+              side="top"
+              disabled={!actions.onDeselectAll}
+              tooltip="Deseleccionar todos"
+              onClick={actions.onDeselectAll}
+            />
 
-          <TooltipButton
-            icon="square"
-            variant="secondary"
-            side="top"
-            disabled={!actions.onDeselectAll}
-            tooltip="Deseleccionar todos"
-            onClick={actions.onDeselectAll}
-          />
+            <TooltipButton
+              icon="arrow-left-right"
+              variant="secondary"
+              side="top"
+              disabled={!actions.onInvertSelection}
+              tooltip="Invertir selección"
+              onClick={actions.onInvertSelection}
+            />
+          </>
+        )}
 
-          <TooltipButton
-            icon="arrow-left-right"
-            variant="secondary"
-            side="top"
-            disabled={!actions.onInvertSelection}
-            tooltip="Invertir selección"
-            onClick={actions.onInvertSelection}
-          />
-        </>
-      )}
+        {/* Grupo Orden */}
+        {features.sorting && (
+          <>
+            <TooltipButton
+              icon="sort-alpha-down"
+              variant="ghost"
+              side="top"
+              disabled={!actions.onSortAZ}
+              tooltip="Ordenar alfabéticamente (A-Z)"
+              onClick={actions.onSortAZ}
+            />
 
-      {/* Grupo Orden */}
-      {features.sorting && (
-        <>
-          <TooltipButton
-            icon="sort-alpha-down"
-            variant="secondary"
-            side="top"
-            disabled={!actions.onSortAZ}
-            tooltip="Ordenar alfabéticamente (A-Z)"
-            onClick={actions.onSortAZ}
-          />
+            <TooltipButton
+              icon="sort-alpha-down-alt"
+              variant="ghost"
+              side="top"
+              disabled={!actions.onSortZA}
+              tooltip="Ordenar alfabéticamente (Z-A)"
+              onClick={actions.onSortZA}
+            />
+          </>
+        )}
 
-          <TooltipButton
-            icon="sort-alpha-down-alt"
-            variant="secondary"
-            side="top"
-            disabled={!actions.onSortZA}
-            tooltip="Ordenar alfabéticamente (Z-A)"
-            onClick={actions.onSortZA}
-          />
-        </>
-      )}
+        {/* Grupo Rotación */}
+        {features.rotation && (
+          <>
+            <TooltipButton
+              icon="arrow-clockwise"
+              variant="secondary"
+              side="top"
+              tooltip="Girar documentos 90° a la derecha"
+              disabled={!actions.onRotateRights}
+              onClick={actions.onRotateRights}
+            />
 
-      {/* Grupo Rotación */}
-      {features.rotation && (
-        <>
-          <TooltipButton
-            icon="arrow-clockwise"
-            variant="secondary"
-            side="top"
-            tooltip="Girar documentos 90° a la derecha"
-            disabled={!actions.onRotateRights}
-            onClick={actions.onRotateRights}
-          />
+            <TooltipButton
+              icon="arrow-counterclockwise"
+              variant="secondary"
+              side="top"
+              tooltip="Girar documentos 90° a la izquierda"
+              disabled={!actions.onRotateLefts}
+              onClick={actions.onRotateLefts}
+            />
 
-          <TooltipButton
-            icon="arrow-counterclockwise"
-            variant="secondary"
-            side="top"
-            tooltip="Girar documentos 90° a la izquierda"
-            disabled={!actions.onRotateLefts}
-            onClick={actions.onRotateLefts}
-          />
+            <TooltipButton
+              icon="arrow-repeat"
+              variant="secondary"
+              side="top"
+              tooltip="Restablecer orientación"
+              disabled={!actions.onResetOrientation}
+              onClick={actions.onResetOrientation}
+            />
+          </>
+        )}
 
-          <TooltipButton
-            icon="arrow-repeat"
-            variant="secondary"
-            side="top"
-            tooltip="Restablecer orientación"
-            disabled={!actions.onResetOrientation}
-            onClick={actions.onResetOrientation}
-          />
-        </>
-      )}
+        {/* Grupo Acciones */}
+        {features.bulkActions && (
+          <>
+            <TooltipButton
+              icon="copy"
+              variant="secondary"
+              side="top"
+              tooltip="Duplicar archivos seleccionados"
+              disabled={!actions.onDuplicateSelected || !state.hasSelection}
+              onClick={actions.onDuplicateSelected}
+            />
 
-      {/* Grupo Acciones */}
-      {features.bulkActions && (
-        <>
-          <TooltipButton
-            icon="copy"
-            variant="secondary"
-            side="top"
-            tooltip="Duplicar archivos seleccionados"
-            disabled={!actions.onDuplicateSelected || !state.hasSelection}
-            onClick={actions.onDuplicateSelected}
-          />
-
-          <TooltipButton
-            icon="x-lg"
-            variant="destructive"
-            side="top"
-            tooltip="Eliminar archivos seleccionados"
-            disabled={!actions.onDeleteSelected || !state.hasSelection}
-            onClick={actions.onDeleteSelected}
-          />
-        </>
-      )}
+            <TooltipButton
+              icon="x-lg"
+              variant="destructive"
+              side="top"
+              tooltip="Eliminar archivos seleccionados"
+              disabled={!actions.onDeleteSelected || !state.hasSelection}
+              onClick={actions.onDeleteSelected}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 

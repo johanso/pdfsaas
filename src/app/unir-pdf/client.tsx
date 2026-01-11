@@ -92,12 +92,12 @@ export default function UnirPdfClient() {
         onFilesSelected={handleFiles}
         dropzoneMultiple={true}
         onReset={reset}
-        onAdd={() => fileInputRef.current?.click()}
         textAdd="Añadir otro PDF"
         features={{ sorting: true }}
         actions={{
           onSortAZ: sortAZ,
           onSortZA: sortZA,
+
         }}
         summaryItems={[
           { label: "Total archivos", value: files.length },
@@ -122,12 +122,12 @@ export default function UnirPdfClient() {
           onOpenChange: () => { },
           onContinue: () => { },
         }}
-        layout="list"
+        layout="grid"
       >
         <PdfGrid
           items={files}
           config={PDF_CARD_PRESETS.merge}
-          layout="list"
+          layout="grid"
           extractCardData={extractCardData}
           onReorder={reorderFiles}
           onRemove={removeFile}
