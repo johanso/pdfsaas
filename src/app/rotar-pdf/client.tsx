@@ -121,6 +121,8 @@ export default function RotatePdfClient() {
           onResetOrientation: handleResetRotation,
         }}
         summaryItems={[
+          { label: "Archivo", value: file ? file.name : "Ninguno" },
+          { label: "Total páginas", value: pages.length },
           hasModifications ? (
             {
               label: "Páginas modificadas",
@@ -133,7 +135,7 @@ export default function RotatePdfClient() {
             }
           ),
         ]}
-        downloadButtonText={isProcessing ? "Procesando..." : "Aplicar Giro y Descargar"}
+        downloadButtonText={isProcessing ? "Procesando..." : "Descargar PDF"}
         isDownloadDisabled={isProcessing || !hasModifications}
         onDownload={() => setIsDialogOpen(true)}
         isGridLoading={isInitialLoading && pages.length === 0}

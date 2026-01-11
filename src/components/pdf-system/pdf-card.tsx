@@ -542,7 +542,7 @@ export const PdfCard = memo(function PdfCard({
 
             {/* Rotation Badge */}
             {showRotationBadge && ((rotation % 360) !== 0) && (
-              <div className="absolute top-1 right-1 text-[10px] leading-none font-medium bg-zinc-800/70 dark:bg-zinc-900/70 text-white px-1.5 py-1 rounded-full h-8 w-8 flex items-center justify-center">
+              <div className="absolute top-1 left-2 text-[10px] leading-none font-medium bg-zinc-800/70 dark:bg-zinc-900/70 text-white px-1.5 py-1 rounded-full h-8 w-8 flex items-center justify-center">
                 {((rotation % 360) + 360) % 360}°
               </div>
             )}

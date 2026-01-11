@@ -61,7 +61,8 @@ export function useRotatePdf() {
       
       formData.append("file", files[0]);
       formData.append("pageInstructions", JSON.stringify(options.pageInstructions));
-      
+      formData.append("fileName", options.fileName);
+
       return formData;
     },
 
