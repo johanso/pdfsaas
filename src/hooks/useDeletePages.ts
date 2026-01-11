@@ -23,6 +23,8 @@ export interface DeletePagesOptions {
   /** Instrucciones para las páginas que se MANTIENEN (no las eliminadas) */
   pageInstructions: PageInstruction[];
   fileName: string;
+  mode?: "separate" | "merge";
+  isZip?: boolean;
 }
 
 export interface DeletePagesResult extends ProcessingResult {
@@ -60,10 +62,12 @@ export function useDeletePages() {
 
     prepareFormData: async (files, options) => {
       const formData = new FormData();
-      
+
       formData.append("file", files[0]);
       formData.append("pageInstructions", JSON.stringify(options.pageInstructions));
-      
+      formData.append("fileName", options.fileName);
+      if (options.mode) formData.append("mode", options.mode);
+
       return formData;
     },
 
@@ -78,10 +82,11 @@ export function useDeletePages() {
    */
   const deletePages = useCallback(
     async (file: File, options: DeletePagesOptions): Promise<DeletePagesResult | null> => {
-      const fileName = options.fileName.endsWith(".pdf") 
-        ? options.fileName 
-        : `${options.fileName}.pdf`;
-      
+      const ext = options.isZip ? "zip" : "pdf";
+      const fileName = options.fileName.endsWith(`.${ext}`)
+        ? options.fileName
+        : `${options.fileName}.${ext}`;
+
       return processor.process([file], options, fileName);
     },
     [processor]

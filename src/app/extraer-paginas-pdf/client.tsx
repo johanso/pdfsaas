@@ -17,6 +17,8 @@ import { usePdfPages } from "@/hooks/usePdfPages";
 import { useExtractPages } from "@/hooks/useExtractPages";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function ExtractPdfClient() {
   const [file, setFile] = useState<File | null>(null);
@@ -32,6 +34,7 @@ export default function ExtractPdfClient() {
     selectAll,
     deselectAll,
     invertSelection,
+    selectByRange,
     reset: resetSelection
   } = usePageSelection(pages.length);
 
@@ -100,6 +103,13 @@ export default function ExtractPdfClient() {
     resetSelection();
   };
 
+  const handleRangeChange = (input: string) => {
+    const sanitized = input
+      .replace(/[^0-9,-]/g, "")
+      .replace(/^0+|(?<=[,-])0+/g, "");
+    selectByRange(sanitized);
+  };
+
   const handlePreSubmit = () => {
     if (!file) return;
     if (selectedPages.length === 0) {
@@ -136,7 +146,7 @@ export default function ExtractPdfClient() {
       <PdfToolLayout
         toolId="extract-pages"
         title="Extraer Páginas de PDF"
-        description="Elimina páginas no deseadas o guarda solo las que necesitas. Herramienta visual rápida para separar hojas sueltas o crear nuevos documentos PDF."
+        description="Selecciona las páginas que deseas conservar o extraer. Herramienta visual rápida para separar hojas sueltas o crear nuevos documentos PDF. Compatible con selección por rangos"
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
@@ -147,9 +157,9 @@ export default function ExtractPdfClient() {
           onInvertSelection: invertSelection,
         }}
         summaryItems={[
+          { label: "Archivo", value: file ? file.name : "Ninguno" },
           { label: "Total páginas", value: pages.length },
-          { label: "Seleccionadas", value: selectedPages.length },
-          { label: "Modo", value: extractMode === "merge" ? "Fusionar en un PDF" : "Archivos separados" },
+          { label: "Páginas a extraer", value: selectedPages.length },
         ]}
         downloadButtonText={isProcessing ? "Procesando..." : (extractMode === "separate" && selectedPages.length > 1 ? "Descargar ZIP" : "Descargar PDF")}
         isDownloadDisabled={isProcessing || selectedPages.length === 0}
@@ -157,7 +167,19 @@ export default function ExtractPdfClient() {
         isGridLoading={file !== null && pages.length === 0}
         sidebarCustomControls={
           <>
-            <div className="space-y-4 pt-2">
+            <div className="space-y-2 pt-2">
+              <Label className="text-sm font-medium">Selección por rango:</Label>
+              <Input
+                className="h-10 text-sm bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-none"
+                placeholder="Ej: 1, 3-5, 8"
+                onChange={(e) => handleRangeChange(e.target.value)}
+              />
+              <p className="text-[11px] text-zinc-500">
+                Usa comas y guiones para especificar páginas
+              </p>
+            </div>
+
+            <div className="space-y-4">
               <p className="text-sm font-medium">¿Cómo quieres descargar?</p>
               <div className="flex flex-col gap-3">
                 <button
@@ -251,14 +273,14 @@ export default function ExtractPdfClient() {
           toolMetrics={
             result
               ? {
-                  type: "pages",
-                  data: {
-                    pagesProcessed: selectedPages.length,
-                    pagesTotal: pages.length,
-                    operation: "Extraídas",
-                    resultSize: result.resultSize,
-                  }
+                type: "pages",
+                data: {
+                  pagesProcessed: selectedPages.length,
+                  pagesTotal: pages.length,
+                  operation: "Extraídas",
+                  resultSize: result.resultSize,
                 }
+              }
               : undefined
           }
         />

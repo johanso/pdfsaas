@@ -105,7 +105,7 @@ export const PDF_CARD_PRESETS = {
 
   // Para Eliminar Páginas (con selección)
   delete: {
-    draggable: true,
+    draggable: false,
     selectable: true,
     rotatable: false,
     removable: false,
@@ -130,7 +130,7 @@ export const PDF_CARD_PRESETS = {
 
   // Para Extraer Páginas (sin drag, con selección)
   extract: {
-    draggable: true,
+    draggable: false,
     selectable: true,
     rotatable: false,
     removable: false,

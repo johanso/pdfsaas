@@ -6,10 +6,9 @@
 import { useCallback } from "react";
 import {
   useToolProcessor,
-  type ProcessingResult,
-  type UploadStats,
+  type ProcessingResult
 } from "./core/useToolProcessor";
-import { mapProcessorPhaseToLegacy, type LegacyPhase } from "./core/phase-mapper";
+import { mapProcessorPhaseToLegacy } from "./core/phase-mapper";
 
 // ============================================================================
 // TYPES
@@ -69,6 +68,7 @@ export function useExtractPages() {
       formData.append("file", files[0]);
       formData.append("mode", "extract");
       formData.append("config", JSON.stringify(options.config));
+      formData.append("fileName", options.fileName);
       
       return formData;
     },
