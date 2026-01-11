@@ -1,11 +1,13 @@
 "use client";
 
+import { memo, useState } from "react";
+
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { GripVertical, X, Check, RotateCw, RotateCcw, InfoIcon, Copy } from "lucide-react";
+import { GripVertical, X, Check, RotateCw, RotateCcw, InfoIcon, Copy, Search } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import BootstrapIcon from "../bootstrapIcon";
@@ -24,6 +26,9 @@ const PdfThumbnail = dynamic(() => import("../pdf-thumbnail").then((mod) => mod.
   loading: () => <ThumbnailSkeleton />,
 });
 
+const PdfPreviewModal = dynamic(() => import("./pdf-preview-modal").then((mod) => mod.PdfPreviewModal), {
+  ssr: false,
+});
 // ============================================
 // TIPOS
 // ============================================
@@ -211,8 +216,8 @@ export const PDF_CARD_PRESETS = {
 };
 
 import { FileText } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
-import { memo } from "react";
 
 // ============================================
 // COMPONENTE PRINCIPAL
@@ -253,6 +258,8 @@ export const PdfCard = memo(function PdfCard({
 
   const rotation = data.rotation || 0;
   const pageNumber = data.pageNumber || 1;
+
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Detectar si es un archivo de Office
   const isOfficeFile = () => {
@@ -355,6 +362,18 @@ export const PdfCard = memo(function PdfCard({
 
           {/* Actions */}
           <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 text-zinc-400 hover:text-primary hover:bg-primary/10 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsPreviewOpen(true);
+              }}
+              title="Vista previa"
+            >
+              <Search className="w-4 h-4" />
+            </Button>
             {(allowDelete || removable) && onRemove && (
               <Button
                 size="icon"
@@ -422,21 +441,47 @@ export const PdfCard = memo(function PdfCard({
             </div>
 
             <div className="flex items-center gap-1 shrink-0">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 text-zinc-500 hover:text-primary cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsPreviewOpen(true);
+                    }}
+                  >
+                    <Search className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Vista previa</p>
+                </TooltipContent>
+              </Tooltip>
+
               {customActions}
+
               {/* Delete Action */}
               {(allowDelete || removable) && onRemove && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5 text-zinc-500 hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemove();
-                  }}
-                  title="Eliminar"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 text-zinc-500 hover:text-destructive cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemove();
+                      }}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Quitar este archivo</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
           </div>
@@ -520,7 +565,7 @@ export const PdfCard = memo(function PdfCard({
 
           {/* Footer Actions */}
           {(rotatable || allowRotateLeft || allowRotateRight || subtitle) && (
-            <div className="w-max  absolute left-1/2 -translate-x-1/2 bottom-3 rounded-full shadow-sm h-8 flex items-center justify-center gap-2 px-3 bg-white dark:bg-zinc-900">
+            <div className="w-max absolute left-1/2 -translate-x-1/2 bottom-4 rounded-full shadow-sm h-8 flex items-center justify-center gap-2 px-3 bg-white dark:bg-zinc-900">
 
               {/* Left Rotation */}
               {allowRotateLeft && onRotateLeft && (
@@ -595,6 +640,14 @@ export const PdfCard = memo(function PdfCard({
           )}
         </CardContent>
       </Card>
+
+      <PdfPreviewModal
+        file={data.file}
+        pageNumber={data.pageNumber}
+        isOpen={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        title={title}
+      />
     </div>
   );
 });

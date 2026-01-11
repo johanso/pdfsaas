@@ -56,6 +56,7 @@ pdfsaas/
 │   │   ├── pdf-system/        # Sistema de tarjetas PDF
 │   │   │   ├── pdf-card.tsx   # Tarjeta individual de PDF/página
 │   │   │   ├── pdf-grid.tsx   # Grid con DnD
+│   │   │   ├── pdf-preview-modal.tsx # Visor de PDF avanzado (zoom, multi-página)
 │   │   │   └── pdf-tool-layout.tsx  # Layout compartido para tools
 │   │   └── [componente].tsx   # Componentes específicos
 │   │
@@ -253,7 +254,21 @@ Errores manejados en niveles jerárquicos:
 </ErrorBoundary>
 ```
 
-### 6. **Typed Error System**
+### 6. **Dynamic Loading Pattern (Client-Only Components)**
+
+Los componentes que consumen librerías pesadas o incompatibles con SSR (como `pdfjs-dist`) deben cargarse dinámicamente:
+
+```tsx
+// components/pdf-system/pdf-card.tsx
+const PdfPreviewModal = dynamic(
+  () => import("./pdf-preview-modal").then((m) => m.PdfPreviewModal),
+  { ssr: false }
+);
+```
+
+**Regla**: Cualquier componente que importe `pdfjs-dist` o `react-pdf` debe exportarse/importarse usando este patrón para evitar el error `Object.defineProperty called on non-object` durante el SSR.
+
+### 7. **Typed Error System**
 
 Sistema de errores con códigos y mensajes amigables:
 

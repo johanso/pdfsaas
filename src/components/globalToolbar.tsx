@@ -48,7 +48,7 @@ export function GlobalToolbar({
   // Desktop implementation
   const DesktopToolbar = () => (
     <div className="hidden lg:flex justify-start items-center gap-2 overflow-x-auto mb-4">
-      <div className="flex relative left-1 gap-1 bg-white border dark:bg-card px-2 py-1 my-0.5 rounded-lg">
+      <div className="flex relative left-1 gap-1 bg-white border dark:bg-card p-1 my-0.5 rounded-lg">
         {/* Grupo Selección */}
         {features.selection && (
           <>
@@ -86,7 +86,7 @@ export function GlobalToolbar({
           <>
             <TooltipButton
               icon="sort-alpha-down"
-              variant="ghost"
+              variant="secondary"
               side="top"
               disabled={!actions.onSortAZ}
               tooltip="Ordenar alfabéticamente (A-Z)"
@@ -95,7 +95,7 @@ export function GlobalToolbar({
 
             <TooltipButton
               icon="sort-alpha-down-alt"
-              variant="ghost"
+              variant="secondary"
               side="top"
               disabled={!actions.onSortZA}
               tooltip="Ordenar alfabéticamente (Z-A)"

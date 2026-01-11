@@ -11,17 +11,15 @@ export function ButtonDownload({
   disabled: any;
 }) {
   return (
-    <div className="lg:border-t lg:border-zinc-200 dark:lg:border-zinc-800">
-      <Button
-        variant="hero"
-        className="w-full py-6 font-medium"
-        size="lg"
-        onClick={handleOpenSaveDialog}
-        disabled={disabled}
-      >
-        {buttonText}
-        <ArrowDownToLine className="w-4 h-4" />
-      </Button>
-    </div>
+    <Button
+      variant="hero"
+      className="w-full py-6 font-medium"
+      size="lg"
+      onClick={handleOpenSaveDialog}
+      disabled={disabled}
+    >
+      {buttonText}
+      <ArrowDownToLine className="w-4 h-4" />
+    </Button>
   )
 }

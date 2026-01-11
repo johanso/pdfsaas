@@ -97,12 +97,11 @@ export default function UnirPdfClient() {
         actions={{
           onSortAZ: sortAZ,
           onSortZA: sortZA,
-
         }}
         summaryItems={[
-          { label: "Total archivos", value: files.length },
+          { label: "Archivos cargados", value: files.length },
           { label: "Total páginas a unir", value: files.reduce((acc, f) => acc + (f.pageCount || 0), 0) },
-          { label: "Peso total", value: (files.reduce((acc, f) => acc + f.file.size, 0) / 1024 / 1024).toFixed(2) + " MB" },
+          { label: "Peso final total", value: (files.reduce((acc, f) => acc + f.file.size, 0) / 1024 / 1024).toFixed(2) + " MB" },
         ]}
         downloadButtonText={isProcessing ? "Procesando..." : "Unir y Descargar PDF"}
         isDownloadDisabled={files.length < 2 || isProcessing}
