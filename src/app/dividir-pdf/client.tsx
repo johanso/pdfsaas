@@ -135,8 +135,6 @@ export default function SplitPdfClient() {
     });
   };
 
-  // const rangeGroups = getRangeGroups(); // Moved to useMemo above
-
   return (
     <>
       <PdfToolLayout
@@ -171,7 +169,7 @@ export default function SplitPdfClient() {
               <div className="space-y-4">
                 {mode === "ranges" && (
                   <div className="text-sm text-zinc-500">
-                    <p className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">Modo Rangos</p>
+                    <p className="mb-2 font-medium text-zinc-900 dark:text-zinc-100">Rangos personalizados</p>
                     <p>Haz clic en las tijeras entre las páginas para crear nuevos grupos.</p>
                     {rangeGroups.length > 0 && (
                       <div className="mt-4 space-y-3">

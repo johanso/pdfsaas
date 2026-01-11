@@ -6,10 +6,9 @@
 import { useCallback } from "react";
 import {
   useToolProcessor,
-  type ProcessingResult,
-  type UploadStats,
+  type ProcessingResult
 } from "./core/useToolProcessor";
-import { mapProcessorPhaseToLegacy, type LegacyPhase } from "./core/phase-mapper";
+import { mapProcessorPhaseToLegacy } from "./core/phase-mapper";
 
 // ============================================================================
 // TYPES
@@ -72,7 +71,8 @@ export function useSplitPdf() {
       formData.append("file", files[0]);
       formData.append("mode", options.mode);
       formData.append("config", JSON.stringify(options.config));
-      
+      formData.append("fileName", options.fileName);
+
       return formData;
     },
 

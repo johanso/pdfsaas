@@ -90,7 +90,7 @@ export default function UnirPdfClient() {
           { label: "Total páginas a unir", value: files.reduce((acc, f) => acc + (f.pageCount || 0), 0) },
           { label: "Peso final total", value: (files.reduce((acc, f) => acc + f.file.size, 0) / 1024 / 1024).toFixed(2) + " MB" },
         ]}
-        downloadButtonText={isProcessing ? "Procesando..." : "Unir y Descargar PDF"}
+        downloadButtonText={isProcessing ? "Procesando..." : "Descargar PDF"}
         isDownloadDisabled={files.length < 2 || isProcessing}
         onDownload={() => setIsDialogOpen(true)}
         isGridLoading={isLoading && files.length === 0}
