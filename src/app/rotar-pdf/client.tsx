@@ -10,7 +10,7 @@ import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import ProcessingScreen from "@/components/processing-screen";
 
 // Hooks
-import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { useRotatePdf } from "@/hooks/useRotatePdf";
 import { usePdfPages } from "@/hooks/usePdfPages";
 
 export default function RotatePdfClient() {
@@ -23,13 +23,15 @@ export default function RotatePdfClient() {
     isProcessing,
     progress,
     isComplete,
-    fileName,
+    phase,
     operation,
-    processAndDownload,
+    uploadStats,
+    result,
+    rotate,
     handleDownloadAgain,
-    handleContinueEditing,
-    handleStartNew
-  } = usePdfProcessing();
+    handleStartNew,
+    cancelOperation,
+  } = useRotatePdf();
 
 
   useEffect(() => {
@@ -59,24 +61,14 @@ export default function RotatePdfClient() {
     // Close dialog immediately
     setIsDialogOpen(false);
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     const pageInstructions = pages.map(p => ({
       originalIndex: p.originalIndex - 1,
       rotation: p.rotation
     }));
 
-    formData.append("pageInstructions", JSON.stringify(pageInstructions));
-
-    await processAndDownload(outputName, formData, {
-      endpoint: "/api/worker/rotate-pdf",
-      extension: "pdf",
-      operation: "Rotando PDF",
-      successMessage: "¡PDF rotado correctamente!",
-      onContinueEditing: () => {
-        // Keep files and state
-      }
+    await rotate(file, {
+      pageInstructions,
+      fileName: outputName,
     });
   };
 
@@ -146,7 +138,7 @@ export default function RotatePdfClient() {
         onDownload={() => setIsDialogOpen(true)}
         isGridLoading={isInitialLoading && pages.length === 0}
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: "documento-modificado",
           onSave: handleSave,
@@ -176,13 +168,32 @@ export default function RotatePdfClient() {
       {
         (isProcessing || isComplete) && (
           <ProcessingScreen
-            fileName={fileName}
+            fileName={result?.fileName || "documento.pdf"}
             operation={operation}
             progress={progress}
             isComplete={isComplete}
+            phase={phase}
+            uploadStats={uploadStats}
             onDownload={handleDownloadAgain}
-            onEditAgain={() => handleContinueEditing()}
-            onStartNew={() => handleStartNew(handleReset)}
+            onEditAgain={handleStartNew}
+            onStartNew={() => {
+              handleStartNew();
+              handleReset();
+            }}
+            onCancel={cancelOperation}
+            toolMetrics={
+              result
+                ? {
+                    type: "pages",
+                    data: {
+                      pagesProcessed: pages.filter(p => (p.rotation % 360) !== 0).length,
+                      pagesTotal: pages.length,
+                      operation: "Rotadas",
+                      resultSize: result.resultSize,
+                    }
+                  }
+                : undefined
+            }
           />
         )
       }

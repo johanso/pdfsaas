@@ -437,7 +437,7 @@ export default function ImageToPdfClient() {
           </>
         }
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: images.length === 1
             ? images[0].file.name.replace(/\.[^/.]+$/, "")

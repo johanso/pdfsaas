@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 
 // Hooks
 import { usePdfLoader } from "@/hooks/usePdfLoader";
-import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { useSplitPdf } from "@/hooks/useSplitPdf";
 
 export default function SplitPdfClient() {
   const [file, setFile] = useState<File | null>(null);
@@ -30,13 +30,15 @@ export default function SplitPdfClient() {
     isProcessing,
     progress,
     isComplete,
-    fileName,
+    phase,
     operation,
-    processAndDownload,
+    uploadStats,
+    result,
+    split,
     handleDownloadAgain,
-    handleContinueEditing,
-    handleStartNew
-  } = usePdfProcessing();
+    handleStartNew,
+    cancelOperation,
+  } = useSplitPdf();
 
   const handleReset = () => {
     setFile(null);
@@ -122,20 +124,14 @@ export default function SplitPdfClient() {
 
     setShowSaveDialog(false);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("mode", mode);
-    let config = mode === "ranges" ? { ranges } : { size: fixedSize };
-    formData.append("config", JSON.stringify(config));
+    const config = mode === "ranges" ? { ranges } : { size: fixedSize };
+    const isZip = getIsZip();
 
-    await processAndDownload(fileName, formData, {
-      endpoint: "/api/worker/split-pdf",
-      extension: getIsZip() ? "zip" : "pdf",
-      operation: "Dividiendo PDF",
-      successMessage: "¡Archivo procesado correctamente!",
-      onContinueEditing: () => {
-        // Keep files and state
-      }
+    await split(file, {
+      mode,
+      config,
+      fileName,
+      isZip,
     });
   };
 
@@ -243,7 +239,7 @@ export default function SplitPdfClient() {
           </>
         }
         saveDialogProps={{
-          isOpen: showSaveDialog,
+          open: showSaveDialog,
           onOpenChange: setShowSaveDialog,
           defaultName: file?.name.replace(".pdf", "") + (mode === "ranges" ? "-split" : "-fixed") || "",
           onSave: handleSubmit,
@@ -270,13 +266,30 @@ export default function SplitPdfClient() {
 
       {(isProcessing || isComplete) && (
         <ProcessingScreen
-          fileName={fileName}
+          fileName={result?.fileName || "documento.pdf"}
           operation={operation}
           progress={progress}
           isComplete={isComplete}
+          phase={phase}
+          uploadStats={uploadStats}
           onDownload={handleDownloadAgain}
-          onEditAgain={() => handleContinueEditing()}
-          onStartNew={() => handleStartNew(handleReset)}
+          onEditAgain={handleStartNew}
+          onStartNew={() => {
+            handleStartNew();
+            handleReset();
+          }}
+          onCancel={cancelOperation}
+          toolMetrics={
+            result
+              ? {
+                  type: "split",
+                  data: {
+                    outputFiles: result.outputFiles,
+                    totalPages: numPages,
+                  }
+                }
+              : undefined
+          }
         />
       )}
     </>

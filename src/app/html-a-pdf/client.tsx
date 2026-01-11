@@ -15,7 +15,7 @@ import ProcessingScreen from "@/components/processing-screen";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 
 // Hooks
-import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { useHtmlToPdf } from "@/hooks/useHtmlToPdf";
 import { getApiUrl } from "@/lib/api";
 
 type InputMode = "file" | "url";
@@ -85,13 +85,15 @@ export default function HtmlToPdfClient() {
     isProcessing,
     progress,
     isComplete,
-    fileName,
+    phase,
     operation,
-    processAndDownload,
+    uploadStats,
+    result,
+    convert,
     handleDownloadAgain,
-    handleContinueEditing,
-    handleStartNew
-  } = usePdfProcessing();
+    handleStartNew,
+    cancelOperation,
+  } = useHtmlToPdf();
 
   const buildViewportPayload = (key: ViewportKey) => ({
     width: VIEWPORT_CONFIG[key].width,
@@ -225,29 +227,15 @@ export default function HtmlToPdfClient() {
   }, [updatePreviewScale]);
 
   const handleConvert = async (saveName: string) => {
-    const formData = new FormData();
-
-    if (inputMode === "file" && file) {
-      formData.append("file", file);
-      formData.append("isUrl", "false");
-    } else if (inputMode === "url" && url) {
-      formData.append("url", url);
-      formData.append("isUrl", "true");
-    } else {
-      return;
-    }
-
-    formData.append("viewport", JSON.stringify(buildViewportPayload(viewport)));
-    formData.append("margins", JSON.stringify(buildMarginsPayload()));
-
     setIsDialogOpen(false);
 
-    await processAndDownload(saveName, formData, {
-      endpoint: "/api/worker/html-to-pdf",
-      extension: "pdf",
-      operation: "Convirtiendo HTML a PDF",
-      successMessage: "¡PDF generado correctamente!",
-      onContinueEditing: () => { }
+    await convert({
+      mode: inputMode,
+      file: file || undefined,
+      url: url || undefined,
+      viewport: buildViewportPayload(viewport),
+      margins: buildMarginsPayload(),
+      fileName: saveName,
     });
   };
 
@@ -449,7 +437,7 @@ export default function HtmlToPdfClient() {
         isDownloadDisabled={!hasFiles || isProcessing}
         onDownload={() => setIsDialogOpen(true)}
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: getDefaultFileName(),
           onSave: handleConvert,
@@ -542,13 +530,30 @@ export default function HtmlToPdfClient() {
 
       {(isProcessing || isComplete) && (
         <ProcessingScreen
-          fileName={fileName}
+          fileName={result?.fileName || "documento.pdf"}
           operation={operation}
           progress={progress}
           isComplete={isComplete}
+          phase={phase}
+          uploadStats={uploadStats}
           onDownload={handleDownloadAgain}
-          onEditAgain={() => handleContinueEditing()}
-          onStartNew={() => handleStartNew(handleReset)}
+          onEditAgain={handleStartNew}
+          onStartNew={() => {
+            handleStartNew();
+            handleReset();
+          }}
+          onCancel={cancelOperation}
+          toolMetrics={
+            result
+              ? {
+                  type: "convert",
+                  data: {
+                    originalFormat: inputMode === "url" ? "URL" : "HTML",
+                    resultSize: result.resultSize,
+                  }
+                }
+              : undefined
+          }
         />
       )}
     </>

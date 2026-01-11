@@ -317,7 +317,7 @@ export default function OcrPdfClient() {
         isGridLoading={isLoading}
         sidebarCustomControls={sidebarControls}
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: file?.name.replace(/\.pdf$/i, "") || "documento",
           onSave: handleSaveWithName,

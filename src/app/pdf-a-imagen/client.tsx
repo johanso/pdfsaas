@@ -367,7 +367,7 @@ export default function PdfToImageClient() {
           </div>
         }
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: file ? file.name.replace(".pdf", "") : "pdf-images",
           onSave: handleSubmit,

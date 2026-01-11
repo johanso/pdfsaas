@@ -190,7 +190,7 @@ export default function GrayscalePdfClient() {
           </div>
         }
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: file ? file.name.replace(".pdf", "") : "grayscale",
           onSave: handleSubmit,

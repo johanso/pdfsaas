@@ -17,7 +17,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { usePdfFiles } from "@/hooks/usePdfFiles";
 import {
   useUnlockPdf,
-  formatBytes,
   type UnlockCheckResult,
 } from "@/hooks/useUnlockPdf";
 
@@ -198,7 +197,7 @@ export default function UnlockPdfClient() {
           </div>
         }
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: file ? file.name.replace(".pdf", "") : "desbloqueado",
           onSave: handleSubmit,

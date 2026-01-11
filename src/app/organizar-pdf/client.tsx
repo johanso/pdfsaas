@@ -11,7 +11,7 @@ import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import ProcessingScreen from "@/components/processing-screen";
 
 // Hooks
-import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { useOrganizePdf } from "@/hooks/useOrganizePdf";
 import { usePdfMultiLoader } from "@/hooks/usePdfMultiLoader";
 import { PageData } from "@/types";
 
@@ -39,13 +39,15 @@ export default function OrganizePdfClient() {
     isProcessing,
     progress,
     isComplete,
-    fileName,
+    phase,
     operation,
-    processAndDownload,
+    uploadStats,
+    result,
+    organize,
     handleDownloadAgain,
-    handleContinueEditing,
-    handleStartNew
-  } = usePdfProcessing();
+    handleStartNew,
+    cancelOperation,
+  } = useOrganizePdf();
   const { loadPdfPages } = usePdfMultiLoader();
 
   // Unique files for summary
@@ -170,10 +172,7 @@ export default function OrganizePdfClient() {
     // Close dialog immediately
     setShowSaveDialog(false);
 
-    const formData = new FormData();
     const uniqueFilesToUpload = Array.from(new Set(pages.map(p => p.file).filter(f => !!f))) as File[];
-
-    uniqueFilesToUpload.forEach((f, i) => formData.append(`file-${i}`, f));
 
     const instructions = pages.map(p => ({
       fileIndex: p.file ? uniqueFilesToUpload.indexOf(p.file) : -1,
@@ -182,16 +181,9 @@ export default function OrganizePdfClient() {
       isBlank: !!p.isBlank
     }));
 
-    formData.append("instructions", JSON.stringify(instructions));
-
-    await processAndDownload(outputName, formData, {
-      endpoint: "/api/worker/organize-pdf",
-      extension: "pdf",
-      operation: "Organizando PDF",
-      successMessage: "¡PDF organizado correctamente!",
-      onContinueEditing: () => {
-        // Keep state
-      }
+    await organize(uniqueFilesToUpload, {
+      instructions,
+      fileName: outputName,
     });
   };
 
@@ -235,7 +227,7 @@ export default function OrganizePdfClient() {
         onDownload={() => setShowSaveDialog(true)}
         isGridLoading={isGridLoading}
         saveDialogProps={{
-          isOpen: showSaveDialog,
+          open: showSaveDialog,
           onOpenChange: setShowSaveDialog,
           defaultName: "documento-organizado",
           onSave: handleSave,
@@ -284,13 +276,32 @@ export default function OrganizePdfClient() {
       {
         (isProcessing || isComplete) && (
           <ProcessingScreen
-            fileName={fileName}
+            fileName={result?.fileName || "documento.pdf"}
             operation={operation}
             progress={progress}
             isComplete={isComplete}
+            phase={phase}
+            uploadStats={uploadStats}
             onDownload={handleDownloadAgain}
-            onEditAgain={() => handleContinueEditing()}
-            onStartNew={() => handleStartNew(handleReset)}
+            onEditAgain={handleStartNew}
+            onStartNew={() => {
+              handleStartNew();
+              handleReset();
+            }}
+            onCancel={cancelOperation}
+            toolMetrics={
+              result
+                ? {
+                    type: "pages",
+                    data: {
+                      pagesProcessed: pages.length,
+                      pagesTotal: pages.length,
+                      operation: "Organizadas",
+                      resultSize: result.resultSize,
+                    }
+                  }
+                : undefined
+            }
           />
         )
       }

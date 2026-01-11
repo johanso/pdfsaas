@@ -10,7 +10,7 @@ import ProcessingScreen from "@/components/processing-screen";
 
 // Hooks
 import { usePdfFiles } from "@/hooks/usePdfFiles";
-import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { useExcelToPdf } from "@/hooks/useExcelToPdf";
 
 export default function ExcelToPdfClient() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -25,15 +25,17 @@ export default function ExcelToPdfClient() {
 
   const {
     isProcessing,
-    progress,
     isComplete,
-    fileName,
+    progress,
+    phase,
     operation,
-    processAndDownload,
+    uploadStats,
+    result,
+    convert,
     handleDownloadAgain,
-    handleContinueEditing,
-    handleStartNew
-  } = usePdfProcessing();
+    handleStartNew,
+    cancelOperation,
+  } = useExcelToPdf();
 
   const handleFilesSelected = (newFiles: File[]) => {
     // Validar extensión
@@ -59,18 +61,7 @@ export default function ExcelToPdfClient() {
     // Close dialog immediately
     setIsDialogOpen(false);
 
-    const formData = new FormData();
-    formData.append("file", files[0].file);
-
-    await processAndDownload(fileName, formData, {
-      endpoint: "/api/worker/excel-to-pdf",
-      extension: "pdf",
-      operation: "Convirtiendo Excel a PDF",
-      successMessage: "¡Documento convertido a PDF correctamente!",
-      onContinueEditing: () => {
-        // Keep files
-      }
-    });
+    await convert(files[0].file, { fileName });
   };
 
   return (
@@ -103,7 +94,7 @@ export default function ExcelToPdfClient() {
         onDownload={() => setIsDialogOpen(true)}
         isGridLoading={isLoading && files.length === 0}
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: files[0]?.name.replace(/\.(xlsx|xls)$/i, "") || "hoja-calculo",
           onSave: handleSubmit,
@@ -142,13 +133,31 @@ export default function ExcelToPdfClient() {
       {/* Processing Screen */}
       {(isProcessing || isComplete) && (
         <ProcessingScreen
-          fileName={fileName}
+          fileName={result?.fileName || "documento.pdf"}
           operation={operation}
           progress={progress}
           isComplete={isComplete}
+          phase={phase}
+          uploadStats={uploadStats}
           onDownload={handleDownloadAgain}
-          onEditAgain={() => handleContinueEditing()}
-          onStartNew={() => handleStartNew(reset)}
+          onEditAgain={handleStartNew}
+          onStartNew={() => {
+            handleStartNew();
+            reset();
+          }}
+          onCancel={cancelOperation}
+          toolMetrics={
+            result
+              ? {
+                  type: "convert",
+                  data: {
+                    originalFormat: files[0]?.name.split('.').pop()?.toUpperCase() || "EXCEL",
+                    sheets: result.sheets,
+                    resultSize: result.resultSize,
+                  }
+                }
+              : undefined
+          }
         />
       )}
     </>

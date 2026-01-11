@@ -41,6 +41,54 @@ export interface SuccessDetails {
   savedBytes?: number;
 }
 
+/**
+ * Métricas específicas por herramienta para mostrar en el resultado
+ */
+export interface ToolMetrics {
+  /** Tipo de herramienta para renderizado específico */
+  type: 
+    | "compression"    // Compresión: muestra ahorro
+    | "merge"          // Unir: muestra archivos y páginas
+    | "split"          // Dividir: muestra archivos generados
+    | "pages"          // Rotar/Organizar/Extraer/Eliminar: muestra páginas
+    | "convert"        // Conversiones Office/HTML: muestra formato
+    | "protect"        // Proteger: muestra encriptación
+    | "repair"         // Reparar: muestra acciones
+    | "simple";        // Sin métricas específicas
+
+  /** Datos específicos según el tipo */
+  data?: {
+    // Compresión
+    originalSize?: number;
+    resultSize?: number;
+    reduction?: number;
+
+    // Merge
+    filesCount?: number;
+    totalPages?: number;
+
+    // Split
+    outputFiles?: number;
+
+    // Pages operations
+    pagesProcessed?: number;
+    pagesTotal?: number;
+    operation?: string; // "rotadas", "extraídas", "eliminadas", etc.
+
+    // Convert
+    originalFormat?: string;
+    sheets?: number;
+    slides?: number;
+
+    // Protect
+    encryption?: string;
+
+    // Repair
+    repairActions?: string[];
+    fullyRepaired?: boolean;
+  };
+}
+
 export interface CustomTip {
   icon: React.ComponentType<{ className?: string }>;
   text: string;
@@ -92,8 +140,11 @@ export interface ProcessingScreenProps {
   /** Descripción durante procesamiento */
   processingDescription?: string;
 
-  /** Detalles de éxito (para compresión) */
+  /** Detalles de éxito (para compresión) - DEPRECATED: usar toolMetrics */
   successDetails?: SuccessDetails;
+
+  /** Métricas específicas de la herramienta (nuevo sistema unificado) */
+  toolMetrics?: ToolMetrics;
 }
 
 // ============================================================================
@@ -170,20 +221,250 @@ function canCancel(phase: UIPhase): boolean {
   return ["uploading", "compressing", "preparing"].includes(phase);
 }
 
+// ============================================================================
+// TOOL METRICS COMPONENT
+// ============================================================================
+
 /**
- * Obtener texto de progreso según fase
+ * Componente para renderizar métricas específicas de cada herramienta
  */
-function getProgressText(phase: UIPhase): string {
-  if (phase === "uploading") {
-    return "Cargando archivos...";
+function ToolMetricsDisplay({ metrics }: { metrics: ToolMetrics }) {
+  const { type, data } = metrics;
+
+  if (!data) return null;
+
+  // Estilos compartidos
+  const containerClass = "bg-green-500/10 border border-green-500/20 rounded-2xl p-4 mt-4";
+  const labelClass = "text-[10px] text-zinc-500 uppercase";
+  const valueClass = "text-sm font-bold";
+  const highlightClass = "text-green-600 dark:text-green-400";
+  const dividerClass = "h-8 w-px bg-green-500/30";
+
+  switch (type) {
+    case "compression":
+      if (!data.originalSize || !data.resultSize) return null;
+      const savedBytes = data.originalSize - data.resultSize;
+      const reduction = data.reduction ?? ((savedBytes / data.originalSize) * 100);
+      return (
+        <div className={containerClass}>
+          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
+            Resultado de compresión
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <div className="text-left">
+              <p className={labelClass}>Original</p>
+              <p className={valueClass}>{formatBytes(data.originalSize)}</p>
+            </div>
+            <div className={dividerClass} />
+            <div className="text-left">
+              <p className={labelClass}>Comprimido</p>
+              <p className={`${valueClass} ${highlightClass}`}>{formatBytes(data.resultSize)}</p>
+            </div>
+            <div className={dividerClass} />
+            <div className="text-left">
+              <p className={labelClass}>Ahorro</p>
+              <p className={`${valueClass} ${highlightClass}`}>-{reduction.toFixed(1)}%</p>
+            </div>
+          </div>
+        </div>
+      );
+
+    case "merge":
+      return (
+        <div className={containerClass}>
+          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
+            Documentos fusionados
+          </p>
+          <div className="flex items-center justify-center gap-6">
+            <div className="text-center">
+              <p className={labelClass}>Archivos unidos</p>
+              <p className={`${valueClass} ${highlightClass} text-lg`}>{data.filesCount}</p>
+            </div>
+            <div className={dividerClass} />
+            <div className="text-center">
+              <p className={labelClass}>Total páginas</p>
+              <p className={`${valueClass} ${highlightClass} text-lg`}>{data.totalPages}</p>
+            </div>
+            {data.resultSize && (
+              <>
+                <div className={dividerClass} />
+                <div className="text-center">
+                  <p className={labelClass}>Tamaño final</p>
+                  <p className={valueClass}>{formatBytes(data.resultSize)}</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      );
+
+    case "split":
+      return (
+        <div className={containerClass}>
+          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
+            Documento dividido
+          </p>
+          <div className="flex items-center justify-center gap-6">
+            <div className="text-center">
+              <p className={labelClass}>Archivos creados</p>
+              <p className={`${valueClass} ${highlightClass} text-lg`}>{data.outputFiles}</p>
+            </div>
+            {data.totalPages && (
+              <>
+                <div className={dividerClass} />
+                <div className="text-center">
+                  <p className={labelClass}>Páginas procesadas</p>
+                  <p className={valueClass}>{data.totalPages}</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      );
+
+    case "pages":
+      return (
+        <div className={containerClass}>
+          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
+            {data.operation || "Páginas procesadas"}
+          </p>
+          <div className="flex items-center justify-center gap-6">
+            <div className="text-center">
+              <p className={labelClass}>Páginas {data.operation?.toLowerCase() || "procesadas"}</p>
+              <p className={`${valueClass} ${highlightClass} text-lg`}>{data.pagesProcessed}</p>
+            </div>
+            {data.pagesTotal && (
+              <>
+                <div className={dividerClass} />
+                <div className="text-center">
+                  <p className={labelClass}>Total en documento</p>
+                  <p className={valueClass}>{data.pagesTotal}</p>
+                </div>
+              </>
+            )}
+            {data.resultSize && (
+              <>
+                <div className={dividerClass} />
+                <div className="text-center">
+                  <p className={labelClass}>Tamaño final</p>
+                  <p className={valueClass}>{formatBytes(data.resultSize)}</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      );
+
+    case "convert":
+      return (
+        <div className={containerClass}>
+          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
+            Conversión completada
+          </p>
+          <div className="flex items-center justify-center gap-6">
+            <div className="text-center">
+              <p className={labelClass}>Formato original</p>
+              <p className={`${valueClass} uppercase`}>{data.originalFormat}</p>
+            </div>
+            <div className={dividerClass} />
+            <div className="text-center">
+              <p className={labelClass}>Formato final</p>
+              <p className={`${valueClass} ${highlightClass}`}>PDF</p>
+            </div>
+            {(data.sheets || data.slides) && (
+              <>
+                <div className={dividerClass} />
+                <div className="text-center">
+                  <p className={labelClass}>{data.slides ? "Diapositivas" : "Hojas"}</p>
+                  <p className={valueClass}>{data.slides || data.sheets}</p>
+                </div>
+              </>
+            )}
+            {data.resultSize && (
+              <>
+                <div className={dividerClass} />
+                <div className="text-center">
+                  <p className={labelClass}>Tamaño</p>
+                  <p className={valueClass}>{formatBytes(data.resultSize)}</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      );
+
+    case "protect":
+      return (
+        <div className={containerClass}>
+          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
+            PDF protegido
+          </p>
+          <div className="flex items-center justify-center gap-6">
+            <div className="text-center">
+              <p className={labelClass}>Encriptación</p>
+              <p className={`${valueClass} ${highlightClass}`}>{data.encryption || "256-bit AES"}</p>
+            </div>
+            {data.resultSize && (
+              <>
+                <div className={dividerClass} />
+                <div className="text-center">
+                  <p className={labelClass}>Tamaño</p>
+                  <p className={valueClass}>{formatBytes(data.resultSize)}</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      );
+
+    case "repair":
+      return (
+        <div className={containerClass}>
+          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
+            {data.fullyRepaired ? "Reparación completa" : "Reparación parcial"}
+          </p>
+          {data.repairActions && data.repairActions.length > 0 && (
+            <ul className="mt-2 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+              {data.repairActions.slice(0, 3).map((action, i) => (
+                <li key={i} className="flex items-center gap-2">
+                  <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  {action}
+                </li>
+              ))}
+              {data.repairActions.length > 3 && (
+                <li className="text-xs text-zinc-500">
+                  +{data.repairActions.length - 3} acciones más
+                </li>
+              )}
+            </ul>
+          )}
+        </div>
+      );
+
+    case "simple":
+    default:
+      // Solo muestra tamaño si está disponible
+      if (!data.resultSize) return null;
+      return (
+        <div className={containerClass}>
+          <div className="flex items-center justify-center gap-6">
+            {data.originalSize && (
+              <>
+                <div className="text-center">
+                  <p className={labelClass}>Original</p>
+                  <p className={valueClass}>{formatBytes(data.originalSize)}</p>
+                </div>
+                <div className={dividerClass} />
+              </>
+            )}
+            <div className="text-center">
+              <p className={labelClass}>Tamaño final</p>
+              <p className={`${valueClass} ${highlightClass}`}>{formatBytes(data.resultSize)}</p>
+            </div>
+          </div>
+        </div>
+      );
   }
-  if (phase === "processing") {
-    return "Procesando";
-  }
-  if (phase === "downloading") {
-    return "Descargando";
-  }
-  return "Preparando";
 }
 
 // ============================================================================
@@ -207,6 +488,7 @@ const ProcessingScreen = ({
   customTips,
   processingDescription,
   successDetails,
+  toolMetrics,
 }: ProcessingScreenProps) => {
   // Usar facts y tips personalizados o defaults
   const activeFunFacts = customFunFacts || DEFAULT_FUN_FACTS;
@@ -347,11 +629,6 @@ const ProcessingScreen = ({
                   <p className="text-sm font-medium text-foreground">
                     {uploadStats.currentFileName}
                   </p>
-                  {uploadStats.speed > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {formatBytes(uploadStats.speed)}/s • {formatTime(uploadStats.timeRemaining)} restante
-                    </p>
-                  )}
                 </div>
               )}
 
@@ -383,8 +660,11 @@ const ProcessingScreen = ({
                     Tu archivo se ha descargado exitosamente
                   </p>
 
-                  {/* Success details (compression results) */}
-                  {successDetails && (
+                  {/* Tool-specific metrics display */}
+                  {toolMetrics && <ToolMetricsDisplay metrics={toolMetrics} />}
+                  
+                  {/* Legacy success details (compression results) - for backwards compatibility */}
+                  {!toolMetrics && successDetails && (
                     <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 mt-4 text-center">
                       <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-1">
                         Resultado de compresión
@@ -420,10 +700,7 @@ const ProcessingScreen = ({
             {/* Progress Bar */}
             {showProgressBar && (
               <div className="mb-6">
-                <div className="mb-2 flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {getProgressText(phase)}
-                  </span>
+                <div className="mb-2 flex justify-end text-sm">
                   <span className="font-medium text-primary">
                     {Math.round(progress)}%
                   </span>

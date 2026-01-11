@@ -13,7 +13,7 @@ import ProcessingScreen from "@/components/processing-screen";
 import { Separator } from "@/components/ui/separator";
 
 // Hooks
-import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { useDeletePages } from "@/hooks/useDeletePages";
 import { usePdfPages } from "@/hooks/usePdfPages";
 import { usePageSelection } from "@/hooks/usePageSelection";
 
@@ -36,13 +36,15 @@ export default function DeletePagesClient() {
     isProcessing,
     progress,
     isComplete,
-    fileName,
+    phase,
     operation,
-    processAndDownload,
+    uploadStats,
+    result,
+    deletePages,
     handleDownloadAgain,
-    handleContinueEditing,
-    handleStartNew
-  } = usePdfProcessing();
+    handleStartNew,
+    cancelOperation,
+  } = useDeletePages();
 
   // Convertir selectedPages (números) a IDs para el PdfGrid
   const selectedIds = useMemo(() => pages
@@ -101,9 +103,6 @@ export default function DeletePagesClient() {
     // Close dialog immediately
     setIsDialogOpen(false);
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     // Enviar solo las páginas que NO están seleccionadas para eliminar
     const remainingPages = pages.filter(p => !selectedPages.includes(p.originalIndex));
 
@@ -112,16 +111,9 @@ export default function DeletePagesClient() {
       rotation: p.rotation
     }));
 
-    formData.append("pageInstructions", JSON.stringify(pageInstructions));
-
-    await processAndDownload(outputName, formData, {
-      endpoint: "/api/worker/delete-pages",
-      extension: "pdf",
-      operation: "Eliminando páginas",
-      successMessage: "¡PDF procesado correctamente!",
-      onContinueEditing: () => {
-        // Keep state
-      }
+    await deletePages(file, {
+      pageInstructions,
+      fileName: outputName,
     });
   };
 
@@ -166,7 +158,7 @@ export default function DeletePagesClient() {
           </>
         }
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: "documento-modificado",
           onSave: handleSave,
@@ -194,13 +186,32 @@ export default function DeletePagesClient() {
       {
         (isProcessing || isComplete) && (
           <ProcessingScreen
-            fileName={fileName}
+            fileName={result?.fileName || "documento.pdf"}
             operation={operation}
             progress={progress}
             isComplete={isComplete}
+            phase={phase}
+            uploadStats={uploadStats}
             onDownload={handleDownloadAgain}
-            onEditAgain={() => handleContinueEditing()}
-            onStartNew={() => handleStartNew(handleReset)}
+            onEditAgain={handleStartNew}
+            onStartNew={() => {
+              handleStartNew();
+              handleReset();
+            }}
+            onCancel={cancelOperation}
+            toolMetrics={
+              result
+                ? {
+                    type: "pages",
+                    data: {
+                      pagesProcessed: selectedPages.length,
+                      pagesTotal: pages.length,
+                      operation: "Eliminadas",
+                      resultSize: result.resultSize,
+                    }
+                  }
+                : undefined
+            }
           />
         )
       }

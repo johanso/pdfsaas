@@ -10,7 +10,7 @@ import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import ProcessingScreen from "@/components/processing-screen";
 
 // Hooks
-import { usePdfProcessing } from "@/hooks/usePdfProcessing";
+import { useMergePdf } from "@/hooks/useMergePdf";
 import { usePdfFiles } from "@/hooks/usePdfFiles";
 
 export default function UnirPdfClient() {
@@ -31,16 +31,15 @@ export default function UnirPdfClient() {
     isProcessing,
     progress,
     isComplete,
-    fileName,
-    operation,
     phase,
+    operation,
     uploadStats,
-    processAndDownload,
+    result,
+    merge,
     handleDownloadAgain,
-    handleContinueEditing,
     handleStartNew,
-    cancelProcess
-  } = usePdfProcessing();
+    cancelOperation,
+  } = useMergePdf();
 
   const handleFiles = useCallback(async (newFiles: File[]) => {
     await addFiles(newFiles);
@@ -57,23 +56,9 @@ export default function UnirPdfClient() {
 
     setIsDialogOpen(false);
 
-    const formData = new FormData();
-    files.forEach((f) => {
-      formData.append("files", f.file);
-    });
-
-    formData.append("fileName", `${outputName}.pdf`);
-
-    await processAndDownload(outputName, formData, {
-      endpoint: "/api/worker/merge-pdf",
-      extension: "pdf",
-      operation: "Uniendo PDFs",
-      successMessage: "¡PDF unido correctamente!",
-      onContinueEditing: () => {
-        // Keep files, just close processing screen
-      }
-    });
-  }, [files, processAndDownload]);
+    const fileList = files.map(f => f.file);
+    await merge(fileList, { fileName: `${outputName}.pdf` });
+  }, [files, merge]);
 
   const extractCardData = useCallback((f: any) => ({
     id: f.id,
@@ -157,16 +142,31 @@ export default function UnirPdfClient() {
       {
         (isProcessing || isComplete) && (
           <ProcessingScreen
-            fileName={fileName}
+            fileName={result?.fileName || "documento.pdf"}
             operation={operation}
             progress={progress}
             isComplete={isComplete}
             phase={phase}
             uploadStats={uploadStats}
             onDownload={handleDownloadAgain}
-            onEditAgain={() => handleContinueEditing()}
-            onStartNew={() => handleStartNew(reset)}
-            onCancel={cancelProcess}
+            onEditAgain={handleStartNew}
+            onStartNew={() => {
+              handleStartNew();
+              reset();
+            }}
+            onCancel={cancelOperation}
+            toolMetrics={
+              result
+                ? {
+                    type: "merge",
+                    data: {
+                      filesCount: files.length,
+                      totalPages: files.reduce((acc, f) => acc + (f.pageCount || 0), 0),
+                      resultSize: result.resultSize,
+                    }
+                  }
+                : undefined
+            }
           />
         )
       }
