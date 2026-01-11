@@ -123,20 +123,6 @@ const DEFAULT_TIPS: CustomTip[] = [
 // ============================================================================
 
 /**
- * Normalizar fase de UI a fase interna
- */
-function normalizePhase(phase: UIPhase): ProcessingPhase {
-  switch (phase) {
-    case "compressing":
-      return "preparing";
-    case "ready":
-      return "complete";
-    default:
-      return phase as ProcessingPhase;
-  }
-}
-
-/**
  * Obtener icono según la fase
  */
 function getPhaseIcon(phase: UIPhase, isComplete: boolean) {
@@ -187,12 +173,9 @@ function canCancel(phase: UIPhase): boolean {
 /**
  * Obtener texto de progreso según fase
  */
-function getProgressText(
-  phase: UIPhase,
-  uploadStats: UploadStats | null
-): string {
-  if (phase === "uploading" && uploadStats) {
-    return `${formatBytes(uploadStats.bytesUploaded)} / ${formatBytes(uploadStats.totalBytes)}`;
+function getProgressText(phase: UIPhase): string {
+  if (phase === "uploading") {
+    return "Cargando archivos...";
   }
   if (phase === "processing") {
     return "Procesando";
@@ -439,7 +422,7 @@ const ProcessingScreen = ({
               <div className="mb-6">
                 <div className="mb-2 flex justify-between text-sm">
                   <span className="text-muted-foreground">
-                    {getProgressText(phase, uploadStats)}
+                    {getProgressText(phase)}
                   </span>
                   <span className="font-medium text-primary">
                     {Math.round(progress)}%

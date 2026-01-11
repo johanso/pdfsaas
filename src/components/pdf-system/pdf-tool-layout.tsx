@@ -53,7 +53,7 @@ interface PdfToolLayoutProps {
 
   // Dialogs
   saveDialogProps: {
-    isOpen: boolean;
+    open: boolean;
     onOpenChange: (open: boolean) => void;
     defaultName: string;
     onSave: (name: string) => void;
@@ -269,7 +269,7 @@ export function PdfToolLayout({
       </div>
 
       <SaveDialog
-        open={saveDialogProps.isOpen}
+        open={saveDialogProps.open}
         onOpenChange={saveDialogProps.onOpenChange}
         defaultName={saveDialogProps.defaultName}
         onSave={saveDialogProps.onSave}

@@ -35,7 +35,7 @@ export function SaveDialog({
   defaultName,
   onSave,
   isProcessing,
-  title = "Guardar archivo",
+  title,
   description = "Asigna un nombre a tu archivo PDF antes de descargarlo.",
   extension = "pdf"
 }: SaveDialogProps) {
@@ -89,49 +89,50 @@ export function SaveDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="mx-auto w-[calc(100%-1rem)] rounded-lg max-w-sm">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-2">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="filename" className="text-right">
-              Nombre
+        <div className="flex flex-col">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="filename" className="text-sm font-medium">
+              Nombre del archivo
             </Label>
-            <div className="col-span-3 space-y-2">
-              <div className="flex items-center gap-2">
-                <Input
-                  id="filename"
-                  value={name}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className={cn(
-                    "flex-1",
-                    error && "border-red-500 focus-visible:ring-red-500"
-                  )}
-                  placeholder="nombre-archivo"
-                  disabled={isProcessing}
-                />
-                <span className="text-sm text-zinc-500 shrink-0">.{extension}</span>
-              </div>
-              {error && (
-                <p className="text-xs text-red-500">{error}</p>
-              )}
+            <div className="relative flex items-center w-full">
+              <Input
+                id="filename"
+                value={name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                autoFocus
+                className={cn(
+                  "flex-1 shadow-none pr-12 h-11",
+                  error && "border-red-500 focus-visible:ring-red-500"
+                )}
+                placeholder="nombre-archivo"
+                disabled={isProcessing}
+              />
+              <span className="absolute right-3 text-sm font-medium text-zinc-400 select-none">
+                .{extension}
+              </span>
             </div>
+            {error && <p className="text-[11px] font-medium text-red-500 mt-1">{error}</p>}
           </div>
         </div>
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 flex flex-row">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isProcessing}
+            className="flex-1"
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
             disabled={isProcessing || !!error}
+            className="flex-1"
           >
             {isProcessing ? (
               <>

@@ -62,6 +62,8 @@ export default function UnirPdfClient() {
       formData.append("files", f.file);
     });
 
+    formData.append("fileName", `${outputName}.pdf`);
+
     await processAndDownload(outputName, formData, {
       endpoint: "/api/worker/merge-pdf",
       extension: "pdf",
@@ -108,12 +110,11 @@ export default function UnirPdfClient() {
         onDownload={() => setIsDialogOpen(true)}
         isGridLoading={isLoading && files.length === 0}
         saveDialogProps={{
-          isOpen: isDialogOpen,
+          open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
           defaultName: "archivos-unidos",
           onSave: handleSubmit,
           isProcessing,
-          title: "Guardar archivo",
           description: "Asigna un nombre a tu archivo PDF fusionado antes de descargarlo.",
         }}
         successDialogProps={{
