@@ -173,9 +173,9 @@ export const PDF_CARD_PRESETS = {
 
   pdftoImg: {
     draggable: false,
-    selectable: true,
+    selectable: false,
     rotatable: false,
-    removable: false,
+    removable: true,
     showPageNumber: true,
     selectedColorName: "green",
     iconSelectedName: "check",
@@ -666,6 +666,7 @@ export const PdfCard = memo(function PdfCard({
         isOpen={isPreviewOpen}
         onOpenChange={setIsPreviewOpen}
         title={title}
+        onRemove={onRemove}
       />
     </div>
   );

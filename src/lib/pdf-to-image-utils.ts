@@ -71,7 +71,6 @@ export const FORMAT_INFO: Record<ImageFormat, FormatInfo> = {
 export function shouldUseServer(
     file: File | null,
     totalPages: number,
-    selectedPagesCount: number,
     format: ImageFormat,
     dpi?: DpiOption
 ): { useServer: boolean; reason?: string } {
@@ -105,12 +104,6 @@ export function shouldUseServer(
         };
     }
 
-    if (selectedPagesCount > CLIENT_LIMITS.maxSelectedPages) {
-        return {
-            useServer: true,
-            reason: "Muchas páginas seleccionadas, procesando en servidor",
-        };
-    }
 
     return { useServer: false };
 }

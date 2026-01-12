@@ -93,6 +93,7 @@ interface PdfPreviewModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   title?: string;
+  onRemove?: () => void;
 }
 
 export function PdfPreviewModal({
@@ -101,6 +102,7 @@ export function PdfPreviewModal({
   isOpen,
   onOpenChange,
   title = "Vista Previa",
+  onRemove,
 }: PdfPreviewModalProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [scale, setScale] = useState<number>(1.0);
@@ -189,6 +191,22 @@ export function PdfPreviewModal({
             >
               <Download className="h-4 w-4" />
             </Button>
+
+            {onRemove && (
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 hover:bg-red-50 dark:hover:bg-red-900/20 text-muted-foreground hover:text-red-600 border-zinc-200 dark:border-zinc-800"
+                onClick={() => {
+                  onRemove();
+                  onOpenChange(false);
+                }}
+                title="Eliminar"
+              >
+                <FileX2 className="h-4 w-4" />
+              </Button>
+            )}
+
             <Button
               variant="outline"
               size="icon"

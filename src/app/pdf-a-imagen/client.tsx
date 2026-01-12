@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/select"
 
 // Hooks
-import { usePageSelection } from "@/hooks/usePageSelection";
 import { usePdfPages } from "@/hooks/usePdfPages";
 import {
   usePdfToImage,
@@ -67,7 +66,6 @@ const DPI_OPTIONS: { value: DpiOption; label: string; description: string }[] = 
   { value: 600, label: "600 DPI", description: "Alta calidad" },
 ];
 
-
 export default function PdfToImageClient() {
   const [file, setFile] = useState<File | null>(null);
   const [format, setFormat] = useState<ImageFormat>("jpg");
@@ -75,14 +73,7 @@ export default function PdfToImageClient() {
   const [dpi, setDpi] = useState<DpiOption>(150);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { pages, reorderPages } = usePdfPages(file);
-  const {
-    selectedPages,
-    setSelectedPages,
-    togglePage,
-    deselectAll,
-    reset: resetSelection
-  } = usePageSelection(pages.length);
+  const { pages, reorderPages, removePage } = usePdfPages(file);
 
   const {
     isProcessing,
@@ -94,16 +85,9 @@ export default function PdfToImageClient() {
     handleStartNew
   } = usePdfToImage();
 
-  const selectedIds = useMemo(() => pages
-    .filter(p => selectedPages.includes(p.originalIndex))
-    .map(p => p.id),
-    [pages, selectedPages]
-  );
-
-  const handleToggle = useCallback((id: string) => {
-    const page = pages.find(p => p.id === id);
-    if (page) togglePage(page.originalIndex);
-  }, [pages, togglePage]);
+  const handleRemove = useCallback((id: string) => {
+    removePage(id);
+  }, [removePage]);
 
   const handleFilesSelected = useCallback((files: File[]) => {
     if (files.length > 0) {
@@ -114,9 +98,8 @@ export default function PdfToImageClient() {
       }
       setIsInitialLoading(true);
       setFile(f);
-      resetSelection();
     }
-  }, [resetSelection]);
+  }, []);
 
   const extractCardData = useCallback((p: any) => ({
     id: p.id,
@@ -131,8 +114,8 @@ export default function PdfToImageClient() {
 
   // Determinar si se usará el servidor
   const serverInfo = useMemo(() => {
-    return shouldUseServer(file, pages.length, selectedPages.length, format, dpi);
-  }, [file, pages.length, selectedPages.length, format, dpi]);
+    return shouldUseServer(file, pages.length, format, dpi);
+  }, [file, pages.length, format, dpi]);
 
   // Cuando cambia el formato, ajustar DPI si es necesario
   useEffect(() => {
@@ -150,11 +133,15 @@ export default function PdfToImageClient() {
     }
   }, [pages.length]);
 
-  // handleFilesSelected is now a useCallback defined above
+  // Si el usuario elimina todas las páginas manualmente, volvemos al estado inicial (dropzone)
+  useEffect(() => {
+    if (file && !isInitialLoading && pages.length === 0) {
+      handleReset();
+    }
+  }, [file, isInitialLoading, pages.length]);
 
   const handleReset = () => {
     setFile(null);
-    resetSelection();
     setFormat("jpg");
     setQuality(85);
     setDpi(150);
@@ -163,58 +150,30 @@ export default function PdfToImageClient() {
     handleStartNew();
   };
 
-  const handleDeleteSelected = () => {
-    if (selectedPages.length === 0) return;
-
-    // Obtener los IDs de las páginas seleccionadas
-    const idsToRemove = pages
-      .filter(p => selectedPages.includes(p.originalIndex))
-      .map(p => p.id);
-
-    // Eliminar las páginas
-    const newPages = pages.filter(p => !idsToRemove.includes(p.id));
-
-    if (newPages.length === 0) {
-      handleReset();
-      notify.success("Todas las páginas eliminadas, puedes subir un nuevo archivo");
-      return;
-    }
-
-    reorderPages(newPages);
-
-    // Limpiar selección
-    deselectAll();
-    notify.success(`${idsToRemove.length} páginas eliminadas de la selección`);
-  };
-
   const handlePreSubmit = () => {
     if (!file) return;
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = async (fileName: string) => {
+  const handleSubmit = useCallback(async (fileName: string) => {
     if (!file) return;
     setIsDialogOpen(false);
 
-    // Si no hay selección, convertir todas las páginas actuales
-    const pagesToConvert = selectedPages.length > 0
-      ? pages.filter(p => selectedPages.includes(p.originalIndex))
-      : pages;
+    const orderedPages = pages.map(p => p.originalIndex - 1);
 
-    const orderedSelectedPages = pagesToConvert.map(p => p.originalIndex - 1);
-
-    await convertAndDownload(file, orderedSelectedPages, fileName, {
+    await convertAndDownload(file, orderedPages, fileName, {
       format,
       quality,
       dpi,
-      scale: dpi >= 300 ? 3.0 : 2.0, // Mayor escala para DPI alto
+      scale: dpi >= 300 ? 3.0 : 2.0,
       mode: "auto",
+      fileName,
       onSuccess: () => {
         setIsDialogOpen(false);
       },
       onError: (error) => console.error(error)
     });
-  };
+  }, [file, pages, format, quality, dpi, convertAndDownload]);
 
   const showQualityControl = currentFormatInfo.supportsQuality;
 
@@ -227,29 +186,12 @@ export default function PdfToImageClient() {
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
-        features={{
-          selection: true,
-          bulkActions: true,
-        }}
-        actions={{
-          onSelectAll: () => setSelectedPages(pages.map(p => p.originalIndex)),
-          onDeselectAll: deselectAll,
-          onInvertSelection: () => {
-            const currentIndices = pages.map(p => p.originalIndex);
-            setSelectedPages(prev => currentIndices.filter(idx => !prev.includes(idx)));
-          },
-          onDeleteSelected: handleDeleteSelected,
-        }}
-        state={{
-          hasSelection: selectedPages.length > 0,
-          isAllSelected: selectedPages.length === pages.length && pages.length > 0,
-        }}
         summaryItems={[
-          { label: "Páginas", value: selectedPages.length > 0 ? `${selectedPages.length} de ${pages.length}` : `Todas (${pages.length})` },
-          { label: "Descarga", value: (selectedPages.length > 1 || (selectedPages.length === 0 && pages.length > 1)) ? "Archivo .ZIP" : `Imagen .${format}` }
+          { label: "Archivo", value: file ? file.name : "Ningún archivo seleccionado" },
+          { label: "Páginas", value: pages.length },
+          { label: "Descarga", value: pages.length > 1 ? "Archivo .ZIP" : `Imagen .${format}` }
         ]}
-        downloadButtonText={(selectedPages.length > 1 || (selectedPages.length === 0 && pages.length > 1)) ? "Descargar imágenes en .ZIP" : "Descargar Imagen"}
-        isDownloadDisabled={isProcessing || (file !== null && pages.length === 0)}
+        downloadButtonText={pages.length > 1 ? "Descargar imágenes" : "Descargar imagen"}
         onDownload={handlePreSubmit}
         isGridLoading={isInitialLoading && pages.length === 0}
         sidebarCustomControls={
@@ -373,10 +315,8 @@ export default function PdfToImageClient() {
           onSave: handleSubmit,
           isProcessing,
           title: "Guardar imágenes",
-          description: selectedPages.length > 0
-            ? `Se convertirán ${selectedPages.length} página${selectedPages.length > 1 ? 'es' : ''} a ${format.toUpperCase()} (${dpi} DPI).`
-            : `Se convertirán las ${pages.length} páginas a ${format.toUpperCase()} (${dpi} DPI).`,
-          extension: (selectedPages.length > 1 || (selectedPages.length === 0 && pages.length > 1)) ? "zip" : format === "jpg" ? "jpg" : format,
+          description: `Se convertirán ${pages.length} página${pages.length > 1 ? 's' : ''} a ${format.toUpperCase()} (${dpi} DPI).`,
+          extension: pages.length > 1 ? "zip" : format === "jpg" ? "jpg" : format,
         }}
         successDialogProps={{
           isOpen: false,
@@ -388,8 +328,7 @@ export default function PdfToImageClient() {
           items={pages}
           config={PDF_CARD_PRESETS.pdftoImg}
           extractCardData={extractCardData}
-          selectedIds={selectedIds}
-          onToggle={handleToggle}
+          onRemove={handleRemove}
           onReorder={reorderPages}
         />
       </PdfToolLayout>

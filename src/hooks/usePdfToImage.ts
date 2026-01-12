@@ -34,6 +34,7 @@ export interface ConvertOptions {
   scale?: number;
   dpi?: DpiOption;
   mode?: ProcessingMode;
+  fileName?: string;
   onProgress?: (current: number, total: number) => void;
   onSuccess?: () => void;
   onError?: (error: Error) => void;
@@ -64,13 +65,15 @@ export function usePdfToImage() {
       formData.append("quality", options.quality.toString());
       formData.append("dpi", (options.dpi || 150).toString());
       formData.append("pages", selectedPageIndices.map((i) => i + 1).join(","));
+      if (options.fileName) {
+        formData.append("fileName", options.fileName);
+      }
       return formData;
     },
 
     getResultFileName: (_, original) => original,
   });
 
-  // -- Conversión en cliente --
   const convertOnClient = useCallback(
     async (
       file: File,
@@ -155,7 +158,6 @@ export function usePdfToImage() {
     []
   );
 
-  // -- Método principal de conversión --
   const convertAndDownload = useCallback(
     async (
       file: File,
@@ -180,7 +182,6 @@ export function usePdfToImage() {
         const check = shouldUseServer(
           file,
           0,
-          selectedPageIndices.length,
           options.format,
           options.dpi
         );
@@ -236,7 +237,6 @@ export function usePdfToImage() {
     [convertOnClient, processor, processingMode]
   );
 
-  // -- Progreso combinado --
   const progressValue = useMemo(() => {
     if (processingMode === "server") {
       return { current: processor.progress, total: 100 };
