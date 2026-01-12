@@ -4,7 +4,6 @@ import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { notify } from "@/lib/errors/notifications";
 import {
-  Maximize,
   RectangleHorizontal,
   RectangleVertical,
   Square,
@@ -62,7 +61,6 @@ const PAGE_SIZES: { id: PageSize; label: string; icon: any }[] = [
   { id: "a4", label: "A4", icon: RectangleVertical },
   { id: "letter", label: "Carta", icon: RectangleVertical },
   { id: "legal", label: "Legal", icon: RectangleVertical },
-  { id: "fit", label: "Ajustar", icon: Maximize },
 ];
 
 const ORIENTATIONS: { id: PageOrientation; label: string; icon: any }[] = [
@@ -96,19 +94,14 @@ export default function ImageToPdfClient() {
   const pathname = usePathname();
   const previousPathname = useRef<string | null>(null);
 
-  // Multi-selection hook
   const {
     selectedIds,
     toggle: toggleSelection,
-    selectAll,
     deselectAll,
-    invertSelection
   } = useMultiSelect(images, (img) => img.id);
 
-  // Reset state when navigating away from this tool
   useEffect(() => {
     if (previousPathname.current && previousPathname.current !== pathname) {
-      // Clean up object URLs to free memory
       images.forEach(img => {
         if (img.preview) URL.revokeObjectURL(img.preview);
       });
@@ -134,10 +127,8 @@ export default function ImageToPdfClient() {
     handleStartNew
   } = useImageToPdf();
 
-  // Info del servidor
   const serverInfo = useMemo(() => shouldUseServer(images.length), [images.length]);
 
-  // Manejar archivos seleccionados
   const handleFilesSelected = useCallback((files: File[]) => {
     const validFiles = files.filter(f => ACCEPTED_TYPES.includes(f.type));
 
@@ -169,17 +160,6 @@ export default function ImageToPdfClient() {
     size: img.file.size
   }), []);
 
-  // Rotar imagen
-  const handleRotate = useCallback((id: string) => {
-    setImages(prev => prev.map(img =>
-      img.id === id
-        ? { ...img, rotation: (img.rotation + 90) % 360 }
-        : img
-    ));
-  }, []);
-
-  // Eliminar imagen
-  // Reset
   const handleReset = useCallback(() => {
     images.forEach(img => {
       if (img.preview) URL.revokeObjectURL(img.preview);
@@ -194,7 +174,6 @@ export default function ImageToPdfClient() {
     handleStartNew();
   }, [images, deselectAll, handleStartNew]);
 
-  // Eliminar imagen
   const handleRemove = useCallback((id: string) => {
     const img = images.find(i => i.id === id);
     if (img?.preview) URL.revokeObjectURL(img.preview);
@@ -207,28 +186,6 @@ export default function ImageToPdfClient() {
     }
   }, [images, handleReset]);
 
-  // Eliminar seleccionados
-  const handleDeleteSelected = useCallback(() => {
-    if (selectedIds.length === 0) return;
-
-    const remainingImages = images.filter(img => !selectedIds.includes(img.id));
-
-    if (remainingImages.length === 0) {
-      handleReset();
-      notify.success("Todas las imágenes eliminadas");
-      return;
-    }
-
-    images.filter(img => selectedIds.includes(img.id)).forEach(img => {
-      if (img.preview) URL.revokeObjectURL(img.preview);
-    });
-
-    setImages(remainingImages);
-    deselectAll();
-    notify.success(`${selectedIds.length} imágenes eliminadas`);
-  }, [selectedIds, images, handleReset, deselectAll]);
-
-  // Reordenar (DnD)
   const handleReorder = useCallback((newItems: any[]) => {
     // Reconstruimos el array basado en los IDs devueltos por PdfGrid
     setImages(prev => {
@@ -240,7 +197,6 @@ export default function ImageToPdfClient() {
       return newOrder;
     });
   }, []);
-
 
   // Pre-submit
   const handlePreSubmit = useCallback(() => {
@@ -259,6 +215,7 @@ export default function ImageToPdfClient() {
       orientation,
       margin,
       quality,
+      fileName,
       onSuccess: () => {
         setIsDialogOpen(false);
       },
@@ -275,7 +232,6 @@ export default function ImageToPdfClient() {
         hasFiles={images.length > 0}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
-        onAdd={() => fileInputRef.current?.click()}
         textAdd="Añadir Imagen"
         acceptedFileTypes=".jpg,.jpeg,.png,.webp,.gif,.bmp"
         dropzoneMultiple={true}
@@ -283,21 +239,14 @@ export default function ImageToPdfClient() {
           selection: true,
           bulkActions: true,
         }}
-        actions={{
-          onSelectAll: selectAll,
-          onDeselectAll: deselectAll,
-          onInvertSelection: invertSelection,
-          onDeleteSelected: handleDeleteSelected,
-        }}
         state={{
           hasSelection: selectedIds.length > 0,
           isAllSelected: selectedIds.length === images.length && images.length > 0,
         }}
         summaryItems={[
-          { label: "Imágenes", value: images.length },
-          { label: "Procesamiento", value: serverInfo.useServer ? "Servidor" : "Local" },
+          { label: "Imágenes cargadas", value: images.length },
         ]}
-        downloadButtonText="Crear PDF"
+        downloadButtonText="Descargar PDF"
         isDownloadDisabled={isProcessing || images.length === 0}
         onDownload={handlePreSubmit}
         sidebarCustomControls={
@@ -460,7 +409,6 @@ export default function ImageToPdfClient() {
           selectedIds={selectedIds as string[]}
           onToggle={toggleSelection}
           onReorder={handleReorder}
-          onRotate={handleRotate}
           onRemove={handleRemove}
           showAddCard={true}
           onAddFiles={handleFilesSelected}

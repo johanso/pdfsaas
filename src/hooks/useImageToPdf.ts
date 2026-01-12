@@ -44,6 +44,7 @@ export interface ConvertOptions {
   orientation: PageOrientation;
   margin: MarginPreset;
   quality: ImageQuality;
+  fileName: string;
   onProgress?: (current: number, total: number) => void;
   onSuccess?: () => void;
   onError?: (error: Error) => void;
@@ -77,6 +78,9 @@ export function useImageToPdf() {
       formData.append("orientation", options.orientation);
       formData.append("margin", options.margin);
       formData.append("quality", options.quality);
+      if (options.fileName) {
+        formData.append("fileName", options.fileName);
+      }
       return formData;
     },
   });

@@ -103,7 +103,6 @@ export const PDF_CARD_PRESETS = {
     showRotationBadge: false,
   } as PdfCardConfig,
 
-  // Para Eliminar Páginas (con selección)
   delete: {
     draggable: false,
     selectable: true,
@@ -115,7 +114,6 @@ export const PDF_CARD_PRESETS = {
     iconSelectedName: "x",
   } as PdfCardConfig,
 
-  // Para Rotar PDF (sin selección)
   rotate: {
     draggable: true,
     selectable: false,
@@ -128,7 +126,6 @@ export const PDF_CARD_PRESETS = {
     removable: false,
   } as PdfCardConfig,
 
-  // Para Extraer Páginas (sin drag, con selección)
   extract: {
     draggable: false,
     selectable: true,
@@ -139,7 +136,6 @@ export const PDF_CARD_PRESETS = {
     iconSelectedName: "check",
   } as PdfCardConfig,
 
-  // Para Dividir PDF (sin drag, sin selección, visual)
   split: {
     draggable: false,
     selectable: false,
@@ -148,7 +144,6 @@ export const PDF_CARD_PRESETS = {
     showPageNumber: true,
   } as PdfCardConfig,
 
-  // Para Organizar PDF (todo habilitado)
   organize: {
     draggable: true,
     selectable: false,
@@ -167,14 +162,13 @@ export const PDF_CARD_PRESETS = {
 
   imageToPdf: {
     draggable: true,
-    selectable: true,
+    selectable: false,
     rotatable: false,
-    removable: false,
+    removable: true,
     showFileName: true,
-    showPageNumber: false,
+    showPageNumber: true,
     showRotationBadge: false,
-    selectedColorName: "green",
-    iconSelectedName: "check",
+    showFileInfo: true,
   } as PdfCardConfig,
 
   pdftoImg: {
@@ -187,8 +181,6 @@ export const PDF_CARD_PRESETS = {
     iconSelectedName: "check",
   } as PdfCardConfig,
 
-
-  // Para OCR PDF (archivos escaneados)
   ocr: {
     draggable: true,
     selectable: false,
@@ -200,7 +192,6 @@ export const PDF_CARD_PRESETS = {
     showRotationBadge: false,
   } as PdfCardConfig,
 
-  // Para Comprimir PDF
   compress: {
     layout: "list",
     draggable: false,
