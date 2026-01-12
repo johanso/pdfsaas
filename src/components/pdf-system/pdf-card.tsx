@@ -151,7 +151,7 @@ export const PDF_CARD_PRESETS = {
   // Para Organizar PDF (todo habilitado)
   organize: {
     draggable: true,
-    selectable: true,
+    selectable: false,
     rotatable: true,
     allowRotateLeft: true,
     allowRotateRight: true,
@@ -365,7 +365,7 @@ export const PdfCard = memo(function PdfCard({
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8 text-zinc-400 hover:text-primary hover:bg-primary/10 transition-colors"
+              className="h-8 w-8 text-zinc-400 hover:text-primary transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsPreviewOpen(true);
@@ -569,65 +569,93 @@ export const PdfCard = memo(function PdfCard({
 
               {/* Left Rotation */}
               {allowRotateLeft && onRotateLeft && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRotateLeft();
-                  }}
-                  title="Rotar Izquierda (-90°)"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 text-zinc-500 hover:text-primary cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRotateLeft();
+                      }}
+                      title="Rotar Izquierda (-90°)"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Rotar Izquierda (-90°)</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
 
-              {/* Right Rotation (Standard or granular) */}
-              {(allowRotateRight || rotatable) && (onRotateRight || onRotate) && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onRotateRight) onRotateRight();
-                    else if (onRotate) onRotate();
-                  }}
-                  title="Rotar Derecha (90°)"
-                >
-                  <RotateCw className="w-3.5 h-3.5" />
-                </Button>
+              {/* Right Rotation */}
+              {(allowRotateRight && onRotateRight) && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 text-zinc-500 hover:text-primary cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onRotateRight) onRotateRight();
+                        else if (onRotate) onRotate();
+                      }}
+                      title="Rotar Derecha (90°)"
+                    >
+                      <RotateCw className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Rotar Derecha (90°)</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
 
               {allowInsertBlank && onInsertBlank && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onInsertBlank();
-                  }}
-                  title="Insertar hoja en blanco"
-                >
-                  <BootstrapIcon name="file-plus" size={20} />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-zinc-500 hover:text-primary cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onInsertBlank();
+                      }}
+                      title="Insertar hoja en blanco"
+                    >
+                      <BootstrapIcon name="file-plus" size={20} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Insertar hoja en blanco</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
 
               {allowDuplicate && onDuplicate && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-zinc-500 hover:text-primary hover:bg-primary/10 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDuplicate();
-                  }}
-                  title="Duplicar página"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-zinc-500 hover:text-primary cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDuplicate();
+                      }}
+                      title="Duplicar página"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Duplicar esta página</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
 
               {subtitle && (

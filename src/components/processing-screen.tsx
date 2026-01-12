@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "./ui/button";
-import { formatBytes, formatTime } from "@/lib/format";
+import { formatBytes } from "@/lib/format";
 
 // Importar tipos desde el hook base consolidado
 import type { UploadStats, ProcessingPhase } from "@/hooks/core/useToolProcessor";
@@ -59,6 +59,7 @@ export interface ToolMetrics {
   /** Datos específicos según el tipo */
   data?: {
     // Compresión
+    size?: number;
     originalSize?: number;
     resultSize?: number;
     reduction?: number;
@@ -228,243 +229,53 @@ function canCancel(phase: UIPhase): boolean {
 /**
  * Componente para renderizar métricas específicas de cada herramienta
  */
-function ToolMetricsDisplay({ metrics }: { metrics: ToolMetrics }) {
+function ToolMetricsDisplay({ 
+  metrics, 
+  fileName 
+}: { 
+  metrics: ToolMetrics; 
+  fileName?: string;
+}) {
   const { type, data } = metrics;
 
-  if (!data) return null;
+  const fileSize = data?.resultSize || data?.size;
+  if (!data || !fileName || !fileSize) return null;
 
-  // Estilos compartidos
-  const containerClass = "bg-green-500/10 border border-green-500/20 rounded-2xl p-4 mt-4";
-  const labelClass = "text-[10px] text-zinc-500 uppercase";
-  const valueClass = "text-sm font-bold";
-  const highlightClass = "text-green-600 dark:text-green-400";
-  const dividerClass = "h-8 w-px bg-green-500/30";
 
-  switch (type) {
-    case "compression":
-      if (!data.originalSize || !data.resultSize) return null;
-      const savedBytes = data.originalSize - data.resultSize;
-      const reduction = data.reduction ?? ((savedBytes / data.originalSize) * 100);
-      return (
-        <div className={containerClass}>
-          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
-            Resultado de compresión
-          </p>
-          <div className="flex items-center justify-center gap-4">
-            <div className="text-left">
-              <p className={labelClass}>Original</p>
-              <p className={valueClass}>{formatBytes(data.originalSize)}</p>
-            </div>
-            <div className={dividerClass} />
-            <div className="text-left">
-              <p className={labelClass}>Comprimido</p>
-              <p className={`${valueClass} ${highlightClass}`}>{formatBytes(data.resultSize)}</p>
-            </div>
-            <div className={dividerClass} />
-            <div className="text-left">
-              <p className={labelClass}>Ahorro</p>
-              <p className={`${valueClass} ${highlightClass}`}>-{reduction.toFixed(1)}%</p>
-            </div>
-          </div>
-        </div>
-      );
+  // Mapeo de títulos según el tipo de operación
+  const getTitleByType = (type: string): string => {
+    switch (type) {
+      case "compression":
+        return "Resultado de compresión";
+      case "merge":
+        return "Documentos fusionados";
+      case "split":
+        return "Documento dividido";
+      case "pages":
+        return data.operation || "Páginas procesadas";
+      case "convert":
+        return "Conversión completada";
+      case "protect":
+        return "PDF protegido";
+      case "repair":
+        return data.fullyRepaired ? "Reparación completa" : "Reparación parcial";
+      default:
+        return "Operación completada";
+    }
+  };
 
-    case "merge":
-      return (
-        <div className={containerClass}>
-          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
-            Documentos fusionados
-          </p>
-          <div className="flex items-center justify-center gap-6">
-            <div className="text-center">
-              <p className={labelClass}>Archivos unidos</p>
-              <p className={`${valueClass} ${highlightClass} text-lg`}>{data.filesCount}</p>
-            </div>
-            <div className={dividerClass} />
-            <div className="text-center">
-              <p className={labelClass}>Total páginas</p>
-              <p className={`${valueClass} ${highlightClass} text-lg`}>{data.totalPages}</p>
-            </div>
-            {data.resultSize && (
-              <>
-                <div className={dividerClass} />
-                <div className="text-center">
-                  <p className={labelClass}>Tamaño final</p>
-                  <p className={valueClass}>{formatBytes(data.resultSize)}</p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      );
+  const title = getTitleByType(type);
 
-    case "split":
-      return (
-        <div className={containerClass}>
-          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
-            Documento dividido
-          </p>
-          <div className="flex items-center justify-center gap-6">
-            <div className="text-center">
-              <p className={labelClass}>Archivos creados</p>
-              <p className={`${valueClass} ${highlightClass} text-lg`}>{data.outputFiles}</p>
-            </div>
-            {data.totalPages && (
-              <>
-                <div className={dividerClass} />
-                <div className="text-center">
-                  <p className={labelClass}>Páginas procesadas</p>
-                  <p className={valueClass}>{data.totalPages}</p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      );
-
-    case "pages":
-      return (
-        <div className={containerClass}>
-          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
-            {data.operation || "Páginas procesadas"}
-          </p>
-          <div className="flex items-center justify-center gap-6">
-            <div className="text-center">
-              <p className={labelClass}>Páginas {data.operation?.toLowerCase() || "procesadas"}</p>
-              <p className={`${valueClass} ${highlightClass} text-lg`}>{data.pagesProcessed}</p>
-            </div>
-            {data.pagesTotal && (
-              <>
-                <div className={dividerClass} />
-                <div className="text-center">
-                  <p className={labelClass}>Total en documento</p>
-                  <p className={valueClass}>{data.pagesTotal}</p>
-                </div>
-              </>
-            )}
-            {data.resultSize && (
-              <>
-                <div className={dividerClass} />
-                <div className="text-center">
-                  <p className={labelClass}>Tamaño final</p>
-                  <p className={valueClass}>{formatBytes(data.resultSize)}</p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      );
-
-    case "convert":
-      return (
-        <div className={containerClass}>
-          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
-            Conversión completada
-          </p>
-          <div className="flex items-center justify-center gap-6">
-            <div className="text-center">
-              <p className={labelClass}>Formato original</p>
-              <p className={`${valueClass} uppercase`}>{data.originalFormat}</p>
-            </div>
-            <div className={dividerClass} />
-            <div className="text-center">
-              <p className={labelClass}>Formato final</p>
-              <p className={`${valueClass} ${highlightClass}`}>PDF</p>
-            </div>
-            {(data.sheets || data.slides) && (
-              <>
-                <div className={dividerClass} />
-                <div className="text-center">
-                  <p className={labelClass}>{data.slides ? "Diapositivas" : "Hojas"}</p>
-                  <p className={valueClass}>{data.slides || data.sheets}</p>
-                </div>
-              </>
-            )}
-            {data.resultSize && (
-              <>
-                <div className={dividerClass} />
-                <div className="text-center">
-                  <p className={labelClass}>Tamaño</p>
-                  <p className={valueClass}>{formatBytes(data.resultSize)}</p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      );
-
-    case "protect":
-      return (
-        <div className={containerClass}>
-          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
-            PDF protegido
-          </p>
-          <div className="flex items-center justify-center gap-6">
-            <div className="text-center">
-              <p className={labelClass}>Encriptación</p>
-              <p className={`${valueClass} ${highlightClass}`}>{data.encryption || "256-bit AES"}</p>
-            </div>
-            {data.resultSize && (
-              <>
-                <div className={dividerClass} />
-                <div className="text-center">
-                  <p className={labelClass}>Tamaño</p>
-                  <p className={valueClass}>{formatBytes(data.resultSize)}</p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      );
-
-    case "repair":
-      return (
-        <div className={containerClass}>
-          <p className={`text-xs font-bold ${highlightClass} uppercase tracking-wider mb-2 text-center`}>
-            {data.fullyRepaired ? "Reparación completa" : "Reparación parcial"}
-          </p>
-          {data.repairActions && data.repairActions.length > 0 && (
-            <ul className="mt-2 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-              {data.repairActions.slice(0, 3).map((action, i) => (
-                <li key={i} className="flex items-center gap-2">
-                  <CheckCircle2 className="h-3 w-3 text-green-500" />
-                  {action}
-                </li>
-              ))}
-              {data.repairActions.length > 3 && (
-                <li className="text-xs text-zinc-500">
-                  +{data.repairActions.length - 3} acciones más
-                </li>
-              )}
-            </ul>
-          )}
-        </div>
-      );
-
-    case "simple":
-    default:
-      // Solo muestra tamaño si está disponible
-      if (!data.resultSize) return null;
-      return (
-        <div className={containerClass}>
-          <div className="flex items-center justify-center gap-6">
-            {data.originalSize && (
-              <>
-                <div className="text-center">
-                  <p className={labelClass}>Original</p>
-                  <p className={valueClass}>{formatBytes(data.originalSize)}</p>
-                </div>
-                <div className={dividerClass} />
-              </>
-            )}
-            <div className="text-center">
-              <p className={labelClass}>Tamaño final</p>
-              <p className={`${valueClass} ${highlightClass}`}>{formatBytes(data.resultSize)}</p>
-            </div>
-          </div>
-        </div>
-      );
-  }
+  return (
+    <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 mt-4 text-center">
+      <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-2">
+        {title}
+      </p>
+      <p className="text-sm text-zinc-900 dark:text-zinc-100">
+        {fileName} | <span className="text-xs text-zinc-500 dark:text-zinc-400">{formatBytes(fileSize)}</span>
+      </p>
+    </div>
+  );
 }
 
 // ============================================================================
@@ -661,7 +472,7 @@ const ProcessingScreen = ({
                   </p>
 
                   {/* Tool-specific metrics display */}
-                  {toolMetrics && <ToolMetricsDisplay metrics={toolMetrics} />}
+                  {toolMetrics && <ToolMetricsDisplay metrics={toolMetrics} fileName={fileName} />}
                   
                   {/* Legacy success details (compression results) - for backwards compatibility */}
                   {!toolMetrics && successDetails && (

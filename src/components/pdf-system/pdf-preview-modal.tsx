@@ -148,7 +148,7 @@ export function PdfPreviewModal({
             <DialogTitle className="text-base truncate max-w-[200px] sm:max-w-md">
               {title}
             </DialogTitle>
-            {numPages > 0 && (
+            {numPages > 0 && !file.type.startsWith("image/") && (
               <p className="text-xs text-muted-foreground">
                 {pageNumber ? `Página ${pageNumber} de ${numPages}` : `${numPages} páginas total`}
               </p>
@@ -205,42 +205,53 @@ export function PdfPreviewModal({
           <div className="h-full w-full overflow-auto scroll-smooth custom-scrollbar">
             <div className="flex flex-col items-center p-4 min-h-full">
               {isReady && fileUrl && (
-                <Document
-                  file={fileUrl}
-                  onLoadSuccess={onDocumentLoadSuccess}
-                  loading={
-                    <div className="flex flex-col items-center justify-center p-24 gap-4">
-                      <div className="relative">
-                        <div className="absolute inset-0 blur-xl bg-primary/20 animate-pulse rounded-full" />
-                        <Loader2 className="h-10 w-10 animate-spin text-primary relative z-10" />
-                      </div>
-                      <p className="text-xs font-medium text-muted-foreground animate-pulse uppercase tracking-[0.2em]">Preparando documento...</p>
-                    </div>
-                  }
-                  error={
-                    <div className="flex flex-col items-center justify-center p-12 gap-3 text-destructive">
-                      <FileX2 className="h-10 w-10" />
-                      <p className="text-sm font-semibold">Error al cargar el PDF</p>
-                      <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cerrar</Button>
-                    </div>
-                  }
-                  className="flex flex-col items-center"
-                >
-                  {pageNumber ? (
-                    <LazyPage
-                      pageNumber={pageNumber}
-                      scale={scale}
+                file.type.startsWith("image/") ? (
+                  <div className="flex items-center justify-center w-full">
+                    <img
+                      src={fileUrl}
+                      alt={title}
+                      className="max-w-full h-auto shadow-2xl border bg-white dark:bg-zinc-900 transition-all duration-300"
+                      style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}
                     />
-                  ) : (
-                    Array.from({ length: numPages }, (_, i) => (
+                  </div>
+                ) : (
+                  <Document
+                    file={fileUrl}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    loading={
+                      <div className="flex flex-col items-center justify-center p-24 gap-4">
+                        <div className="relative">
+                          <div className="absolute inset-0 blur-xl bg-primary/20 animate-pulse rounded-full" />
+                          <Loader2 className="h-10 w-10 animate-spin text-primary relative z-10" />
+                        </div>
+                        <p className="text-xs font-medium text-muted-foreground animate-pulse uppercase tracking-[0.2em]">Preparando documento...</p>
+                      </div>
+                    }
+                    error={
+                      <div className="flex flex-col items-center justify-center p-12 gap-3 text-destructive">
+                        <FileX2 className="h-10 w-10" />
+                        <p className="text-sm font-semibold">Error al cargar el PDF</p>
+                        <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cerrar</Button>
+                      </div>
+                    }
+                    className="flex flex-col items-center"
+                  >
+                    {pageNumber ? (
                       <LazyPage
-                        key={`page_${i + 1}`}
-                        pageNumber={i + 1}
+                        pageNumber={pageNumber}
                         scale={scale}
                       />
-                    ))
-                  )}
-                </Document>
+                    ) : (
+                      Array.from({ length: numPages }, (_, i) => (
+                        <LazyPage
+                          key={`page_${i + 1}`}
+                          pageNumber={i + 1}
+                          scale={scale}
+                        />
+                      ))
+                    )}
+                  </Document>
+                )
               )}
             </div>
           </div>

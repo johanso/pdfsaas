@@ -6,10 +6,9 @@
 import { useCallback } from "react";
 import {
   useToolProcessor,
-  type ProcessingResult,
-  type UploadStats,
+  type ProcessingResult
 } from "./core/useToolProcessor";
-import { mapProcessorPhaseToLegacy, type LegacyPhase } from "./core/phase-mapper";
+import { mapProcessorPhaseToLegacy } from "./core/phase-mapper";
 
 // ============================================================================
 // TYPES
@@ -63,12 +62,12 @@ export function useOrganizePdf() {
     prepareFormData: async (files, options) => {
       const formData = new FormData();
       
-      // Agregar archivos únicos con índice
       files.forEach((file, index) => {
         formData.append(`file-${index}`, file);
       });
       
       formData.append("instructions", JSON.stringify(options.instructions));
+      formData.append("fileName", options.fileName);
       
       return formData;
     },

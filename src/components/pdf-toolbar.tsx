@@ -25,12 +25,6 @@ export function PdfToolbar({
   return (
     <div className={cn("flex flex-col lg:flex-row lg:items-center gap-4 mb-2 lg:mb-4", className)}>
       <div className="flex lg:flex-col items-center justify-end gap-2 lg:w-full">
-        {onAdd && (
-          <Button variant="black" onClick={onAdd} size="lg" className="cursor-pointer w-auto lg:w-full flex-1 lg:flex-none">
-            <span className="font-medium">{textAdd}</span>
-            <Plus className="h-4 w-4" />
-          </Button>
-        )}
         {onReset && (
           <AlertDialog>
             <AlertDialogTrigger asChild>

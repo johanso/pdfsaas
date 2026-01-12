@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { notify } from "@/lib/errors/notifications";
 
@@ -78,43 +78,6 @@ export default function OrganizePdfClient() {
     setSelectedIds([]);
   }, []);
 
-  const handleDeleteSelected = useCallback(() => {
-    if (selectedIds.length === 0) return;
-    const count = selectedIds.length;
-    setPages(prev => prev.filter(p => !selectedIds.includes(p.id)));
-    setSelectedIds([]);
-    notify.success(`${count} página(s) eliminada(s)`);
-  }, [selectedIds]);
-
-  const handleRotateBulk = useCallback((degrees: number) => {
-    if (selectedIds.length === 0) return;
-    setPages(prev => prev.map(p =>
-      selectedIds.includes(p.id) ? { ...p, rotation: p.rotation + degrees } : p
-    ));
-  }, [selectedIds]);
-
-  const handleResetRotationBulk = useCallback(() => {
-    if (selectedIds.length === 0) return;
-    setPages(prev => prev.map(p =>
-      selectedIds.includes(p.id) ? { ...p, rotation: 0 } : p
-    ));
-  }, [selectedIds]);
-
-  const handleDuplicateSelected = useCallback(() => {
-    if (selectedIds.length === 0) return;
-    setPages(prev => {
-      const newPages = [...prev];
-      for (let i = newPages.length - 1; i >= 0; i--) {
-        if (selectedIds.includes(newPages[i].id)) {
-          newPages.splice(i + 1, 0, { ...newPages[i], id: crypto.randomUUID() });
-        }
-      }
-      return newPages;
-    });
-    notify.success(`${selectedIds.length} página(s) duplicada(s)`);
-    setSelectedIds([]);
-  }, [selectedIds]);
-
   const handleToggle = useCallback((id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]);
   }, []);
@@ -162,10 +125,6 @@ export default function OrganizePdfClient() {
     isBlank: page.isBlank
   }), []);
 
-  const handleSelectAll = useCallback(() => setSelectedIds(pages.map(p => p.id)), [pages]);
-  const handleDeselectAll = useCallback(() => setSelectedIds([]), []);
-  const handleInvertSelection = useCallback(() => setSelectedIds(pages.map(p => p.id).filter(id => !selectedIds.includes(id))), [pages, selectedIds]);
-
   const handleSave = async (outputName: string) => {
     if (pages.length === 0) return;
 
@@ -188,10 +147,9 @@ export default function OrganizePdfClient() {
   };
 
   const summaryItems = [
-    { label: "Archivos", value: uniqueFiles.length },
-    { label: "Total páginas", value: pages.length },
-    { label: "Seleccionadas", value: selectedIds.length },
+    { label: "Archivos cargados", value: uniqueFiles.length },
     { label: "En blanco", value: pages.filter(p => p.isBlank).length },
+    { label: "Total páginas", value: pages.length },
   ].filter(i => (typeof i.value === 'number' && i.value > 0) || typeof i.value !== 'number');
 
   return (
@@ -204,25 +162,14 @@ export default function OrganizePdfClient() {
         onFilesSelected={handleAddFiles}
         dropzoneMultiple
         onReset={handleReset}
-        onAdd={() => fileInputRef.current?.click()}
         features={{
           selection: true,
           rotation: true,
           bulkActions: true,
         }}
-        actions={{
-          onSelectAll: handleSelectAll,
-          onDeselectAll: handleDeselectAll,
-          onInvertSelection: handleInvertSelection,
-          onRotateRights: () => handleRotateBulk(90),
-          onRotateLefts: () => handleRotateBulk(-90),
-          onResetOrientation: handleResetRotationBulk,
-          onDuplicateSelected: handleDuplicateSelected,
-          onDeleteSelected: handleDeleteSelected,
-        }}
         state={{ hasSelection: selectedIds.length > 0 }}
         summaryItems={summaryItems}
-        downloadButtonText={isProcessing ? "Procesando..." : "Guardar Documento"}
+        downloadButtonText={isProcessing ? "Procesando..." : "Descargar PDF"}
         isDownloadDisabled={isProcessing || pages.length === 0}
         onDownload={() => setShowSaveDialog(true)}
         isGridLoading={isGridLoading}
@@ -296,7 +243,7 @@ export default function OrganizePdfClient() {
                     data: {
                       pagesProcessed: pages.length,
                       pagesTotal: pages.length,
-                      operation: "Organizadas",
+                      operation: `Organizadas (${result.filesUsed} archivo${result.filesUsed !== 1 ? 's' : ''}, ${result.blankPages} en blanco)`,
                       resultSize: result.resultSize,
                     }
                   }

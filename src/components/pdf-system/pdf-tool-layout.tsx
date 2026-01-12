@@ -37,7 +37,6 @@ interface PdfToolLayoutProps {
   acceptedFileTypes?: string;
   onReset: () => void;
   textAdd?: string;
-  onAdd?: () => void;
 
   // Global Toolbar
   features?: GlobalToolbarProps["features"];
@@ -86,7 +85,6 @@ export function PdfToolLayout({
   acceptedFileTypes = "application/pdf",
   onReset,
   textAdd = "Añadir PDF",
-  onAdd,
   features,
   actions,
   state,
@@ -141,7 +139,7 @@ export function PdfToolLayout({
                   <ToolBreadcrumb toolId={toolId} />
                   <HeadingPage titlePage={title} descriptionPage={description} />
                   {isMobile && (
-                    <PdfToolbar onReset={onReset} onAdd={onAdd} textAdd={textAdd} />
+                    <PdfToolbar onReset={onReset} textAdd={textAdd} />
                   )}
                   {!isMobile && hasFeatures && (
                     <section className="py-0 sticky top-0 z-2">
@@ -189,7 +187,7 @@ export function PdfToolLayout({
                     )}
                   >
                     {!isMobile && (
-                      <PdfToolbar onReset={onReset} onAdd={onAdd} textAdd={textAdd} />
+                      <PdfToolbar onReset={onReset} textAdd={textAdd} />
                     )}
 
                     {isMobile && (
