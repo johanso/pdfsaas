@@ -6,10 +6,9 @@
 import { useCallback } from "react";
 import {
   useToolProcessor,
-  type ProcessingResult,
-  type UploadStats,
+  type ProcessingResult
 } from "./core/useToolProcessor";
-import { mapProcessorPhaseToLegacy, type LegacyPhase } from "./core/phase-mapper";
+import { mapProcessorPhaseToLegacy} from "./core/phase-mapper";
 
 // ============================================================================
 // TYPES
@@ -60,13 +59,13 @@ export function useHtmlToPdf() {
     toolId: "html-to-pdf",
     endpoint: "/api/worker/html-to-pdf",
     operationName: "Convirtiendo HTML a PDF",
-    useGzipCompression: false, // HTML/URLs no se comprimen igual
+    useGzipCompression: false,
     responseType: "json",
 
     progressWeights: {
       preparing: 5,
       uploading: 20,
-      processing: 65, // Mayor peso en processing porque renderiza la página
+      processing: 65,
       downloading: 10,
     },
 
@@ -83,6 +82,7 @@ export function useHtmlToPdf() {
       
       formData.append("viewport", JSON.stringify(options.viewport));
       formData.append("margins", JSON.stringify(options.margins));
+      formData.append("fileName", options.fileName);
       
       return formData;
     },
@@ -90,7 +90,6 @@ export function useHtmlToPdf() {
     getResultFileName: (result, original) => result.fileName || original,
   });
 
-  // Mapear fase a formato legacy para compatibilidad con UI
   const legacyPhase = mapProcessorPhaseToLegacy(processor.phase);
 
   /**

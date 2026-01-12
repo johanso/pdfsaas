@@ -107,13 +107,12 @@ export default function HtmlToPdfClient() {
     return MARGIN_PRESETS[marginPreset];
   };
 
-  // Calcular escala basada en un viewport específico
   const calculateScale = useCallback((viewportKey: ViewportKey) => {
     if (!containerRef.current) {
       // Fallback: usar window.innerWidth si el container no está listo
       if (typeof window === 'undefined') return 1;
       const padding = 32;
-      const containerWidth = window.innerWidth - 350 - padding; // 350 = sidebar aproximado
+      const containerWidth = window.innerWidth - 350 - padding;
       const targetWidth = VIEWPORT_CONFIG[viewportKey].width;
 
       if (containerWidth < targetWidth) {
@@ -548,7 +547,7 @@ export default function HtmlToPdfClient() {
               ? {
                   type: "convert",
                   data: {
-                    originalFormat: inputMode === "url" ? "URL" : "HTML",
+                    originalFormat: result.sourceType === 'url' ? 'URL' : 'HTML',
                     resultSize: result.resultSize,
                   }
                 }

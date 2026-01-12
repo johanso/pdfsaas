@@ -111,17 +111,14 @@ export function PdfToolLayout({
       <div className="space-y-6">
         {/* <ToolBreadcrumb toolId={toolId} /> */}
 
-        {headerContent && (
-          <div className="w-full flex justify-center lg:justify-start mb-6">
-            {headerContent}
-          </div>
-        )}
+        
 
         <div className="w-full">
           {!hasFiles ? (
             customEmptyState || (
               <>
                 <div className="w-full mb-6">
+                  <ToolBreadcrumb toolId={toolId} />
                   <HeadingPage titlePage={title} descriptionPage={description} />
                 </div>
                 <Dropzone
@@ -137,6 +134,11 @@ export function PdfToolLayout({
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div className="lg:col-span-3 space-y-2 relative">
                   <ToolBreadcrumb toolId={toolId} />
+                  {headerContent && (
+                    <div className="w-full flex justify-center lg:justify-start mb-6">
+                      {headerContent}
+                    </div>
+                  )}
                   <HeadingPage titlePage={title} descriptionPage={description} />
                   {isMobile && (
                     <PdfToolbar onReset={onReset} textAdd={textAdd} />
