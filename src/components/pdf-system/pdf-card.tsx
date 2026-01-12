@@ -42,7 +42,7 @@ export interface PdfCardData {
   size?: number;
   pageCount?: number;
   isBlank?: boolean;
-  previewUrl?: string; // URL de la imagen para vista previa directa (evita usar PdfThumbnail)
+  previewUrl?: string;
 }
 
 export interface PdfCardConfig {
@@ -59,6 +59,7 @@ export interface PdfCardConfig {
   allowInsertBlank?: boolean;
   removable?: boolean; // Mantenido por compatibilidad
   allowDelete?: boolean;
+  showPreview?: boolean;
 
   // Información a mostrar
   showFileName?: boolean;
@@ -204,6 +205,17 @@ export const PDF_CARD_PRESETS = {
     showRotationBadge: false,
   } as PdfCardConfig,
 
+  officeToPdf: {
+    layout: "list",
+    draggable: false,
+    selectable: false,
+    rotatable: false,
+    removable: true,
+    showFileName: true,
+    showFileInfo: true,
+    showRotationBadge: false,
+    showPreview: false,
+  } as PdfCardConfig,
 };
 
 import { FileText } from "lucide-react";
@@ -242,6 +254,7 @@ export const PdfCard = memo(function PdfCard({
     showPageNumber = false,
     showFileInfo = false,
     showRotationBadge = true,
+    showPreview = true,
     selectedColorName,
     iconSelectedName,
     aspectRatio = "3/4",
@@ -291,7 +304,7 @@ export const PdfCard = memo(function PdfCard({
 
   // Subtítulo (info del archivo)
   const subtitle = showFileInfo && data.size
-    ? `${(data.size / 1024 / 1024).toFixed(2)} MB${data.pageCount != null ? ` / ${data.pageCount} págs` : ""}`
+    ? `${(data.size / 1024 / 1024).toFixed(2)} MB ${data.pageCount != null && !isOfficeFile() ? ` / ${data.pageCount} págs` : ""}`
     : undefined;
 
   // Click handler para selección
@@ -353,18 +366,21 @@ export const PdfCard = memo(function PdfCard({
 
           {/* Actions */}
           <div className="flex items-center gap-1">
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 text-zinc-400 hover:text-primary transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsPreviewOpen(true);
-              }}
-              title="Vista previa"
-            >
-              <Search className="w-4 h-4" />
-            </Button>
+            {showPreview && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 text-zinc-400 hover:text-primary transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsPreviewOpen(true);
+                }}
+                title="Vista previa"
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+            )}
+
             {(allowDelete || removable) && onRemove && (
               <Button
                 size="icon"
@@ -380,6 +396,14 @@ export const PdfCard = memo(function PdfCard({
             )}
           </div>
         </div>
+        <PdfPreviewModal
+          file={data.file}
+          pageNumber={data.pageNumber}
+          isOpen={isPreviewOpen}
+          onOpenChange={setIsPreviewOpen}
+          title={title}
+          onRemove={onRemove}
+        />
       </div>
     );
   }
@@ -432,24 +456,26 @@ export const PdfCard = memo(function PdfCard({
             </div>
 
             <div className="flex items-center gap-1 shrink-0">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5 text-zinc-500 hover:text-primary cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsPreviewOpen(true);
-                    }}
-                  >
-                    <Search className="w-3.5 h-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Vista previa</p>
-                </TooltipContent>
-              </Tooltip>
+              {showPreview && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 text-zinc-500 hover:text-primary cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsPreviewOpen(true);
+                      }}
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Vista previa</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
 
               {customActions}
 

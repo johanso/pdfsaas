@@ -1,10 +1,13 @@
 /**
  * Hook para convertir Excel (XLS/XLSX) a PDF
- * Usa createPdfToolHook factory
  */
 
-import { createPdfToolHook } from "./factories/createPdfToolHook";
-import type { ProcessingResult } from "./core/useToolProcessor";
+import { useCallback } from "react";
+import {
+  useToolProcessor,
+  type ProcessingResult
+} from "./core/useToolProcessor";
+import { mapProcessorPhaseToLegacy } from "./core/phase-mapper";
 
 // ============================================================================
 // TYPES
@@ -31,35 +34,58 @@ export type { UploadStats } from "./core/useToolProcessor";
 // HOOK
 // ============================================================================
 
-/**
- * Hook base creado con factory
- */
-const useExcelToPdfBase = createPdfToolHook<ExcelToPdfOptions, ExcelToPdfResult>({
-  toolId: "excel-to-pdf",
-  endpoint: "/api/worker/excel-to-pdf",
-  operationName: "Convirtiendo Excel a PDF",
-
-  buildFormData: () => [],
-
-  getFileName: (result, original) =>
-    result.fileName || original.replace(/\.(xlsx?|xls)$/i, ".pdf"),
-
-  progressWeights: {
-    preparing: 5,
-    uploading: 35,
-    processing: 50,
-    downloading: 10,
-  },
-});
-
-/**
- * Hook público con compatibilidad
- */
 export function useExcelToPdf() {
-  const hook = useExcelToPdfBase();
+  const processor = useToolProcessor<ExcelToPdfOptions, ExcelToPdfResult>({
+    toolId: "excel-to-pdf",
+    endpoint: "/api/worker/excel-to-pdf",
+    operationName: "Convirtiendo Excel a PDF",
+    useGzipCompression: true,
+    responseType: "json",
+
+    progressWeights: {
+      preparing: 5,
+      uploading: 35,
+      processing: 50,
+      downloading: 10,
+    },
+
+    prepareFormData: async (files, options) => {
+      const formData = new FormData();
+      formData.append("file", files[0]);
+      formData.append("fileName", options.fileName);
+      return formData;
+    },
+
+    getResultFileName: (result, original) => result.fileName || original,
+  });
+
+  const legacyPhase = mapProcessorPhaseToLegacy(processor.phase);
+
+  const convert = useCallback(
+    async (file: File, options: ExcelToPdfOptions): Promise<ExcelToPdfResult | null> => {
+      const fileName = options.fileName.endsWith(".pdf") 
+        ? options.fileName 
+        : `${options.fileName}.pdf`;
+      
+      return processor.process([file], options, fileName);
+    },
+    [processor]
+  );
 
   return {
-    ...hook,
-    convert: hook.process,
+    // Estado
+    isProcessing: processor.isProcessing,
+    isComplete: processor.isComplete,
+    progress: processor.progress,
+    phase: legacyPhase,
+    operation: processor.operation,
+    uploadStats: processor.uploadStats,
+    result: processor.result,
+
+    // Acciones
+    convert,
+    handleDownloadAgain: processor.downloadAgain,
+    handleStartNew: processor.reset,
+    cancelOperation: processor.cancel,
   };
 }

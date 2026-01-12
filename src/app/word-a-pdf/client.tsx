@@ -75,18 +75,6 @@ export default function WordToPdfClient() {
         acceptedFileTypes=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         onReset={reset}
         summaryItems={[
-          {
-            label: "Archivo",
-            value: files[0]
-              ? `${files[0].name}`
-              : "-"
-          },
-          {
-            label: "Peso total",
-            value: files[0]
-              ? `${(files[0].file.size / 1024 / 1024).toFixed(2)} MB`
-              : "-"
-          },
           { label: "Formato de salida", value: "PDF" }
         ]}
         downloadButtonText="Convertir a PDF"
@@ -108,17 +96,12 @@ export default function WordToPdfClient() {
           onOpenChange: () => { },
           onContinue: () => { },
         }}
-        layout="list"
-      >
+        layout="grid"
+      > 
         <PdfGrid
           items={files}
           layout="list"
-          config={{
-            ...PDF_CARD_PRESETS.merge,
-            draggable: false,
-            selectable: false,
-            removable: false,
-          }}
+          config={PDF_CARD_PRESETS.officeToPdf}
           extractCardData={(f) => ({
             id: f.id,
             file: f.file,

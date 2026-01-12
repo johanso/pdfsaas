@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, memo } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, ZoomIn, ZoomOut, Download, FileX2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getOfficePageCount } from "@/lib/office-utils";
 
 // Configure worker with optimized options
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
@@ -34,13 +35,11 @@ const LazyPage = memo(({
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsInView(true);
-          // Once it has been in view, we keep it loaded for smoother scrolling
-          // but we could also disconnect if we wanted strict memory management
           observer.disconnect();
         }
       },
       {
-        rootMargin: "400px", // High margin to start loading before the user gets there
+        rootMargin: "400px",
         threshold: 0.01
       }
     );
@@ -102,32 +101,102 @@ export function PdfPreviewModal({
   isOpen,
   onOpenChange,
   title = "Vista Previa",
-  onRemove,
 }: PdfPreviewModalProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [scale, setScale] = useState<number>(1.0);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [officeInfo, setOfficeInfo] = useState<{
+    extension: string;
+    type: 'word' | 'excel' | 'powerpoint' | 'other';
+    pageCount: number;
+  } | null>(null);
+  const [officePreviewUrl, setOfficePreviewUrl] = useState<string | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+
+  const getOfficeType = (ext: string) => {
+    if (['doc', 'docx'].includes(ext)) return 'word';
+    if (['xls', 'xlsx'].includes(ext)) return 'excel';
+    if (['ppt', 'pptx'].includes(ext)) return 'powerpoint';
+    return 'other';
+  };
+
+  const loadOfficePreview = async (file: File) => {
+    setIsLoadingPreview(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/worker/preview/office', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al generar preview');
+      }
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setOfficePreviewUrl(url);
+    } catch (error) {
+      console.error('Error loading office preview:', error);
+      setOfficePreviewUrl(null);
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
 
   useEffect(() => {
     if (isOpen && file) {
-      // Setup worker options (CMaps etc)
-      // @ts-ignore
-      pdfjs.GlobalWorkerOptions.cMapUrl = `//unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`;
-      // @ts-ignore
-      pdfjs.GlobalWorkerOptions.cMapPacked = true;
+      const ext = file.name.toLowerCase().split('.').pop() || '';
+      const isOffice = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext);
 
-      const url = URL.createObjectURL(file);
-      setFileUrl(url);
-      setIsReady(true);
-      return () => {
-        URL.revokeObjectURL(url);
-        setIsReady(false);
-      };
+      if (isOffice) {
+        const loadOfficeInfo = async () => {
+          const pageCount = await getOfficePageCount(file);
+          setOfficeInfo({
+            extension: ext,
+            type: getOfficeType(ext),
+            pageCount,
+          });
+          
+          // Cargar preview desde backend
+          await loadOfficePreview(file);
+          
+          setIsReady(true);
+        };
+        loadOfficeInfo();
+      } else {
+        setOfficeInfo(null);
+        setOfficePreviewUrl(null);
+        // Setup worker options (CMaps etc)
+        // @ts-ignore
+        pdfjs.GlobalWorkerOptions.cMapUrl = `//unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`;
+        // @ts-ignore
+        pdfjs.GlobalWorkerOptions.cMapPacked = true;
+
+        const url = URL.createObjectURL(file);
+        setFileUrl(url);
+        setIsReady(true);
+        return () => {
+          if (url) URL.revokeObjectURL(url);
+          setIsReady(false);
+        };
+      }
     } else {
       setFileUrl(null);
+      setOfficeInfo(null);
+      setOfficePreviewUrl(null);
       setIsReady(false);
     }
+    
+    // Cleanup: Liberar URL del preview al cerrar
+    return () => {
+      if (officePreviewUrl) {
+        URL.revokeObjectURL(officePreviewUrl);
+      }
+    };
   }, [isOpen, file]);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
@@ -135,11 +204,13 @@ export function PdfPreviewModal({
   };
 
   const handleDownload = () => {
-    if (!fileUrl) return;
+    if (!fileUrl && !file) return;
+    const url = fileUrl || URL.createObjectURL(file);
     const a = document.createElement("a");
-    a.href = fileUrl;
+    a.href = url;
     a.download = file.name;
     a.click();
+    if (!fileUrl) URL.revokeObjectURL(url);
   };
 
   return (
@@ -150,9 +221,9 @@ export function PdfPreviewModal({
             <DialogTitle className="text-base truncate max-w-[200px] sm:max-w-md">
               {title}
             </DialogTitle>
-            {numPages > 0 && !file.type.startsWith("image/") && (
+            {officeInfo && (
               <p className="text-xs text-muted-foreground">
-                {pageNumber ? `Página ${pageNumber} de ${numPages}` : `${numPages} páginas total`}
+                Documento de {officeInfo.type.charAt(0).toUpperCase() + officeInfo.type.slice(1)} • {officeInfo.pageCount} {officeInfo.pageCount === 1 ? 'página' : 'páginas'}
               </p>
             )}
           </div>
@@ -192,21 +263,6 @@ export function PdfPreviewModal({
               <Download className="h-4 w-4" />
             </Button>
 
-            {onRemove && (
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 hover:bg-red-50 dark:hover:bg-red-900/20 text-muted-foreground hover:text-red-600 border-zinc-200 dark:border-zinc-800"
-                onClick={() => {
-                  onRemove();
-                  onOpenChange(false);
-                }}
-                title="Eliminar"
-              >
-                <FileX2 className="h-4 w-4" />
-              </Button>
-            )}
-
             <Button
               variant="outline"
               size="icon"
@@ -222,53 +278,93 @@ export function PdfPreviewModal({
         <div className="flex-1 bg-zinc-100/50 dark:bg-zinc-950 overflow-hidden relative flex flex-col">
           <div className="h-full w-full overflow-auto scroll-smooth custom-scrollbar">
             <div className="flex flex-col items-center p-4 min-h-full">
-              {isReady && fileUrl && (
-                file.type.startsWith("image/") ? (
-                  <div className="flex items-center justify-center w-full">
-                    <img
-                      src={fileUrl}
-                      alt={title}
-                      className="max-w-full h-auto shadow-2xl border bg-white dark:bg-zinc-900 transition-all duration-300"
-                      style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}
-                    />
-                  </div>
-                ) : (
-                  <Document
-                    file={fileUrl}
-                    onLoadSuccess={onDocumentLoadSuccess}
-                    loading={
-                      <div className="flex flex-col items-center justify-center p-24 gap-4">
+              {isReady && (
+                officeInfo ? (
+                  <div className="flex flex-col items-center justify-center w-full max-w-4xl mx-auto">
+                    {isLoadingPreview ? (
+                      <div className="flex flex-col items-center justify-center p-24 gap-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-lg w-full">
                         <div className="relative">
                           <div className="absolute inset-0 blur-xl bg-primary/20 animate-pulse rounded-full" />
                           <Loader2 className="h-10 w-10 animate-spin text-primary relative z-10" />
                         </div>
-                        <p className="text-xs font-medium text-muted-foreground animate-pulse uppercase tracking-[0.2em]">Preparando documento...</p>
+                        <p className="text-xs font-medium text-muted-foreground animate-pulse uppercase tracking-[0.2em]">
+                          Generando vista previa...
+                        </p>
                       </div>
-                    }
-                    error={
-                      <div className="flex flex-col items-center justify-center p-12 gap-3 text-destructive">
-                        <FileX2 className="h-10 w-10" />
-                        <p className="text-sm font-semibold">Error al cargar el PDF</p>
-                        <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cerrar</Button>
+                    ) : officePreviewUrl ? (
+                      <div className="w-full flex flex-col items-center">
+                        <img
+                          src={officePreviewUrl}
+                          alt="Preview de primera página"
+                          className="max-w-full h-auto shadow-2xl border bg-white dark:bg-zinc-900 rounded-lg transition-all duration-300"
+                          style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}
+                        />
+                        <p className="text-xs text-muted-foreground mt-4 text-center">
+                          Vista previa de la primera página • Para ver el documento completo, conviértelo a PDF
+                        </p>
                       </div>
-                    }
-                    className="flex flex-col items-center"
-                  >
-                    {pageNumber ? (
-                      <LazyPage
-                        pageNumber={pageNumber}
-                        scale={scale}
-                      />
                     ) : (
-                      Array.from({ length: numPages }, (_, i) => (
+                      <div className="bg-destructive/5 dark:bg-destructive/10 border border-destructive/20 rounded-lg p-6 flex items-start gap-4 max-w-2xl">
+                        <div className="p-2 bg-destructive/20 rounded-full">
+                          <FileX2 className="w-4 h-4 text-destructive" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-destructive">No se pudo generar la vista previa</p>
+                          <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                            El documento está listo para convertir. La vista previa estará disponible después de la conversión.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : fileUrl && (
+                  file.type.startsWith("image/") ? (
+                    <div className="flex items-center justify-center w-full">
+                      <img
+                        src={fileUrl}
+                        alt={title}
+                        className="max-w-full h-auto shadow-2xl border bg-white dark:bg-zinc-900 transition-all duration-300"
+                        style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}
+                      />
+                    </div>
+                  ) : (
+                    <Document
+                      file={fileUrl}
+                      onLoadSuccess={onDocumentLoadSuccess}
+                      loading={
+                        <div className="flex flex-col items-center justify-center p-24 gap-4">
+                          <div className="relative">
+                            <div className="absolute inset-0 blur-xl bg-primary/20 animate-pulse rounded-full" />
+                            <Loader2 className="h-10 w-10 animate-spin text-primary relative z-10" />
+                          </div>
+                          <p className="text-xs font-medium text-muted-foreground animate-pulse uppercase tracking-[0.2em]">Preparando documento...</p>
+                        </div>
+                      }
+                      error={
+                        <div className="flex flex-col items-center justify-center p-12 gap-3 text-destructive">
+                          <FileX2 className="h-10 w-10" />
+                          <p className="text-sm font-semibold">Error al cargar el PDF</p>
+                          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cerrar</Button>
+                        </div>
+                      }
+                      className="flex flex-col items-center"
+                    >
+                      {pageNumber ? (
                         <LazyPage
-                          key={`page_${i + 1}`}
-                          pageNumber={i + 1}
+                          pageNumber={pageNumber}
                           scale={scale}
                         />
-                      ))
-                    )}
-                  </Document>
+                      ) : (
+                        Array.from({ length: numPages }, (_, i) => (
+                          <LazyPage
+                            key={`page_${i + 1}`}
+                            pageNumber={i + 1}
+                            scale={scale}
+                          />
+                        ))
+                      )}
+                    </Document>
+                  )
                 )
               )}
             </div>

@@ -154,7 +154,7 @@ export function PdfToolLayout({
                   <section className={cn(
                     "rounded-lg transition-all duration-200",
                     layout === "grid"
-                      ? "bg-zinc-200/30 dark:bg-zinc-700/20 p-4 min-h-[320px]"
+                      ? "bg-zinc-200/30 dark:bg-zinc-700/20 p-4"
                       : "p-0 bg-transparent border-0 min-h-0",
                     hasFeatures && ""
                   )}>

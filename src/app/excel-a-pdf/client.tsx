@@ -75,18 +75,6 @@ export default function ExcelToPdfClient() {
         acceptedFileTypes=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         onReset={reset}
         summaryItems={[
-          {
-            label: "Archivo",
-            value: files[0]
-              ? `${files[0].name}`
-              : "-"
-          },
-          {
-            label: "Peso total",
-            value: files[0]
-              ? `${(files[0].file.size / 1024 / 1024).toFixed(2)} MB`
-              : "-"
-          },
           { label: "Formato de salida", value: "PDF" }
         ]}
         downloadButtonText="Convertir a PDF"
@@ -108,17 +96,12 @@ export default function ExcelToPdfClient() {
           onOpenChange: () => { },
           onContinue: () => { },
         }}
-        layout="list"
+        layout="grid"
       >
         <PdfGrid
           items={files}
           layout="list"
-          config={{
-            ...PDF_CARD_PRESETS.merge,
-            draggable: false,
-            selectable: false,
-            removable: false,
-          }}
+          config={PDF_CARD_PRESETS.officeToPdf}
           extractCardData={(f) => ({
             id: f.id,
             file: f.file,
@@ -152,7 +135,6 @@ export default function ExcelToPdfClient() {
                   type: "convert",
                   data: {
                     originalFormat: files[0]?.name.split('.').pop()?.toUpperCase() || "EXCEL",
-                    sheets: result.sheets,
                     resultSize: result.resultSize,
                   }
                 }
