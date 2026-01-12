@@ -47,6 +47,7 @@ const useCompressPdfBase = createPdfToolHook<CompressOptions, CompressResult>({
   buildFormData: (file, options) => {
     const entries: [string, string][] = [
       ["mode", options.mode],
+      ["fileName", options.fileName || "document.pdf"],
     ];
 
     // Agregar campos según el modo

@@ -11,7 +11,6 @@ import { usePdfFiles } from "./usePdfFiles";
 import { useToolProcessor, ProcessingResult, UploadStats } from "./core/useToolProcessor";
 import { setupPdfjs } from "@/lib/pdfjs-config";
 import {
-  DPI_OPTIONS,
   DEFAULT_LANGUAGES,
   OPERATION_MESSAGES,
   PROCESSING_TIPS,
@@ -116,7 +115,13 @@ export function useOcrPdf() {
 
   // -- Core Processor --
   const processor = useToolProcessor<
-    { languages: string[]; dpi: DpiOption; optimize: boolean; pages: PageInfo[] },
+    { 
+      languages: string[]; 
+      dpi: DpiOption; 
+      optimize: boolean; 
+      pages: PageInfo[];
+      fileName?: string;
+    },
     ProcessingResult
   >({
     toolId: "ocr-pdf",
@@ -132,6 +137,7 @@ export function useOcrPdf() {
       formData.append("languages", options.languages.join(","));
       formData.append("dpi", options.dpi.toString());
       formData.append("optimize", options.optimize.toString());
+      formData.append("fileName", options.fileName || '');
 
       const pageInstructions = options.pages.map((p, idx) => ({
         originalIndex: p.pageNumber - 1,
@@ -269,7 +275,7 @@ export function useOcrPdf() {
       setOcrStatus("idle");
       setOperationMsg("");
       setTip("");
-      processor.reset();
+      processorResetRef.current();
       return;
     }
 
@@ -277,7 +283,7 @@ export function useOcrPdf() {
     const currentFileId = fileIdRef.current;
     loadPdfPages(file, currentFileId);
     detectOcrStatus(file, currentFileId);
-  }, [file, loadPdfPages, detectOcrStatus, processor.reset]); // added reset here
+  }, [file, loadPdfPages, detectOcrStatus]);
 
   // -- Setear archivo --
   const setFile = useCallback(
@@ -346,6 +352,7 @@ export function useOcrPdf() {
     selectedLanguages,
     dpi,
     optimize,
+    result: processor.result,
 
     // Setters
     setFile,
@@ -367,7 +374,13 @@ export function useOcrPdf() {
       const finalName = outputFileName || file.name.replace(/\.pdf$/i, "-ocr.pdf");
       return processor.process(
         [file],
-        { languages: selectedLanguages, dpi, optimize, pages },
+        { 
+          languages: selectedLanguages, 
+          dpi, 
+          optimize, 
+          pages,
+          fileName: finalName
+        },
         finalName
       );
     },

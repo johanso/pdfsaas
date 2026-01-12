@@ -111,8 +111,6 @@ export function PdfToolLayout({
       <div className="space-y-6">
         {/* <ToolBreadcrumb toolId={toolId} /> */}
 
-        
-
         <div className="w-full">
           {!hasFiles ? (
             customEmptyState || (

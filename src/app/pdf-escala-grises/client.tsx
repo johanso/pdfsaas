@@ -137,12 +137,7 @@ export default function GrayscalePdfClient() {
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
-        summaryItems={[
-          {
-            label: "Contraste",
-            value: contrastInfo.title,
-          },
-        ]}
+        summaryItems={[]}
         downloadButtonText="Convertir a escala de grises"
         isDownloadDisabled={isProcessing || files.length === 0}
         onDownload={handlePreSubmit}

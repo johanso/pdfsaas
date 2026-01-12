@@ -30,7 +30,6 @@ import { Separator } from "@/components/ui/separator";
 import { usePdfFiles } from "@/hooks/usePdfFiles";
 import {
   useCompressPdf,
-  formatBytes,
   type CompressionPreset,
   type CompressionMode,
 } from "@/hooks/useCompressPdf";
@@ -147,18 +146,7 @@ export default function CompressPdfClient() {
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
-        summaryItems={[
-          {
-            label: "Modo",
-            value: mode === "simple" ? "Preset" : "Personalizado",
-          },
-          {
-            label: "Nivel",
-            value: mode === "simple"
-              ? presetInfo.title
-              : `${dpi} DPI / ${imageQuality}%`,
-          },
-        ]}
+        summaryItems={[]}
         downloadButtonText="Comprimir PDF"
         isDownloadDisabled={isProcessing || files.length === 0}
         onDownload={handlePreSubmit}
@@ -294,20 +282,22 @@ export default function CompressPdfClient() {
           isComplete={isComplete}
           phase={phase}
           uploadStats={uploadStats}
-          fileName={file?.name || "documento.pdf"}
+          fileName={result?.fileName || file?.name || "documento.pdf"}
           operation={operation}
           onDownload={handleDownloadAgain}
           onEditAgain={handleStartNew}
           onStartNew={handleReset}
           onCancel={phase === "uploading" || phase === "compressing" ? cancelOperation : undefined}
-          successDetails={
+          toolMetrics={
             result
               ? {
-                originalSize: result.originalSize,
-                compressedSize: result.compressedSize,
-                reductionPercentage: result.reduction,
-                savedBytes: result.saved,
-              }
+                  type: "compression",
+                  data: {
+                    originalSize: result.originalSize,
+                    resultSize: result.compressedSize,
+                    reduction: result.reduction,
+                  }
+                }
               : undefined
           }
         />
@@ -337,16 +327,16 @@ function PresetCard({
 }) {
   return (
     <Card
-      className={`relative cursor-pointer transition-all ${selected
+      className={`relative rounded-sm cursor-pointer transition-all ${selected
         ? "border-primary bg-primary/5 ring-1 ring-primary/20"
         : "hover:border-zinc-300 dark:hover:border-zinc-700 bg-transparent"
         }`}
       onClick={onClick}
     >
-      <CardContent className="py-3 px-3">
-        <div className="flex items-center gap-3">
+      <CardContent className="py-2 px-3">
+        <div className="flex items-center gap-2">
           <div className="shrink-0">{icon}</div>
-          <div className="flex-1 min-w-0">
+          <div className="flex flex-col flex-1 gap-0.5 min-w-0">
             <h4 className="text-sm font-bold truncate">{title}</h4>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               {description}

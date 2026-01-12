@@ -60,6 +60,8 @@ export default function OcrPdfClient() {
     selectedLanguages,
     dpi,
     optimize,
+    result,
+    
 
     // Setters
     setFile,
@@ -152,14 +154,14 @@ export default function OcrPdfClient() {
         return (
           <Badge variant="destructive" className="gap-1.5">
             <FileText className="w-3 h-3" color="white" />
-            <span className="text-white">Escaneado</span>
+            <span className="text-white">Documento escaneado</span>
           </Badge>
         );
       case "has-text":
         return (
           <Badge className="gap-1.5 bg-green-500 hover:bg-green-600">
             <Check className="w-3 h-3" />
-            Ya tiene texto
+            Documento(s) con texto
           </Badge>
         );
       case "error":
@@ -183,7 +185,6 @@ export default function OcrPdfClient() {
       {/* Estado OCR */}
       {file && (
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Est. documento</span>
           <div className="flex items-center gap-2">
             {renderStatusBadge()}
             {ocrStatus === "has-text" && (
@@ -311,7 +312,7 @@ export default function OcrPdfClient() {
           { label: "Peso", value: file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : "-" },
           { label: "Idiomas", value: `${selectedLanguages.length} seleccionado${selectedLanguages.length !== 1 ? "s" : ""}` },
         ]}
-        downloadButtonText="Aplicar OCR"
+        downloadButtonText="Descargar PDF"
         isDownloadDisabled={isProcessing || !hasContent || selectedLanguages.length === 0}
         onDownload={handleApplyOcr}
         isGridLoading={isLoading}
@@ -327,11 +328,9 @@ export default function OcrPdfClient() {
           extension: "pdf",
         }}
         successDialogProps={{
-          isOpen: isComplete && !isProcessing,
-          onOpenChange: (open) => {
-            if (!open) startNew();
-          },
-          onContinue: startNew,
+          isOpen: false,
+          onOpenChange: () => { },
+          onContinue: () => { },
         }}
       >
         <PdfGrid
@@ -360,6 +359,19 @@ export default function OcrPdfClient() {
           onEditAgain={startNew}
           onStartNew={reset}
           onCancel={phase === "uploading" || phase === "compressing" ? cancelOperation : undefined}
+          toolMetrics={
+            result
+              ? {
+                  type: "pages",
+                  data: {
+                    operation: "OCR aplicado",
+                    resultSize: result.resultSize,
+                    pagesProcessed: pages.length,
+                    pagesTotal: pages.length,
+                  }
+                }
+              : undefined
+          }
         />
       )}
     </>
