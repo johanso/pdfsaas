@@ -20,7 +20,6 @@ export interface PowerPointToPdfResult extends ProcessingResult {
   originalSize: number;
   resultSize: number;
   originalFormat: string;
-  slides?: number;
 }
 
 // Re-exports para compatibilidad
@@ -39,7 +38,9 @@ const usePowerPointToPdfBase = createPdfToolHook<PowerPointToPdfOptions, PowerPo
   endpoint: "/api/worker/ppt-to-pdf",
   operationName: "Convirtiendo PowerPoint a PDF",
 
-  buildFormData: () => [],
+  buildFormData: (file, options) => [
+    ['fileName', options?.fileName || ''] 
+  ],
 
   getFileName: (result, original) =>
     result.fileName || original.replace(/\.(pptx?|ppt)$/i, ".pdf"),

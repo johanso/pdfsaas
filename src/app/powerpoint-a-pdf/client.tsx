@@ -21,7 +21,7 @@ export default function PowerPointToPdfClient() {
     removeFile,
     reset,
     isLoading,
-  } = usePdfFiles(true); // Skip PDF validation for PowerPoint files
+  } = usePdfFiles(true);
 
   const {
     isProcessing,
@@ -48,7 +48,6 @@ export default function PowerPointToPdfClient() {
       return;
     }
 
-    // Solo permitimos un archivo a la vez
     if (files.length > 0) {
       reset();
     }
@@ -57,10 +56,7 @@ export default function PowerPointToPdfClient() {
 
   const handleSubmit = async (fileName: string) => {
     if (files.length === 0) return;
-
-    // Close dialog immediately
     setIsDialogOpen(false);
-
     await convert(files[0].file, { fileName });
   };
 
@@ -75,18 +71,6 @@ export default function PowerPointToPdfClient() {
         acceptedFileTypes=".ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
         onReset={reset}
         summaryItems={[
-          {
-            label: "Archivo",
-            value: files[0]
-              ? `${files[0].name}`
-              : "-"
-          },
-          {
-            label: "Peso total",
-            value: files[0]
-              ? `${(files[0].file.size / 1024 / 1024).toFixed(2)} MB`
-              : "-"
-          },
           { label: "Formato de salida", value: "PDF" }
         ]}
         downloadButtonText="Convertir a PDF"
@@ -108,17 +92,12 @@ export default function PowerPointToPdfClient() {
           onOpenChange: () => { },
           onContinue: () => { },
         }}
-        layout="list"
+        layout="grid"
       >
         <PdfGrid
           items={files}
           layout="list"
-          config={{
-            ...PDF_CARD_PRESETS.merge,
-            draggable: false,
-            selectable: false,
-            removable: false,
-          }}
+          config={PDF_CARD_PRESETS.officeToPdf}
           extractCardData={(f) => ({
             id: f.id,
             file: f.file,
