@@ -261,8 +261,8 @@ export const TOOLS: Record<string, Tool> = {
     path: '/firmar-pdf',
     icon: 'PenTool',
     category: 'security',
-    isAvailable: false,
-    comingSoon: true
+    isAvailable: true,
+    comingSoon: false
   },
   'redact-pdf': {
     id: 'redact-pdf',
