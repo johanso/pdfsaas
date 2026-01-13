@@ -47,6 +47,7 @@ const useFlattenPdfBase = createPdfToolHook<FlattenOptions, FlattenResult>({
   buildFormData: (file, options) => [
     ["mode", options.mode],
     ["compress", String(options.compress)],
+    ["fileName", options?.fileName || ''],
   ],
 
   getFileName: (result, original) =>

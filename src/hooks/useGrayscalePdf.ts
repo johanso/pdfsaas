@@ -44,6 +44,7 @@ const useGrayscalePdfBase = createPdfToolHook<GrayscaleOptions, GrayscaleResult>
 
   buildFormData: (file, options) => [
     ["contrast", options.contrast],
+    ["fileName", options?.fileName || ''],
   ],
 
   getFileName: (result, original) =>

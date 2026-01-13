@@ -138,7 +138,7 @@ export default function GrayscalePdfClient() {
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
         summaryItems={[]}
-        downloadButtonText="Convertir a escala de grises"
+        downloadButtonText="Descargar PDF"
         isDownloadDisabled={isProcessing || files.length === 0}
         onDownload={handlePreSubmit}
         isGridLoading={isFilesLoading && files.length === 0}
@@ -199,7 +199,7 @@ export default function GrayscalePdfClient() {
           onOpenChange: () => { },
           onContinue: () => { },
         }}
-        layout="list"
+        layout="grid"
       >
         <PdfGrid
           items={files}
@@ -216,20 +216,22 @@ export default function GrayscalePdfClient() {
           isComplete={isComplete}
           phase={phase}
           uploadStats={uploadStats}
-          fileName={file?.name || "documento.pdf"}
+          fileName={result?.fileName || file?.name || "documento.pdf"}
           operation={operation}
           onDownload={handleDownloadAgain}
           onEditAgain={handleStartNew}
           onStartNew={handleReset}
           onCancel={phase === "uploading" || phase === "processing" ? cancelOperation : undefined}
-          successDetails={
+          toolMetrics={
             result
               ? {
-                originalSize: result.originalSize,
-                compressedSize: result.resultSize,
-                reductionPercentage: (result.savings / result.originalSize) * 100,
-                savedBytes: result.savings,
-              }
+                  type: "compression",
+                  data: {
+                    originalSize: result.originalSize,
+                    resultSize: result.resultSize,
+                    reduction: (result.savings / result.originalSize) * 100,
+                  }
+                }
               : undefined
           }
         />

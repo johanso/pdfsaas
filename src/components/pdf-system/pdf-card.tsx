@@ -205,6 +205,19 @@ export const PDF_CARD_PRESETS = {
     showRotationBadge: false,
   } as PdfCardConfig,
 
+  unlock: {
+    layout: "list",
+    draggable: false,
+    selectable: false,
+    rotatable: false,
+    removable: true,
+    showFileName: true,
+    showFileInfo: true,
+    showPageNumber: false,
+    showRotationBadge: false,
+    showPreview: false,
+  } as PdfCardConfig,
+
   officeToPdf: {
     layout: "list",
     draggable: false,

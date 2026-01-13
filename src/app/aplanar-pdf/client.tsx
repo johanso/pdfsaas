@@ -29,7 +29,6 @@ import { Separator } from "@/components/ui/separator";
 import { usePdfFiles } from "@/hooks/usePdfFiles";
 import {
   useFlattenPdf,
-  formatBytes,
   type FlattenMode,
 } from "@/hooks/useFlattenPdf";
 
@@ -136,17 +135,8 @@ export default function FlattenPdfClient() {
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
-        summaryItems={[
-          {
-            label: "Modo",
-            value: modeInfo.title,
-          },
-          {
-            label: "Optimizar",
-            value: compress ? "Sí" : "No",
-          },
-        ]}
-        downloadButtonText="Aplanar PDF"
+        summaryItems={[]}
+        downloadButtonText="Descargar PDF"
         isDownloadDisabled={isProcessing || files.length === 0}
         onDownload={handlePreSubmit}
         isGridLoading={isFilesLoading && files.length === 0}
@@ -215,7 +205,7 @@ export default function FlattenPdfClient() {
           onOpenChange: () => { },
           onContinue: () => { },
         }}
-        layout="list"
+        layout="grid"
       >
         <PdfGrid
           items={files}
@@ -232,20 +222,22 @@ export default function FlattenPdfClient() {
           isComplete={isComplete}
           phase={phase}
           uploadStats={uploadStats}
-          fileName={file?.name || "documento.pdf"}
+          fileName={result?.fileName || file?.name || "documento.pdf"}
           operation={operation}
           onDownload={handleDownloadAgain}
           onEditAgain={handleStartNew}
           onStartNew={handleReset}
           onCancel={phase === "uploading" || phase === "processing" ? cancelOperation : undefined}
-          successDetails={
+          toolMetrics={
             result
               ? {
-                originalSize: result.originalSize,
-                compressedSize: result.resultSize,
-                reductionPercentage: (result.reduction / result.originalSize) * 100,
-                savedBytes: result.reduction,
-              }
+                  type: "compression",
+                  data: {
+                    originalSize: result.originalSize,
+                    resultSize: result.resultSize,
+                    reduction: (result.reduction / result.originalSize) * 100,
+                  }
+                }
               : undefined
           }
         />

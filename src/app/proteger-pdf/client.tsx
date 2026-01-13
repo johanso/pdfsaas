@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { notify } from "@/lib/errors/notifications";
-import { Lock, Shield } from "lucide-react";
+import { CheckCircle2, Lock, Shield } from "lucide-react";
 
 // Components
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,6 @@ import { Separator } from "@/components/ui/separator";
 import { usePdfFiles } from "@/hooks/usePdfFiles";
 import {
   useProtectPdf,
-  formatBytes,
   type EncryptionLevel,
 } from "@/hooks/useProtectPdf";
 
@@ -116,13 +115,8 @@ export default function ProtectPdfClient() {
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
-        summaryItems={[
-          {
-            label: "Encriptación",
-            value: `${encryption}-bit AES`,
-          },
-        ]}
-        downloadButtonText="Proteger PDF"
+        summaryItems={[]}
+        downloadButtonText="Descargar PDF"
         isDownloadDisabled={isProcessing || files.length === 0 || !canSubmit}
         onDownload={handlePreSubmit}
         isGridLoading={isFilesLoading && files.length === 0}
@@ -135,14 +129,13 @@ export default function ProtectPdfClient() {
 
               <Input
                 type="password"
-                placeholder="Ingresa una contraseña (mínimo 4 caracteres)"
+                className="shadow-none"
+                placeholder="Contraseña (mínimo 4 caracteres)"
                 value={userPassword}
                 onChange={(e) => setUserPassword(e.target.value)}
                 disabled={isProcessing}
               />
             </div>
-
-            <Separator className="my-4" />
 
             <div className="space-y-3 mb-4">
               <Label className="block text-sm font-semibold">
@@ -150,17 +143,17 @@ export default function ProtectPdfClient() {
               </Label>
 
               <div className="space-y-2">
-                <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg cursor-pointer hover:bg-primary/15 transition-colors"
+                <div className="py-2 px-3 bg-primary/10 border border-primary/20 rounded-lg cursor-pointer hover:bg-primary/15 transition-colors"
                   onClick={() => setEncryption("256")}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <Shield className="w-5 h-5 text-primary shrink-0" />
                     <div className="flex-1">
                       <div className="font-medium text-sm">256-bit AES</div>
                       <div className="text-xs text-muted-foreground">Máxima seguridad</div>
                     </div>
                     {encryption === "256" && (
-                      <div className="w-4 h-4 rounded-full bg-primary" />
+                      <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
                     )}
                   </div>
                 </div>
@@ -175,7 +168,7 @@ export default function ProtectPdfClient() {
                       <div className="text-xs text-muted-foreground">Compatible con lectores antiguos</div>
                     </div>
                     {encryption === "128" && (
-                      <div className="w-4 h-4 rounded-full bg-primary" />
+                      <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
                     )}
                   </div>
                 </div>
@@ -200,7 +193,7 @@ export default function ProtectPdfClient() {
           onOpenChange: () => { },
           onContinue: () => { },
         }}
-        layout="list"
+        layout="grid"
       >
         <PdfGrid
           items={files}
@@ -217,20 +210,21 @@ export default function ProtectPdfClient() {
           isComplete={isComplete}
           phase={phase}
           uploadStats={uploadStats}
-          fileName={file?.name || "documento.pdf"}
+          fileName={result?.fileName || file?.name || "documento.pdf"}
           operation={operation}
           onDownload={handleDownloadAgain}
           onEditAgain={handleStartNew}
           onStartNew={handleReset}
           onCancel={phase === "uploading" || phase === "processing" ? cancelOperation : undefined}
-          successDetails={
+          toolMetrics={
             result
               ? {
-                originalSize: result.originalSize,
-                compressedSize: result.resultSize,
-                reductionPercentage: 0,
-                savedBytes: 0,
-              }
+                  type: "protect",
+                  data: {
+                    encryption: result.encryption,
+                    resultSize: result.resultSize,
+                  }
+                }
               : undefined
           }
         />

@@ -55,6 +55,7 @@ const useRepairPdfBase = createPdfToolHook<RepairOptions, RepairResult>({
 
   buildFormData: (file, options) => [
     ["mode", options.mode],
+    ["fileName", options?.fileName || ''],
   ],
 
   getFileName: (result, original) =>

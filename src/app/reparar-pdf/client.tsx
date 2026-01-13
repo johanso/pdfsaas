@@ -27,7 +27,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { usePdfFiles } from "@/hooks/usePdfFiles";
 import {
   useRepairPdf,
-  formatBytes,
   type RepairMode,
   type RepairCheckResult,
 } from "@/hooks/useRepairPdf";
@@ -159,7 +158,6 @@ export default function RepairPdfClient() {
 
   const modeInfo = MODE_INFO[mode];
 
-  const canRepair = checkResult?.canRepair || checkResult?.status === "ok";
   const showRepairButton = file && (checkResult?.status === "damaged" || checkResult?.status === "ok");
 
   return (
@@ -171,24 +169,7 @@ export default function RepairPdfClient() {
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
-        summaryItems={[
-          {
-            label: "Modo",
-            value: modeInfo.title,
-          },
-          {
-            label: "Estado",
-            value: checkResult
-              ? checkResult.status === "ok"
-                ? "OK"
-                : checkResult.status === "damaged"
-                ? "Dañado"
-                : checkResult.status === "encrypted"
-                ? "Encriptado"
-                : "Inválido"
-              : "Sin verificar",
-          },
-        ]}
+        summaryItems={[]}
         downloadButtonText="Reparar PDF"
         isDownloadDisabled={!showRepairButton || isProcessing || isChecking}
         onDownload={handlePreSubmit}
@@ -298,7 +279,7 @@ export default function RepairPdfClient() {
           onOpenChange: () => { },
           onContinue: () => { },
         }}
-        layout="list"
+        layout="grid"
       >
         <PdfGrid
           items={files}
@@ -315,20 +296,22 @@ export default function RepairPdfClient() {
           isComplete={isComplete}
           phase={phase}
           uploadStats={uploadStats}
-          fileName={file?.name || "documento.pdf"}
+          fileName={result?.fileName || file?.name || "documento.pdf"}
           operation={operation}
           onDownload={handleDownloadAgain}
           onEditAgain={handleStartNew}
           onStartNew={handleReset}
           onCancel={phase === "uploading" || phase === "processing" ? cancelOperation : undefined}
-          successDetails={
+          toolMetrics={
             result
               ? {
-                originalSize: result.originalSize,
-                compressedSize: result.resultSize,
-                reductionPercentage: ((result.originalSize - result.resultSize) / result.originalSize) * 100,
-                savedBytes: result.originalSize - result.resultSize,
-              }
+                  type: "repair",
+                  data: {
+                    repairActions: result.repairActions,
+                    fullyRepaired: result.fullyRepaired,
+                    resultSize: result.resultSize,
+                  }
+                }
               : undefined
           }
         />

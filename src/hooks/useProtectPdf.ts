@@ -45,6 +45,7 @@ const useProtectPdfBase = createPdfToolHook<ProtectOptions, ProtectResult>({
   buildFormData: (file, options) => [
     ["password", options.userPassword],
     ["encryption", options.encryption],
+    ["fileName", options?.fileName || ''],
   ],
 
   getFileName: (result, original) => result.fileName,

@@ -138,12 +138,7 @@ export default function UnlockPdfClient() {
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
-        summaryItems={[
-          {
-            label: "Estado",
-            value: encryptionCheck?.isEncrypted ? "Protegido" : "Sin protección",
-          },
-        ]}
+        summaryItems={[]}
         downloadButtonText="Desbloquear PDF"
         isDownloadDisabled={isProcessing || files.length === 0 || !canSubmit}
         onDownload={handlePreSubmit}
@@ -157,6 +152,7 @@ export default function UnlockPdfClient() {
 
               <Input
                 type="password"
+                className="shadow-none"
                 placeholder="Ingresa la contraseña del PDF"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -211,11 +207,11 @@ export default function UnlockPdfClient() {
           onOpenChange: () => { },
           onContinue: () => { },
         }}
-        layout="list"
+        layout="grid"
       >
         <PdfGrid
           items={files}
-          config={PDF_CARD_PRESETS.compress}
+          config={PDF_CARD_PRESETS.unlock}
           layout="list"
           extractCardData={extractCardData}
           onRemove={removeFile}
@@ -228,20 +224,20 @@ export default function UnlockPdfClient() {
           isComplete={isComplete}
           phase={phase}
           uploadStats={uploadStats}
-          fileName={file?.name || "documento.pdf"}
+          fileName={result?.fileName || file?.name || "documento.pdf"}
           operation={operation}
           onDownload={handleDownloadAgain}
           onEditAgain={handleStartNew}
           onStartNew={handleReset}
           onCancel={phase === "uploading" || phase === "processing" ? cancelOperation : undefined}
-          successDetails={
+          toolMetrics={
             result
               ? {
-                originalSize: result.originalSize,
-                compressedSize: result.resultSize,
-                reductionPercentage: 0,
-                savedBytes: 0,
-              }
+                  type: "simple",
+                  data: {
+                    resultSize: result.resultSize,
+                  }
+                }
               : undefined
           }
         />

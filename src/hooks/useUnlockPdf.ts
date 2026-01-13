@@ -52,6 +52,7 @@ const useUnlockPdfBase = createPdfToolHook<UnlockOptions, UnlockResult>({
 
   buildFormData: (file, options) => [
     ["password", options.password],
+    ["fileName", options?.fileName || ''],
   ],
 
   getFileName: (result, original) => result.fileName,

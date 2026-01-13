@@ -271,8 +271,9 @@ function ToolMetricsDisplay({
       <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wider mb-2">
         {title}
       </p>
-      <p className="text-sm text-zinc-900 dark:text-zinc-100">
-        {fileName} | <span className="text-xs text-zinc-500 dark:text-zinc-400">{formatBytes(fileSize)}</span>
+      <p className="flex items-baseline justify-center gap-2 text-sm text-zinc-900 dark:text-zinc-100">
+        <span className="inline-block truncate min-w-0">{fileName}</span> | 
+        <span className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">{formatBytes(fileSize)}</span>
       </p>
     </div>
   );
