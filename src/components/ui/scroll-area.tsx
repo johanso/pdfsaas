@@ -6,17 +6,17 @@ import { cn } from "@/lib/utils"
 interface ScrollAreaProps extends React.HTMLAttributes<HTMLDivElement> { }
 
 const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
-    ({ className, children, ...props }, ref) => {
-        return (
-            <div
-                ref={ref}
-                className={cn("relative overflow-auto custom-scrollbar", className)}
-                {...props}
-            >
-                <div className="h-full w-full">
-                    {children}
-                </div>
-                <style jsx global>{`
+  ({ className, children, ...props }, ref) => {
+    return (
+      <div
+        ref={ref}
+        className={cn("relative overflow-auto custom-scrollbar", className)}
+        {...props}
+      >
+        <div className="min-h-full min-w-full">
+          {children}
+        </div>
+        <style jsx global>{`
           .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -38,9 +38,9 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
             background: rgba(200, 200, 200, 0.2);
           }
         `}</style>
-            </div>
-        )
-    }
+      </div>
+    )
+  }
 )
 ScrollArea.displayName = "ScrollArea"
 

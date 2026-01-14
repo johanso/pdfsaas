@@ -8,10 +8,10 @@ import { Signature } from "@/hooks/useSignPdf";
 import {
   Loader2, ZoomIn, ZoomOut, X,
   ChevronLeft, ChevronRight, LayoutPanelLeft,
-  MousePointer2
+  MousePointer2, Edit3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../ui/scroll-area";
 
 // --- Sub-componente: Firma en el documento ---
 interface PlacedSignatureProps {
@@ -22,22 +22,157 @@ interface PlacedSignatureProps {
   width: number;
   height: number;
   onRemove: (id: string) => void;
+  onUpdate: (id: string, updates: Partial<PlacedSignatureProps>) => void;
+  onEdit?: (id: string) => void;
+  disabled?: boolean;
 }
 
-const PlacedSignature = memo(({ id, image, x, y, width, height, onRemove }: PlacedSignatureProps) => {
+const PlacedSignature = memo(({ id, image, x, y, width, height, onRemove, onUpdate, onEdit, disabled }: PlacedSignatureProps) => {
+  const [isInteraction, setIsInteraction] = useState<'move' | 'nw' | 'sw' | 'se' | null>(null);
+  const startPos = useRef({ x: 0, y: 0, initialX: 0, initialY: 0, initialW: 0, initialH: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent, type: 'move' | 'nw' | 'sw' | 'se') => {
+    if (disabled) return;
+    e.stopPropagation();
+    setIsInteraction(type);
+    startPos.current = {
+      x: e.clientX,
+      y: e.clientY,
+      initialX: x,
+      initialY: y,
+      initialW: width,
+      initialH: height
+    };
+  };
+
+  useEffect(() => {
+    if (!isInteraction) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const parent = document.getElementById(`viewer-page-${id.split('-')[1]}`) || document.querySelector(`[id^="viewer-page-"]`);
+      const container = parent?.getBoundingClientRect();
+      if (!container) return;
+
+      const dx = (e.clientX - startPos.current.x) / container.width;
+      const dy = (e.clientY - startPos.current.y) / container.height;
+
+      if (isInteraction === 'move') {
+        onUpdate(id, {
+          x: Math.max(0, Math.min(1 - width, startPos.current.initialX + dx)),
+          y: Math.max(0, Math.min(1 - height, startPos.current.initialY + dy))
+        });
+      } else {
+        // Redimensionamiento Proporcional Inteligente (con anclajes)
+        const { initialX, initialY, initialW, initialH } = startPos.current;
+        const pageAspectRatio = container.width / container.height;
+        const sigAspectRatio = initialW / initialH;
+
+        let newWidth = initialW;
+        let newX = initialX;
+        let newY = initialY;
+
+        if (isInteraction === 'se') {
+          newWidth = Math.max(0.05, initialW + dx);
+        } else if (isInteraction === 'sw') {
+          newWidth = Math.max(0.05, initialW - dx);
+          newX = initialX + (initialW - newWidth);
+        } else if (isInteraction === 'nw') {
+          newWidth = Math.max(0.05, initialW - dx);
+          newX = initialX + (initialW - newWidth);
+          const newHeight = (newWidth * initialH) / initialW;
+          newY = initialY + (initialH - newHeight);
+        }
+
+        onUpdate(id, {
+          width: newWidth,
+          height: (newWidth * initialH) / initialW,
+          x: newX,
+          y: newY
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsInteraction(null);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isInteraction, id, onUpdate]);
+
   return (
     <div
-      style={{ left: x, top: y, width, height, position: 'absolute', zIndex: 10 }}
-      className="group"
+      style={{
+        left: `${x * 100}%`,
+        top: `${y * 100}%`,
+        width: `${width * 100}%`,
+        height: `${height * 100}%`,
+        position: 'absolute',
+        zIndex: 10
+      }}
+      className={cn(
+        "group select-none",
+        !disabled && (isInteraction === 'move' ? "cursor-grabbing" : "cursor-grab")
+      )}
+      onMouseDown={(e) => handleMouseDown(e, 'move')}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        if (!disabled && onEdit) onEdit(id);
+      }}
     >
-      <div className="relative w-full h-full border-2 border-transparent group-hover:border-primary rounded transition-all bg-primary/5 backdrop-blur-[1px]">
+      <div className={cn(
+        "relative w-full h-full border-2 transition-all bg-white/0 rounded",
+        isInteraction ? "border-primary shadow-xl ring-1 ring-primary/20" : "border-transparent group-hover:border-primary/50"
+      )}>
         <img src={image} alt="Firma" className="w-full h-full object-contain pointer-events-none select-none" />
-        <button
-          onClick={(e) => { e.stopPropagation(); onRemove(id); }}
-          className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600"
-        >
-          <X className="w-3 h-3" />
-        </button>
+
+        {!disabled && (
+          <>
+            {/* Botones de Acción */}
+            <div className="absolute -top-3 -right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+              <button
+                onClick={(e) => { e.stopPropagation(); if (onEdit) onEdit(id); }}
+                className="bg-primary text-white rounded-full p-1 shadow-lg hover:bg-primary/90"
+                title="Editar firma"
+              >
+                <Edit3 className="w-3 h-3" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onRemove(id); }}
+                className="bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600"
+                title="Eliminar"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+
+            {/* Handles de Resize (Esquinas excepto superior-derecha) */}
+            {/* Inferior Derecha */}
+            <div
+              className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border border-white shadow-sm cursor-nwse-resize opacity-0 group-hover:opacity-100 transition-opacity z-20"
+              onMouseDown={(e) => handleMouseDown(e, 'se')}
+            />
+            {/* Inferior Izquierda */}
+            <div
+              className="absolute -bottom-1 -left-1 w-2.5 h-2.5 bg-primary rounded-full border border-white shadow-sm cursor-nesw-resize opacity-0 group-hover:opacity-100 transition-opacity z-20"
+              onMouseDown={(e) => handleMouseDown(e, 'sw')}
+            />
+            {/* Superior Izquierda */}
+            <div
+              className="absolute -top-1 -left-1 w-2.5 h-2.5 bg-primary rounded-full border border-white shadow-sm cursor-nwse-resize opacity-0 group-hover:opacity-100 transition-opacity z-20"
+              onMouseDown={(e) => handleMouseDown(e, 'nw')}
+            />
+
+            {/* Visual feedback of being selected */}
+            <div className="absolute inset-x-0 -bottom-6 text-[9px] font-bold text-primary text-center opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-tighter">
+              Mover o Escalar
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -51,11 +186,14 @@ interface PdfSignerPageProps {
   width: number;
   signatures: any[];
   onRemoveSignature: (id: string) => void;
-  onDropSignature: (image: string, x: number, y: number) => void;
+  onUpdateSignature: (id: string, updates: any) => void;
+  onEditSignature: (id: string) => void;
+  onDropSignature: (image: string, x: number, y: number, meta?: string) => void;
   registerPageRef: (el: HTMLDivElement | null, pageNumber: number) => void;
+  isPanMode?: boolean;
 }
 
-const LazyViewerPage = memo(({ pageNumber, width, signatures, onRemoveSignature, onDropSignature, registerPageRef }: PdfSignerPageProps) => {
+const LazyViewerPage = memo(({ pageNumber, width, signatures, onRemoveSignature, onUpdateSignature, onEditSignature, onDropSignature, registerPageRef, isPanMode }: PdfSignerPageProps) => {
   const [isInView, setIsInView] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -78,13 +216,14 @@ const LazyViewerPage = memo(({ pageNumber, width, signatures, onRemoveSignature,
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const image = e.dataTransfer.getData("signature-image");
+    const meta = e.dataTransfer.getData("signature-meta");
     if (!image || !containerRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
 
-    onDropSignature(image, x, y);
+    onDropSignature(image, x, y, meta);
   };
 
   return (
@@ -121,6 +260,9 @@ const LazyViewerPage = memo(({ pageNumber, width, signatures, onRemoveSignature,
               key={sig.id}
               {...sig}
               onRemove={onRemoveSignature}
+              onUpdate={onUpdateSignature}
+              onEdit={onEditSignature}
+              disabled={isPanMode}
             />
           ))}
         </div>
@@ -132,21 +274,24 @@ const LazyViewerPage = memo(({ pageNumber, width, signatures, onRemoveSignature,
 LazyViewerPage.displayName = "LazyViewerPage";
 
 // --- Sub-componente: Miniatura de la página (Optimizada) ---
-const LazyThumbnailPage = memo(({ pageNumber, onClick, active }: { pageNumber: number, onClick: () => void, active: boolean }) => {
+const LazyThumbnailPage = memo(({ pageNumber, onClick, active, registerRef }: { pageNumber: number, onClick: () => void, active: boolean, registerRef: (el: HTMLDivElement | null) => void }) => {
   const [isInView, setIsInView] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) setIsInView(true);
-    }, { rootMargin: "200px" });
+    }, { rootMargin: "180px" });
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
   }, []);
 
   return (
     <div
-      ref={ref}
+      ref={(el) => {
+        ref.current = el;
+        registerRef(el);
+      }}
       onClick={onClick}
       className={cn(
         "cursor-pointer group relative rounded-lg mb-2 border-2 transition-all p-1 min-h-[100px] flex items-center justify-center",
@@ -154,13 +299,13 @@ const LazyThumbnailPage = memo(({ pageNumber, onClick, active }: { pageNumber: n
       )}
     >
       {isInView ? (
-        <Page pageNumber={pageNumber} width={160} renderTextLayer={false} renderAnnotationLayer={false} className="block" loading={null} />
+        <Page pageNumber={pageNumber} width={120} height={120} renderTextLayer={false} renderAnnotationLayer={false} className="block" loading={null} />
       ) : (
-        <div className="w-[160px] h-[200px] bg-zinc-100 dark:bg-zinc-800 rounded flex items-center justify-center text-[10px] text-zinc-400">
+        <div className="w-[140px] h-[180px] bg-zinc-100 dark:bg-zinc-800 rounded flex items-center justify-center text-[10px] text-zinc-400">
           Pág {pageNumber}
         </div>
       )}
-      <div className="absolute top-1 left-1 bg-zinc-800/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">
+      <div className="absolute top-1 left-1 bg-zinc-800/80 text-white text-xs font-bold py-0 px-1 rounded z-10">
         {pageNumber}
       </div>
     </div>
@@ -173,12 +318,13 @@ LazyThumbnailPage.displayName = "LazyThumbnailPage";
 interface PdfSignerEditorAreaProps {
   file: File;
   fileId: string;
+  initialSignatures?: any[];
   onSignaturesUpdate: (sigs: any[]) => void;
+  onEditSignature?: (id: string) => void;
 }
 
-export function PdfSignerEditorArea({ file, fileId, onSignaturesUpdate }: PdfSignerEditorAreaProps) {
+export function PdfSignerEditorArea({ file, fileId, initialSignatures = [], onSignaturesUpdate, onEditSignature }: PdfSignerEditorAreaProps) {
   const [numPages, setNumPages] = useState<number>(0);
-  const [scale, setScale] = useState<number>(0.85);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [containerWidth, setContainerWidth] = useState<number>(800);
   const [placedSignatures, setPlacedSignatures] = useState<any[]>([]);
@@ -186,28 +332,67 @@ export function PdfSignerEditorArea({ file, fileId, onSignaturesUpdate }: PdfSig
   const [showThumbnails, setShowThumbnails] = useState<boolean>(true);
   const [isCapturingDimensions, setIsCapturingDimensions] = useState(false);
 
-  // Sync signatures to parent when they change
+  // Sync signatures to parent ONLY when they change and NOT from initialSignatures sync
+  const lastSyncedSigs = useRef<string>("");
+
   useEffect(() => {
-    onSignaturesUpdate(placedSignatures);
+    const sigsString = JSON.stringify(placedSignatures);
+    if (lastSyncedSigs.current !== sigsString) {
+      lastSyncedSigs.current = sigsString;
+      onSignaturesUpdate(placedSignatures);
+    }
   }, [placedSignatures, onSignaturesUpdate]);
 
+  // Sync external signatures (e.g. from editing dialog)
+  useEffect(() => {
+    const incomingSigsString = JSON.stringify(initialSignatures);
+    if (incomingSigsString !== JSON.stringify(placedSignatures)) {
+      setPlacedSignatures(initialSignatures);
+      lastSyncedSigs.current = incomingSigsString; // Update ref to prevent feedback loop
+    }
+  }, [initialSignatures]);
+
   const vScrollRef = useRef<HTMLDivElement>(null);
+  const thumbScrollRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const thumbRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  // Sincronizar scroll de miniaturas cuando cambia la página actual
+  useEffect(() => {
+    if (!showThumbnails) return;
+    const thumbEl = thumbRefs.current[currentPage];
+    if (thumbEl && thumbScrollRef.current) {
+      const scrollArea = thumbScrollRef.current;
+      const thumbTop = thumbEl.offsetTop;
+      const thumbHeight = thumbEl.offsetHeight;
+      const scrollHeight = scrollArea.offsetHeight;
+      const currentScroll = scrollArea.scrollTop;
+
+      // Si la miniatura está fuera del área visible del sidebar, centrarla
+      if (thumbTop < currentScroll || (thumbTop + thumbHeight) > (currentScroll + scrollHeight)) {
+        scrollArea.scrollTo({
+          top: thumbTop - (scrollHeight / 2) + (thumbHeight / 2),
+          behavior: "smooth"
+        });
+      }
+    }
+  }, [currentPage, showThumbnails]);
 
   useEffect(() => { setupPdfjs(); }, []);
 
   useEffect(() => {
     const updateWidth = () => {
       if (vScrollRef.current) {
-        setContainerWidth(vScrollRef.current.clientWidth - (showThumbnails ? 240 : 80));
+        // Ocupar el 100% del ancho disponible menos un pequeño margen para el padding
+        setContainerWidth(vScrollRef.current.clientWidth - 48);
       }
     };
     updateWidth();
     window.addEventListener("resize", updateWidth);
     return () => window.removeEventListener("resize", updateWidth);
-  }, [showThumbnails]);
+  }, []); // Ya no depende de showThumbnails porque vScrollRef ya lo tiene en cuenta
 
-  const pageWidth = containerWidth * scale;
+  const pageWidth = containerWidth;
 
   // Seguimiento de página actual al hacer scroll (Debounced)
   const handleScroll = useCallback(() => {
@@ -263,38 +448,57 @@ export function PdfSignerEditorArea({ file, fileId, onSignaturesUpdate }: PdfSig
     }
   };
 
-  const handleDropSignature = useCallback((pageNumber: number, image: string, x: number, y: number) => {
+  const handleDropSignature = useCallback((pageNumber: number, image: string, x: number, y: number, meta?: string) => {
+    let sourceMeta = null;
+    if (meta) {
+      try {
+        sourceMeta = JSON.parse(meta);
+      } catch (e) {
+        console.error("Error parsing signature meta", e);
+      }
+    }
+
+    // Calcular ancho inicial proporcional (aprox 150px en vista estándar)
+    const initialWidth = 0.25; // 25% del ancho de página
+    const initialHeight = 0.10; // 10% del alto aprox
+
     const newSig = {
       id: `sig-${Date.now()}-${Math.random()}`,
       pageNumber,
       image,
-      x: x - 75,
-      y: y - 30,
-      width: 150,
-      height: 60,
-      rotation: 0
+      x: Math.max(0, x - (initialWidth / 2)),
+      y: Math.max(0, y - (initialHeight / 2)),
+      width: initialWidth,
+      height: initialHeight,
+      rotation: 0,
+      source: sourceMeta
     };
     setPlacedSignatures(prev => [...prev, newSig]);
-  }, []); // No need for onSignaturesUpdate in deps anymore as we use useEffect
+  }, []);
 
   const removeSignature = useCallback((id: string) => {
     setPlacedSignatures(prev => prev.filter(s => s.id !== id));
   }, []); // No need for onSignaturesUpdate in deps anymore
+
+  const updateSignature = useCallback((id: string, updates: any) => {
+    setPlacedSignatures(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+  }, []);
 
   useEffect(() => {
     const triggerSign = (e: any) => {
       if (e.detail.fileId !== fileId) return;
       const finalSignatures: Signature[] = placedSignatures.map(sig => {
         const dimensions = pageDimensions[sig.pageNumber] || { w: 595, h: 841 };
-        const renderScale = dimensions.w / pageWidth;
+
+        // Al usar coordenadas porcentuales (0-1), multiplicamos directamente por las dimensiones del PDF
         return {
           id: sig.id,
           pageNumber: sig.pageNumber,
           image: sig.image,
-          x: sig.x * renderScale,
-          y: dimensions.h - (sig.y * renderScale) - (sig.height * renderScale),
-          width: sig.width * renderScale,
-          height: sig.height * renderScale,
+          x: sig.x * dimensions.w,
+          y: dimensions.h - (sig.y * dimensions.h) - (sig.height * dimensions.h),
+          width: sig.width * dimensions.w,
+          height: sig.height * dimensions.h,
           rotation: sig.rotation || 0,
           opacity: 1
         };
@@ -303,19 +507,18 @@ export function PdfSignerEditorArea({ file, fileId, onSignaturesUpdate }: PdfSig
     };
     document.addEventListener('trigger-sign-process', triggerSign);
     return () => document.removeEventListener('trigger-sign-process', triggerSign);
-  }, [placedSignatures, pageWidth, pageDimensions, fileId]);
+  }, [placedSignatures, pageDimensions, fileId]);
 
   return (
     <div className="flex h-full bg-zinc-100/30 dark:bg-zinc-950/20 relative overflow-hidden">
 
       {/* Miniaturas Sidebar */}
       {showThumbnails && (
-        <div className="w-[200px] border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col z-20">
+        <div className="w-[180px] border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col z-20">
           <div className="p-3 border-b flex items-center justify-between">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Páginas</h3>
-            <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded font-bold">{numPages}</span>
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Páginas ({numPages})</h3>
           </div>
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1" ref={thumbScrollRef}>
             <div className="px-2 py-3 space-y-4">
               <Document file={file} loading={null}>
                 {Array.from(new Array(numPages), (_, i) => (
@@ -324,6 +527,7 @@ export function PdfSignerEditorArea({ file, fileId, onSignaturesUpdate }: PdfSig
                     pageNumber={i + 1}
                     active={currentPage === i + 1}
                     onClick={() => scrollToPage(i + 1)}
+                    registerRef={(el) => thumbRefs.current[i + 1] = el}
                   />
                 ))}
               </Document>
@@ -333,12 +537,12 @@ export function PdfSignerEditorArea({ file, fileId, onSignaturesUpdate }: PdfSig
       )}
 
       {/* Visor Area */}
-      <div className="flex-1 flex flex-col relative">
+      <div className="flex-1 min-w-0 flex flex-col relative overflow-hidden">
 
         {/* Floating Toolbar */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 p-1.5 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 rounded-full shadow-2xl shadow-primary/5 transition-all">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 p-1.5 bg-white/60 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 rounded-full shadow-2xl shadow-primary/5 transition-all">
           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowThumbnails(!showThumbnails)} title="Ver Miniaturas">
-            <LayoutPanelLeft className={cn("w-4 h-4", showThumbnails && "text-primary")} />
+            <LayoutPanelLeft className={cn("w-6 h-6", showThumbnails && "text-primary")} />
           </Button>
 
           <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
@@ -347,28 +551,21 @@ export function PdfSignerEditorArea({ file, fileId, onSignaturesUpdate }: PdfSig
           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" disabled={currentPage <= 1} onClick={() => scrollToPage(currentPage - 1)}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <div className="text-[11px] font-bold min-w-[70px] text-center flex flex-col leading-tight">
+          <div className="text-xs font-bold min-w-max text-center flex flex-col leading-tight">
             <span>{currentPage} / {numPages}</span>
-            {isCapturingDimensions && <span className="text-[9px] text-primary animate-pulse">Capturando...</span>}
+            {isCapturingDimensions && <span className="text-xs text-primary animate-pulse">Capturando...</span>}
           </div>
           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" disabled={currentPage >= numPages} onClick={() => scrollToPage(currentPage + 1)}>
             <ChevronRight className="w-4 h-4" />
           </Button>
-
-          <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
-
-          {/* Zoom */}
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setScale(s => Math.max(0.4, s - 0.1))}>
-            <ZoomOut className="w-4 h-4" />
-          </Button>
-          <div className="px-2 text-[10px] font-mono font-bold">{Math.round(scale * 100)}%</div>
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setScale(s => Math.min(2, s + 0.1))}>
-            <ZoomIn className="w-4 h-4" />
-          </Button>
         </div>
 
-        <ScrollArea className="flex-1" ref={vScrollRef} onScroll={handleScroll}>
-          <div className="p-12 pb-32 flex flex-col items-center">
+        <ScrollArea
+          className="flex-1"
+          ref={vScrollRef}
+          onScroll={handleScroll}
+        >
+          <div className="p-6 pt-16 flex flex-col items-center">
             <Document
               file={file}
               onLoadSuccess={handleDocumentLoadSuccess}
@@ -390,7 +587,9 @@ export function PdfSignerEditorArea({ file, fileId, onSignaturesUpdate }: PdfSig
                   width={pageWidth}
                   signatures={placedSignatures.filter(s => s.pageNumber === index + 1)}
                   onRemoveSignature={removeSignature}
-                  onDropSignature={(img, x, y) => handleDropSignature(index + 1, img, x, y)}
+                  onUpdateSignature={updateSignature}
+                  onEditSignature={onEditSignature || (() => { })}
+                  onDropSignature={(img, x, y, meta) => handleDropSignature(index + 1, img, x, y, meta)}
                   registerPageRef={(el, p) => pageRefs.current[p] = el}
                 />
               ))}

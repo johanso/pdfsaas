@@ -11,13 +11,31 @@ interface SignaturePadProps {
   height?: number;
   penColor?: string;
   penWidth?: number;
+  initialImage?: string | null;
 }
 
 export const SignaturePad = forwardRef<{ clear: () => void }, SignaturePadProps>(
-  ({ onSave, onClear, width = 500, height = 200, penColor = "#000000", penWidth = 2 }, ref) => {
+  ({ onSave, onClear, width = 500, height = 200, penColor = "#000000", penWidth = 2, initialImage }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
-    const [hasSignature, setHasSignature] = useState(false);
+    const [hasSignature, setHasSignature] = useState(!!initialImage);
+
+    // Cargar imagen inicial si existe
+    useEffect(() => {
+      if (initialImage && canvasRef.current) {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = initialImage;
+      }
+    }, [initialImage]);
 
     useImperativeHandle(ref, () => ({
       clear: clearCanvas

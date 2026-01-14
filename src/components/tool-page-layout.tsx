@@ -53,7 +53,8 @@ import {
   FileCheck,
   Stethoscope,
   Hammer,
-  MonitorSmartphone
+  MonitorSmartphone,
+  PenTool,
 } from "lucide-react";
 import {
   Accordion,
@@ -126,7 +127,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   FileCheck,
   Stethoscope,
   Hammer,
-  MonitorSmartphone
+  MonitorSmartphone,
+  PenTool,
 };
 
 export function ToolPageLayout({
