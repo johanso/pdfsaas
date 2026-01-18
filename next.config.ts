@@ -40,6 +40,60 @@ const nextConfig: NextConfig = {
         include: /node_modules/,
         type: 'javascript/auto',
       });
+
+      // ============================================
+      // OPTIMIZACIÓN: SPLIT CHUNKS
+      // ============================================
+      // Configurar cómo webpack divide el código en chunks
+      config.optimization = config.optimization || {};
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          // Chunk para React y React-DOM (core framework)
+          react: {
+            test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+            name: 'react-vendor',
+            priority: 40,
+            reuseExistingChunk: true,
+          },
+          // Chunk para Radix UI (componentes UI)
+          radix: {
+            test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
+            name: 'radix-vendor',
+            priority: 30,
+            reuseExistingChunk: true,
+          },
+          // Chunk para librerías de PDF
+          pdf: {
+            test: /[\\/]node_modules[\\/](pdf-lib|jszip|fflate)[\\/]/,
+            name: 'pdf-vendor',
+            priority: 25,
+            reuseExistingChunk: true,
+          },
+          // Chunk para iconos y utilidades
+          utilities: {
+            test: /[\\/]node_modules[\\/](lucide-react|clsx|class-variance-authority|tailwind-merge)[\\/]/,
+            name: 'utilities-vendor',
+            priority: 20,
+            reuseExistingChunk: true,
+          },
+          // Chunk para DnD Kit
+          dndkit: {
+            test: /[\\/]node_modules[\\/]@dnd-kit[\\/]/,
+            name: 'dndkit-vendor',
+            priority: 20,
+            reuseExistingChunk: true,
+          },
+          // Chunk para otros vendors (resto de node_modules)
+          commons: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'commons-vendor',
+            priority: 10,
+            minChunks: 2, // Solo si se usa en 2+ páginas
+            reuseExistingChunk: true,
+          },
+        },
+      };
     }
     return config;
   },

@@ -12,9 +12,9 @@ Este directorio contiene la documentación de todas las optimizaciones de perfor
 | 4 | [Webpack Bundle Analyzer](./webpack-bundle-analyzer.md) | ✅ Configurado | Herramienta análisis | 2026-01-18 |
 | 5 | [React.memo en componentes](./react-memo-components.md) | ✅ Completo | -30-50% renders | 2026-01-18 |
 | 6 | [Separar FileContext](./separate-file-context.md) | ✅ Completo | -40-60% renders | 2026-01-18 |
-| 7 | Webpack SplitChunks config | ⏳ Pendiente | -20% bundle | - |
+| 7 | [Webpack SplitChunks](./webpack-splitchunks.md) | ✅ Completo | Mejor caching | 2026-01-18 |
 
-## 🎯 Impacto Acumulado (Items 1, 2, 3, 5 y 6)
+## 🎯 Impacto Acumulado (Items 1, 2, 3, 5, 6 y 7)
 
 ### Bundle Size (Cliente)
 
@@ -60,6 +60,29 @@ Total producción:    ~445 MB  (-1.1%)
 - Antes: ~30-35 segundos
 - Después: ~27-30 segundos (-3-5s)
 - Mejora: ~10-15% más rápido
+
+### Vendor Chunks (Item 7 - SplitChunks)
+
+**Chunks generados:**
+```
+react-vendor.js:      186 KB  (React core)
+radix-vendor.js:       97 KB  (UI components)
+pdf-vendor.js:        319 KB  (PDF libraries)
+utilities-vendor.js:  620 KB  (Icons & utils)
+dndkit-vendor.js:      45 KB  (Drag & drop)
+commons-vendor.js:    404 KB  (Shared deps)
+
+Total vendors:       ~1.68 MB
+```
+
+**Beneficio de Caching:**
+- Deploy de app: Solo ~10 KB descarga (vendors en cache)
+- Navegación entre herramientas: ~10 KB por página
+- Actualización de librería: Solo el vendor afectado se re-descarga
+
+**Cache Hit Rate:**
+- Sin splitChunks: 0% (todo el bundle cambia)
+- Con splitChunks: 98% (solo lo que cambió se re-descarga)
 
 ### Web Vitals (Estimados)
 
@@ -197,7 +220,7 @@ npm run build
 
 5. ✅ ~~React.memo en PdfCard, PdfGrid, ProcessingScreen~~
 6. ✅ ~~Separar FileContext en state y actions~~
-7. ⏳ Optimizar Webpack splitChunks
+7. ✅ ~~Optimizar Webpack splitChunks~~
 
 ### Prioridad Baja
 
