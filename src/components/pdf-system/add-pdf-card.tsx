@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, DragEvent, ChangeEvent } from "react";
+import { useState, useRef, DragEvent, ChangeEvent, memo } from "react";
 import { Plus, Upload } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,7 @@ interface AddPdfCardProps {
   accept?: string;
 }
 
-export function AddPdfCard({
+export const AddPdfCard = memo(function AddPdfCard({
   onFilesAdded,
   className,
   text = "Añadir PDF",
@@ -177,4 +177,4 @@ export function AddPdfCard({
       </div>
     </Card>
   );
-}
+});

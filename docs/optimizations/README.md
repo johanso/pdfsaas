@@ -9,12 +9,12 @@ Este directorio contiene la documentación de todas las optimizaciones de perfor
 | 1 | [Lazy Loading pdfjs-dist](./lazy-load-pdfjs.md) | ✅ Completo | -2.5MB bundle | 2026-01-18 |
 | 2 | [Dynamic Imports & Code Splitting](./dynamic-imports-code-splitting.md) | ✅ Completo | -60% bundle inicial | 2026-01-18 |
 | 3 | [Mover canvas a devDependencies](./move-canvas-to-devdependencies.md) | ✅ Completo | -5MB producción | 2026-01-18 |
-| 4 | Webpack Bundle Analyzer | ⏳ Pendiente | Análisis | - |
-| 5 | React.memo en componentes | ⏳ Pendiente | Renders | - |
-| 6 | Separar FileContext | ⏳ Pendiente | Renders | - |
+| 4 | [Webpack Bundle Analyzer](./webpack-bundle-analyzer.md) | ✅ Configurado | Herramienta análisis | 2026-01-18 |
+| 5 | [React.memo en componentes](./react-memo-components.md) | ✅ Completo | -30-50% renders | 2026-01-18 |
+| 6 | [Separar FileContext](./separate-file-context.md) | ✅ Completo | -40-60% renders | 2026-01-18 |
 | 7 | Webpack SplitChunks config | ⏳ Pendiente | -20% bundle | - |
 
-## 🎯 Impacto Acumulado (Items 1, 2 y 3)
+## 🎯 Impacto Acumulado (Items 1, 2, 3, 5 y 6)
 
 ### Bundle Size (Cliente)
 
@@ -80,21 +80,24 @@ Total producción:    ~445 MB  (-1.1%)
 
 ## 🔧 Herramientas de Análisis
 
-### Bundle Analyzer
+### Bundle Analyzer (✅ Configurado)
 
 ```bash
-# Instalar
-npm install -D @next/bundle-analyzer
+# Ejecutar análisis (genera reportes visuales)
+npm run analyze
 
-# Configurar en next.config.ts
-import withBundleAnalyzer from '@next/bundle-analyzer';
-const config = withBundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true',
-})(nextConfig);
-
-# Ejecutar
-ANALYZE=true npm run build
+# Abrir reportes generados
+start .next/analyze/client.html     # Windows
+open .next/analyze/client.html      # Mac
+xdg-open .next/analyze/client.html  # Linux
 ```
+
+**Reportes generados:**
+- `client.html` - Bundle del cliente (más importante)
+- `nodejs.html` - Bundle del servidor
+- `edge.html` - Bundle del edge runtime
+
+**Ver documentación completa:** [webpack-bundle-analyzer.md](./webpack-bundle-analyzer.md)
 
 ### Lighthouse CI
 
@@ -188,12 +191,12 @@ npm run build
 1. ✅ ~~Lazy load pdfjs-dist~~
 2. ✅ ~~Dynamic imports para herramientas~~
 3. ✅ ~~Mover canvas a devDependencies~~
-4. ⏳ Configurar Webpack Bundle Analyzer
+4. ✅ ~~Configurar Webpack Bundle Analyzer~~
 
 ### Prioridad Media
 
-5. ⏳ React.memo en PdfCard, PdfGrid
-6. ⏳ Separar FileContext en state y actions
+5. ✅ ~~React.memo en PdfCard, PdfGrid, ProcessingScreen~~
+6. ✅ ~~Separar FileContext en state y actions~~
 7. ⏳ Optimizar Webpack splitChunks
 
 ### Prioridad Baja

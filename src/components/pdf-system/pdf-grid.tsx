@@ -1,4 +1,4 @@
-import { useMemo, useCallback, memo } from "react";
+import React, { useMemo, useCallback, memo } from "react";
 import {
   DndContext,
   closestCenter,
@@ -63,7 +63,7 @@ interface PdfGridProps<T> {
   layout?: "grid" | "list";
 }
 
-export function PdfGrid<T extends { id: string }>({
+export const PdfGrid = memo(function PdfGrid<T extends { id: string }>({
   items,
   config,
   selectedIds = [],
@@ -181,7 +181,7 @@ export function PdfGrid<T extends { id: string }>({
       </SortableContext>
     </DndContext>
   );
-}
+}) as <T extends { id: string }>(props: PdfGridProps<T>) => React.ReactElement;
 
 // ============================================
 // COMPONENTE INTERNO MEMOIZADO

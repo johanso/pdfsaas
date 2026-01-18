@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import {
   FileText,
   Sparkles,
@@ -283,7 +283,7 @@ function ToolMetricsDisplay({
 // COMPONENT
 // ============================================================================
 
-const ProcessingScreen = ({
+const ProcessingScreen = memo(function ProcessingScreen({
   fileName = "documento.pdf",
   operation = "Procesando",
   progress = 0,
@@ -301,7 +301,7 @@ const ProcessingScreen = ({
   processingDescription,
   successDetails,
   toolMetrics,
-}: ProcessingScreenProps) => {
+}: ProcessingScreenProps) {
   // Usar facts y tips personalizados o defaults
   const activeFunFacts = customFunFacts || DEFAULT_FUN_FACTS;
   const activeTips = customTips || DEFAULT_TIPS;
@@ -591,6 +591,6 @@ const ProcessingScreen = ({
       </div>
     </div>
   );
-};
+});
 
 export default ProcessingScreen;

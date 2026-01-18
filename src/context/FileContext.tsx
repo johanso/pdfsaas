@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { notify } from "@/lib/errors/notifications";
 import { getOfficePageCount } from "@/lib/office-utils";
@@ -15,8 +15,16 @@ export interface PdfFile {
   pageCount?: number;
 }
 
-interface FileContextType {
+// ============================================
+// SEPARACIÓN DE STATE Y ACTIONS
+// ============================================
+
+interface FileStateType {
   files: PdfFile[];
+  isLoading: boolean;
+}
+
+interface FileActionsType {
   setFiles: React.Dispatch<React.SetStateAction<PdfFile[]>>;
   addFiles: (newFiles: File[], skipValidation?: boolean) => Promise<void>;
   rotateFile: (id: string, degrees?: number) => void;
@@ -27,17 +35,37 @@ interface FileContextType {
   reset: () => void;
   getTotalSize: () => number;
   getTotalPages: () => number;
-  isLoading: boolean;
 }
 
-export const FileContext = createContext<FileContextType | undefined>(undefined);
+interface FileContextType extends FileStateType, FileActionsType {}
 
-export function useFileContext() {
-  const context = useContext(FileContext);
+// Contextos separados para optimizar re-renders
+const FileStateContext = createContext<FileStateType | undefined>(undefined);
+const FileActionsContext = createContext<FileActionsType | undefined>(undefined);
+
+// Hook para acceder solo al estado (se re-renderiza cuando files o isLoading cambian)
+export function useFileState() {
+  const context = useContext(FileStateContext);
   if (context === undefined) {
-    throw new Error("useFileContext must be used within a FileContextProvider");
+    throw new Error("useFileState must be used within a FileContextProvider");
   }
   return context;
+}
+
+// Hook para acceder solo a las acciones (NO se re-renderiza cuando files cambia)
+export function useFileActions() {
+  const context = useContext(FileActionsContext);
+  if (context === undefined) {
+    throw new Error("useFileActions must be used within a FileContextProvider");
+  }
+  return context;
+}
+
+// Hook combinado para backward compatibility
+export function useFileContext(): FileContextType {
+  const state = useFileState();
+  const actions = useFileActions();
+  return { ...state, ...actions };
 }
 
 export function FileContextProvider({ children }: { children: ReactNode }) {
@@ -225,35 +253,39 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
     setFiles([]);
   }, []);
 
-  const getTotalSize = () => {
+  const getTotalSize = useCallback(() => {
     return files.reduce((acc, f) => acc + f.file.size, 0);
-  };
+  }, [files]);
 
-  const getTotalPages = () => {
+  const getTotalPages = useCallback(() => {
     return files.reduce((acc, f) => acc + (f.pageCount || 0), 0);
-  };
+  }, [files]);
+
+  // Memoizar el objeto de estado (cambia cuando files o isLoading cambian)
+  const stateValue = useMemo<FileStateType>(() => ({
+    files,
+    isLoading
+  }), [files, isLoading]);
+
+  // Memoizar el objeto de acciones (estable, no cambia porque las funciones están en useCallback)
+  const actionsValue = useMemo<FileActionsType>(() => ({
+    setFiles,
+    addFiles,
+    rotateFile,
+    removeFile,
+    reorderFiles,
+    sortAZ,
+    sortZA,
+    reset,
+    getTotalSize,
+    getTotalPages,
+  }), [setFiles, addFiles, rotateFile, removeFile, reorderFiles, sortAZ, sortZA, reset, getTotalSize, getTotalPages]);
 
   return (
-    <FileContext.Provider value={{
-      files,
-      setFiles,
-      addFiles,
-      // Actually, let's expose specific add methods or update interface
-      // To keep it simple and compatible with current usage (which expects addFiles(files)),
-      // I'll stick to default validation=true (PDF only).
-      // But wait, Word-to-PDF needs non-PDFs.
-      // I should update the interface to: addFiles: (files: File[], skipValidation?: boolean) => Promise<void>
-      rotateFile,
-      removeFile,
-      reorderFiles,
-      sortAZ,
-      sortZA,
-      reset,
-      getTotalSize,
-      getTotalPages,
-      isLoading
-    }}>
-      {children}
-    </FileContext.Provider>
+    <FileStateContext.Provider value={stateValue}>
+      <FileActionsContext.Provider value={actionsValue}>
+        {children}
+      </FileActionsContext.Provider>
+    </FileStateContext.Provider>
   );
 }

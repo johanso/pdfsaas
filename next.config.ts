@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import withBundleAnalyzer from '@next/bundle-analyzer';
 
 const nextConfig: NextConfig = {
   // Excluir canvas del bundle del cliente (es un módulo solo para servidor)
@@ -65,4 +66,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Configurar Bundle Analyzer (se activa con ANALYZE=true npm run build)
+const withBundleAnalyzerConfig = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+export default withBundleAnalyzerConfig(nextConfig);
