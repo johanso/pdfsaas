@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { ToolPageLayout } from "@/components/tool-page-layout";
-import UnirPdfClient from "./client";
 import { mergePdfContent } from "@/content/tools";
+import { ToolLoadingSkeleton } from "@/components/tool-loading-skeleton";
+
+const UnirPdfClient = dynamic(() => import("./client"), {
+  loading: () => <ToolLoadingSkeleton />,
+});
 
 const { metadata: meta, jsonLd } = mergePdfContent;
 

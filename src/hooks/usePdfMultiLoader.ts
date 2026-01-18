@@ -1,27 +1,11 @@
 import { useState, useCallback } from "react";
 import { notify } from "@/lib/errors/notifications";
 import { createError } from "@/lib/errors/error-types";
-
-let isWorkerConfigured = false;
-
-// Función auxiliar para configurar pdfjs
-async function setupPdfjs() {
-  if (typeof window === "undefined") return;
-
-  if (!isWorkerConfigured) {
-    const pdfjsModule = await import("pdfjs-dist");
-    const pdfjs = pdfjsModule.default || pdfjsModule;
-    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
-    // @ts-ignore - cMapUrl might be missing in types but is valid in pdfjs-dist
-    pdfjs.GlobalWorkerOptions.cMapUrl = `//unpkg.com/pdfjs-dist@3.11.174/cmaps/`;
-    // @ts-ignore
-    pdfjs.GlobalWorkerOptions.cMapPacked = true;
-    isWorkerConfigured = true;
-  }
-}
+import { usePdfjs } from "@/hooks/core/usePdfjs";
 
 export function usePdfMultiLoader() {
   const [isLoading, setIsLoading] = useState(false);
+  const { loadDocument } = usePdfjs();
 
   const loadPdfPages = useCallback(async (files: File[]) => {
     setIsLoading(true);
@@ -30,10 +14,6 @@ export function usePdfMultiLoader() {
       if (typeof window === "undefined") {
         throw new Error("PDF loading only works in browser");
       }
-
-      await setupPdfjs();
-      const pdfjsModule = await import("pdfjs-dist");
-      const pdfjs = pdfjsModule.default || pdfjsModule;
 
       const allPages: Array<{
         id: string;
@@ -53,8 +33,7 @@ export function usePdfMultiLoader() {
         let objectUrl: string | null = null;
         try {
           objectUrl = URL.createObjectURL(file);
-          const loadingTask = pdfjs.getDocument(objectUrl);
-          const pdf = await loadingTask.promise;
+          const pdf = await loadDocument(objectUrl);
 
           for (let i = 1; i <= pdf.numPages; i++) {
             allPages.push({
@@ -94,7 +73,7 @@ export function usePdfMultiLoader() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [loadDocument]);
 
   return {
     loadPdfPages,

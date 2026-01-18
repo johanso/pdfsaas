@@ -9,7 +9,7 @@ import { createError } from "@/lib/errors/error-types";
 import JSZip from "jszip";
 import { useToolProcessor, ProcessingResult, UploadStats } from "./core/useToolProcessor";
 import { ImageFormat, DpiOption } from "@/types";
-import { setupPdfjs } from "@/lib/pdfjs-config";
+import { usePdfjs } from "./core/usePdfjs";
 import {
   shouldUseServer,
   getFormatInfo,
@@ -48,6 +48,7 @@ export function usePdfToImage() {
   const [processingMode, setProcessingMode] = useState<"client" | "server" | null>(null);
   const [clientProgress, setClientProgress] = useState({ current: 0, total: 0 });
   const [isInternalComplete, setIsInternalComplete] = useState(false);
+  const { loadDocument } = usePdfjs();
 
   const processor = useToolProcessor<
     { file: File; selectedPageIndices: number[]; options: ConvertOptions },
@@ -88,12 +89,8 @@ export function usePdfToImage() {
           throw new Error("PDF conversion only works in browser");
         }
 
-        await setupPdfjs();
-        const pdfjsModule = await import("pdfjs-dist");
-        const pdfjs = pdfjsModule.default || pdfjsModule;
-
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+        const pdf = await loadDocument(arrayBuffer);
         const imageBlobs: { blob: Blob; name: string }[] = [];
 
         for (let i = 0; i < selectedPageIndices.length; i++) {
@@ -155,7 +152,7 @@ export function usePdfToImage() {
         throw error;
       }
     },
-    []
+    [loadDocument]
   );
 
   const convertAndDownload = useCallback(

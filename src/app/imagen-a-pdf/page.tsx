@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { ToolPageLayout } from "@/components/tool-page-layout";
 import { imageToPdfContent } from "@/content/tools";
-import ImageToPdfClient from "./client";
+import { ToolLoadingSkeleton } from "@/components/tool-loading-skeleton";
+
+const ImageToPdfClient = dynamic(() => import("./client"), {
+  loading: () => <ToolLoadingSkeleton />,
+});
 
 const { metadata: meta, jsonLd } = imageToPdfContent;
 

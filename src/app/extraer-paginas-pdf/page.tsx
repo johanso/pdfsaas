@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { ToolPageLayout } from "@/components/tool-page-layout";
 import { extractPdfContent } from "@/content/tools/extract-pdf";
-import ExtractPdfClient from "./client";
+import { ToolLoadingSkeleton } from "@/components/tool-loading-skeleton";
+
+const ExtractPdfClient = dynamic(() => import("./client"), {
+  loading: () => <ToolLoadingSkeleton />,
+});
 
 const { metadata: meta, jsonLd } = extractPdfContent;
 

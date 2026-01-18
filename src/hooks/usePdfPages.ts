@@ -2,23 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { notify } from "@/lib/errors/notifications";
 import { createError } from "@/lib/errors/error-types";
 import { PageData } from "@/types";
-
-let isWorkerConfigured = false;
-
-// Función auxiliar para configurar pdfjs
-async function setupPdfjs() {
-  if (typeof window === "undefined") return;
-
-  if (!isWorkerConfigured) {
-    const pdfjsModule = await import("pdfjs-dist");
-    const pdfjs = pdfjsModule.default || pdfjsModule;
-    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
-    isWorkerConfigured = true;
-  }
-}
+import { usePdfjs } from "@/hooks/core/usePdfjs";
 
 export function usePdfPages(file: File | null) {
   const [pages, setPages] = useState<PageData[]>([]);
+  const { loadDocument } = usePdfjs();
 
   useEffect(() => {
     if (!file) {
@@ -33,12 +21,8 @@ export function usePdfPages(file: File | null) {
           throw new Error("PDF loading only works in browser");
         }
 
-        await setupPdfjs();
-        const pdfjsModule = await import("pdfjs-dist");
-        const pdfjs = pdfjsModule.default || pdfjsModule;
-
         objectUrl = URL.createObjectURL(file);
-        const pdf = await pdfjs.getDocument(objectUrl).promise;
+        const pdf = await loadDocument(objectUrl);
 
         const newPages: PageData[] = [];
         for (let i = 1; i <= pdf.numPages; i++) {
@@ -72,7 +56,7 @@ export function usePdfPages(file: File | null) {
     };
 
     loadPages();
-  }, [file]);
+  }, [file, loadDocument]);
 
   const rotatePage = useCallback((id: string, degrees: number = 90) => {
     setPages(prev => prev.map(p =>

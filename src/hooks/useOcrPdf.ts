@@ -9,7 +9,7 @@ import { createError } from "@/lib/errors/error-types";
 import { getApiUrl } from "@/lib/api";
 import { usePdfFiles } from "./usePdfFiles";
 import { useToolProcessor, ProcessingResult, UploadStats } from "./core/useToolProcessor";
-import { setupPdfjs } from "@/lib/pdfjs-config";
+import { usePdfjs } from "./core/usePdfjs";
 import {
   DEFAULT_LANGUAGES,
   OPERATION_MESSAGES,
@@ -56,6 +56,7 @@ export type { DpiOption, Language } from "@/lib/ocr-constants";
 export function useOcrPdf() {
   const { files, addFiles, reset: resetContextFiles } = usePdfFiles();
   const file = files[0]?.file || null;
+  const { loadDocument } = usePdfjs();
 
   // Estado local para configuración OCR
   const [pages, setPages] = useState<PageInfo[]>([]);
@@ -196,12 +197,8 @@ export function useOcrPdf() {
         throw new Error("PDF loading only works in browser");
       }
 
-      await setupPdfjs();
-      const pdfjsModule = await import("pdfjs-dist");
-      const pdfjs = pdfjsModule.default || pdfjsModule;
-
       const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+      const pdf = await loadDocument(arrayBuffer);
 
       if (!isMounted.current || fileIdRef.current !== currentFileId) {
         await pdf.destroy();
@@ -235,7 +232,7 @@ export function useOcrPdf() {
         setOcrStatus("error");
       }
     }
-  }, [file]); // added file dependency for name
+  }, [file, loadDocument]);
 
   // -- Detectar si necesita OCR --
   const detectOcrStatus = useCallback(async (pdfFile: File, currentFileId: number) => {

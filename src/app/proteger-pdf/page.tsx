@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { ToolPageLayout } from "@/components/tool-page-layout";
 import { protectPdfContent } from "@/content/tools";
-import ProtectPdfClient from "./client";
+import { ToolLoadingSkeleton } from "@/components/tool-loading-skeleton";
+
+const ProtectPdfClient = dynamic(() => import("./client"), {
+  loading: () => <ToolLoadingSkeleton />,
+});
 
 
 const { metadata: meta, jsonLd } = protectPdfContent;

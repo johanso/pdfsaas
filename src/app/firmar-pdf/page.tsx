@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { signPdfContent } from "@/content/tools/sign-pdf";
-import SignPdfClient from "./client";
+import { ToolLoadingSkeleton } from "@/components/tool-loading-skeleton";
+
+const SignPdfClient = dynamic(() => import("./client"), {
+  loading: () => <ToolLoadingSkeleton />,
+});
 import { ToolPageLayout } from "@/components/tool-page-layout";
 
 export const metadata: Metadata = {

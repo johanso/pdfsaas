@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { notify } from "@/lib/errors/notifications";
 import { getOfficePageCount } from "@/lib/office-utils";
 import { FILE_SIZE_LIMITS, formatBytes } from "@/lib/config";
+import { usePdfjs } from "@/hooks/core/usePdfjs";
 
 export interface PdfFile {
   id: string;
@@ -44,6 +45,7 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const pathname = usePathname();
   const previousPathname = useRef<string | null>(null);
+  const { getPageCount } = usePdfjs();
 
   // Reset files when changing routes (to free memory and avoid confusion)
   useEffect(() => {
@@ -68,6 +70,7 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
         path.startsWith('/pdf-escala-grises') ||
         path.startsWith('/aplanar-pdf') ||
         path.startsWith('/reparar-pdf') ||
+        path.startsWith('/firmar-pdf') ||
         path.startsWith('/desbloquear-pdf');
 
       const wasToolRoute = isToolRoute(previousPathname.current);
@@ -138,16 +141,9 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
 
         if (f.type === "application/pdf") {
           try {
-            // Use dynamic import for browser-only pdfjs
+            // Usar hook optimizado para lazy loading de pdfjs
             if (typeof window !== "undefined") {
-              const pdfjsModule = await import("pdfjs-dist");
-              const pdfjs = pdfjsModule.default || pdfjsModule;
-              pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
-
-              const buffer = await f.arrayBuffer();
-              const pdf = await pdfjs.getDocument(buffer).promise;
-              pageCount = pdf.numPages;
-              await pdf.destroy();
+              pageCount = await getPageCount(f);
             }
           } catch (error: any) {
             if (error.name === "PasswordException") {
