@@ -13,6 +13,7 @@ import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import { getSplitGroupColor } from "@/lib/split-colors";
 import ProcessingScreen from "@/components/processing-screen";
 import { Separator } from "@/components/ui/separator";
+import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 
 // Hooks
 import { usePdfLoader } from "@/hooks/usePdfLoader";
@@ -25,7 +26,7 @@ export default function SplitPdfClient() {
   const [fixedSize, setFixedSize] = useState<number>(2);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
 
-  const { numPages } = usePdfLoader(file);
+  const { numPages, isLoading: isPdfLoading, hasPasswordError, passwordProtectedFileName, clearPasswordError } = usePdfLoader(file);
   const {
     isProcessing,
     progress,
@@ -44,6 +45,7 @@ export default function SplitPdfClient() {
     setFile(null);
     setRanges([]);
     setFixedSize(2);
+    clearPasswordError();
   };
 
   const handleFilesSelected = useCallback((files: File[]) => {
@@ -141,7 +143,7 @@ export default function SplitPdfClient() {
         toolId="split-pdf"
         title="Dividir, Separar o cortar PDF"
         description="Extrae páginas sueltas o divide tu archivo en varios documentos PDF. Fácil, rápido y seguro."
-        hasFiles={!!file}
+        hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
         summaryItems={[
@@ -151,7 +153,7 @@ export default function SplitPdfClient() {
         downloadButtonText={isProcessing ? "Procesando..." : (getIsZip() ? "Dividir y Descargar ZIP" : "Dividir y Descargar PDF")}
         isDownloadDisabled={isProcessing || numPages === 0 || (mode === "ranges" && ranges.length === 0) || (mode === "fixed" && fixedSize < 1)}
         onDownload={handlePreSubmit}
-        isGridLoading={file !== null && numPages === 0}
+        isGridLoading={isPdfLoading && !hasPasswordError}
         sidebarCustomControls={
           <>
             <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
@@ -252,14 +254,21 @@ export default function SplitPdfClient() {
           onContinue: () => { },
         }}
       >
-        <SplitGrid
-          file={file!}
-          numPages={numPages}
-          mode={mode}
-          ranges={ranges}
-          fixedSize={fixedSize}
-          onRangeClick={handleRangeClick}
-        />
+        {hasPasswordError ? (
+          <PasswordProtectedState
+            fileName={passwordProtectedFileName || undefined}
+            onReset={handleReset}
+          />
+        ) : (
+          <SplitGrid
+            file={file!}
+            numPages={numPages}
+            mode={mode}
+            ranges={ranges}
+            fixedSize={fixedSize}
+            onRangeClick={handleRangeClick}
+          />
+        )}
       </PdfToolLayout>
 
       {(isProcessing || isComplete) && (
@@ -280,12 +289,12 @@ export default function SplitPdfClient() {
           toolMetrics={
             result
               ? {
-                  type: "split",
-                  data: {
-                    outputFiles: result.outputFiles,
-                    totalPages: numPages,
-                  }
+                type: "split",
+                data: {
+                  outputFiles: result.outputFiles,
+                  totalPages: numPages,
                 }
+              }
               : undefined
           }
         />

@@ -5,6 +5,7 @@ import { TOOLS } from "@/lib/tools-data";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import CardTool from "../card-tool";
+import { Layers } from "lucide-react";
 
 const Features = () => {
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -24,34 +25,57 @@ const Features = () => {
     : allTools.filter(tool => tool.categoryInfo.id === activeCategory);
 
   return (
-    <section id="features" className="py-24 bg-background">
-      <div className="container mx-auto px-4 max-w-7xl">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-            Herramientas Poderosas
+    <section id="features" className="relative py-32 overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-muted/30" />
+
+      {/* Decorative elements */}
+      <div className="absolute top-20 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+      <div className="absolute bottom-20 left-0 w-80 h-80 bg-accent/5 rounded-full blur-3xl" />
+
+      <div className="container mx-auto px-4 max-w-7xl relative z-10">
+        {/* Header Editorial */}
+        <div className="max-w-3xl mb-16">
+          <div className="inline-flex items-center gap-2 text-primary mb-6">
+            <Layers className="w-5 h-5" />
+            <span className="text-sm font-medium tracking-wide uppercase">Suite Completa</span>
+          </div>
+
+          <h2 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
+            Herramientas
+            <span className="block text-primary">Profesionales</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Todo lo que necesitas para trabajar con tus documentos PDF, directamente en tu navegador.
+
+          <p className="text-xl text-muted-foreground leading-relaxed">
+            Todo lo que necesitas para trabajar con documentos PDF.
+            Procesamiento local, sin límites, sin compromisos.
           </p>
         </div>
 
-        {/* Category Filters */}
-        <div className="flex flex-wrap justify-center gap-2 mb-12 max-w-4xl mx-auto">
+        {/* Category Filters - Editorial Pills */}
+        <div className="flex flex-wrap gap-3 mb-16">
           <Button
-            variant={activeCategory === "all" ? "default" : "outline"}
+            variant={activeCategory === "all" ? "default" : "ghost"}
             onClick={() => setActiveCategory("all")}
-            className="rounded-full"
+            className={cn(
+              "rounded-full px-6 py-2.5 font-medium transition-all duration-300",
+              activeCategory === "all"
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-105"
+                : "hover:bg-primary-soft hover:text-primary"
+            )}
           >
-            Todos
+            Todas
           </Button>
           {allCategories.map((category) => (
             <Button
               key={category.id}
-              variant={activeCategory === category.id ? "default" : "outline"}
+              variant={activeCategory === category.id ? "default" : "ghost"}
               onClick={() => setActiveCategory(category.id)}
               className={cn(
-                "rounded-full transition-all",
-                activeCategory === category.id && "shadow-md scale-105"
+                "rounded-full px-6 py-2.5 font-medium transition-all duration-300",
+                activeCategory === category.id
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-105"
+                  : "hover:bg-primary-soft hover:text-primary"
               )}
             >
               {category.name}
@@ -60,18 +84,27 @@ const Features = () => {
         </div>
 
         {/* Tools Grid */}
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {filteredTools.map((tool) => {
+        <div className="relative">
+          {/* Grid with staggered animation */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {filteredTools.map((tool, index) => {
               return (
-                <CardTool key={`${tool.id}-${tool.categoryInfo.id}`} tool={tool} />
+                <div
+                  key={`${tool.id}-${tool.categoryInfo.id}`}
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <CardTool tool={tool} />
+                </div>
               );
             })}
           </div>
 
           {filteredTools.length === 0 && (
-            <div className="text-center py-20">
-              <p className="text-muted-foreground">No se encontraron herramientas en esta categoría.</p>
+            <div className="text-center py-32">
+              <p className="text-lg text-muted-foreground">
+                No se encontraron herramientas en esta categoría.
+              </p>
             </div>
           )}
         </div>

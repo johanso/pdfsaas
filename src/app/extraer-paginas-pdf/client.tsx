@@ -17,6 +17,7 @@ import { usePdfPages } from "@/hooks/usePdfPages";
 import { useExtractPages } from "@/hooks/useExtractPages";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -27,7 +28,7 @@ export default function ExtractPdfClient() {
   const pathname = usePathname();
   const previousPathname = useRef<string | null>(null);
 
-  const { pages, reorderPages } = usePdfPages(file);
+  const { pages, reorderPages, isLoading: isPagesLoading, hasPasswordError, passwordProtectedFileName, clearPasswordError } = usePdfPages(file);
   const {
     selectedPages,
     togglePage,
@@ -101,6 +102,7 @@ export default function ExtractPdfClient() {
   const handleReset = () => {
     setFile(null);
     resetSelection();
+    clearPasswordError();
   };
 
   const handleRangeChange = (input: string) => {
@@ -147,7 +149,7 @@ export default function ExtractPdfClient() {
         toolId="extract-pages"
         title="Extraer Páginas de PDF"
         description="Selecciona las páginas que deseas conservar o extraer. Herramienta visual rápida para separar hojas sueltas o crear nuevos documentos PDF. Compatible con selección por rangos"
-        hasFiles={!!file}
+        hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
         features={{ selection: true }}
@@ -159,12 +161,12 @@ export default function ExtractPdfClient() {
         summaryItems={[
           { label: "Archivo", value: file ? file.name : "Ninguno" },
           { label: "Total páginas", value: pages.length },
-          { label: "Páginas a extraer", value: selectedPages.length },
+          { label: "Páginas seleccionadas", value: selectedPages.length },
         ]}
         downloadButtonText={isProcessing ? "Procesando..." : (extractMode === "separate" && selectedPages.length > 1 ? "Descargar ZIP" : "Descargar PDF")}
         isDownloadDisabled={isProcessing || selectedPages.length === 0}
         onDownload={handlePreSubmit}
-        isGridLoading={file !== null && pages.length === 0}
+        isGridLoading={isPagesLoading && !hasPasswordError}
         sidebarCustomControls={
           <>
             <div className="space-y-2 pt-2">
@@ -244,14 +246,21 @@ export default function ExtractPdfClient() {
           onContinue: () => { },
         }}
       >
-        <PdfGrid
-          items={pages}
-          config={PDF_CARD_PRESETS.extract}
-          extractCardData={extractCardData}
-          selectedIds={selectedIds}
-          onToggle={handleToggle}
-          onReorder={reorderPages}
-        />
+        {hasPasswordError ? (
+          <PasswordProtectedState
+            fileName={passwordProtectedFileName || undefined}
+            onReset={handleReset}
+          />
+        ) : (
+          <PdfGrid
+            items={pages}
+            config={PDF_CARD_PRESETS.extract}
+            extractCardData={extractCardData}
+            selectedIds={selectedIds}
+            onToggle={handleToggle}
+            onReorder={reorderPages}
+          />
+        )}
       </PdfToolLayout>
 
       {/* Processing Screen */}

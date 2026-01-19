@@ -6,16 +6,26 @@ import { usePdfjs } from "@/hooks/core/usePdfjs";
 
 export function usePdfPages(file: File | null) {
   const [pages, setPages] = useState<PageData[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasPasswordError, setHasPasswordError] = useState(false);
+  const [passwordProtectedFileName, setPasswordProtectedFileName] = useState<string | null>(null);
   const { loadDocument } = usePdfjs();
 
   useEffect(() => {
     if (!file) {
       setPages([]);
+      setIsLoading(false);
+      setHasPasswordError(false);
+      setPasswordProtectedFileName(null);
       return;
     }
 
     const loadPages = async () => {
       let objectUrl: string | null = null;
+      setIsLoading(true);
+      // Limpiar errores previos
+      setHasPasswordError(false);
+      setPasswordProtectedFileName(null);
       try {
         if (typeof window === "undefined") {
           throw new Error("PDF loading only works in browser");
@@ -40,7 +50,16 @@ export function usePdfPages(file: File | null) {
         await pdf.destroy();
       } catch (error: any) {
         console.error(error);
+
+        // IMPORTANTE: Resetear isLoading ANTES de mostrar el error
+        // Esto evita que el modal de "Preparando archivo..." se quede bloqueado
+        setIsLoading(false);
+
         if (error.name === "PasswordException") {
+          // Setear el estado de error de contraseña
+          setHasPasswordError(true);
+          setPasswordProtectedFileName(file.name);
+
           const protectedError = createError.fileProtected(file.name);
           notify.error(protectedError.userMessage.description);
         } else {
@@ -48,10 +67,13 @@ export function usePdfPages(file: File | null) {
           notify.error(appError.userMessage.description);
         }
         setPages([]);
+        return; // Salir temprano para evitar el finally
       } finally {
         if (objectUrl) {
           URL.revokeObjectURL(objectUrl);
         }
+        // Solo resetear isLoading aquí si no hubo error
+        setIsLoading(false);
       }
     };
 
@@ -83,13 +105,22 @@ export function usePdfPages(file: File | null) {
     setPages(prev => prev.filter(p => p.id !== id));
   }, []);
 
+  const clearPasswordError = useCallback(() => {
+    setHasPasswordError(false);
+    setPasswordProtectedFileName(null);
+  }, []);
+
   return {
     pages,
     setPages,
+    isLoading,
+    hasPasswordError,
+    passwordProtectedFileName,
     rotatePage,
     rotateAllPages,
     resetRotation,
     reorderPages,
-    removePage
+    removePage,
+    clearPasswordError
   };
 }

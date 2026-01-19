@@ -19,6 +19,7 @@ import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import ProcessingScreen from "@/components/processing-screen";
 import { Separator } from "@/components/ui/separator";
+import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 import {
   Tooltip,
   TooltipContent,
@@ -73,7 +74,7 @@ export default function PdfToImageClient() {
   const [dpi, setDpi] = useState<DpiOption>(150);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { pages, reorderPages, removePage } = usePdfPages(file);
+  const { pages, reorderPages, removePage, isLoading: isPagesLoading, hasPasswordError, passwordProtectedFileName, clearPasswordError } = usePdfPages(file);
 
   const {
     isProcessing,
@@ -148,6 +149,7 @@ export default function PdfToImageClient() {
     setIsDialogOpen(false);
     setIsInitialLoading(false);
     handleStartNew();
+    clearPasswordError();
   };
 
   const handlePreSubmit = () => {
@@ -183,7 +185,7 @@ export default function PdfToImageClient() {
         toolId="pdf-to-image"
         title="Convertir PDF a Imagenes de Alta Calidad"
         description="Transforma páginas de PDF en archivos de imagen nítidos. Elige resolución de hasta 600 DPI para impresión o formatos ligeros para web."
-        hasFiles={!!file}
+        hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
         summaryItems={[
@@ -193,7 +195,7 @@ export default function PdfToImageClient() {
         ]}
         downloadButtonText={pages.length > 1 ? "Descargar imágenes" : "Descargar imagen"}
         onDownload={handlePreSubmit}
-        isGridLoading={isInitialLoading && pages.length === 0}
+        isGridLoading={isPagesLoading && !hasPasswordError}
         sidebarCustomControls={
           <div className="space-y-5">
             {/* Formato de salida */}
@@ -324,13 +326,20 @@ export default function PdfToImageClient() {
           onContinue: () => { },
         }}
       >
-        <PdfGrid
-          items={pages}
-          config={PDF_CARD_PRESETS.pdftoImg}
-          extractCardData={extractCardData}
-          onRemove={handleRemove}
-          onReorder={reorderPages}
-        />
+        {hasPasswordError ? (
+          <PasswordProtectedState
+            fileName={passwordProtectedFileName || undefined}
+            onReset={handleReset}
+          />
+        ) : (
+          <PdfGrid
+            items={pages}
+            config={PDF_CARD_PRESETS.pdftoImg}
+            extractCardData={extractCardData}
+            onRemove={handleRemove}
+            onReorder={reorderPages}
+          />
+        )}
       </PdfToolLayout>
 
       {(isProcessing || isComplete) && (

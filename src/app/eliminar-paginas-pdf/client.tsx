@@ -13,6 +13,7 @@ import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import ProcessingScreen from "@/components/processing-screen";
 import { Separator } from "@/components/ui/separator";
+import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 
 // Hooks
 import { useDeletePages } from "@/hooks/useDeletePages";
@@ -28,7 +29,7 @@ export default function DeletePagesClient() {
   const previousPathname = useRef<string | null>(null);
 
   // Hooks principales
-  const { pages, reorderPages } = usePdfPages(file);
+  const { pages, reorderPages, isLoading: isPagesLoading, hasPasswordError, passwordProtectedFileName, clearPasswordError } = usePdfPages(file);
   const {
     selectedPages,
     togglePage,
@@ -101,6 +102,7 @@ export default function DeletePagesClient() {
   const handleReset = () => {
     setFile(null);
     resetSelection();
+    clearPasswordError();
   };
 
   const handleOpenSaveDialog = () => {
@@ -162,7 +164,7 @@ export default function DeletePagesClient() {
         downloadButtonText={isProcessing ? "Procesando..." : (extractMode === "separate" && (pages.length - selectedPages.length) > 1 ? "Descargar ZIP" : "Descargar PDF")}
         isDownloadDisabled={isProcessing || selectedPages.length === 0}
         onDownload={handleOpenSaveDialog}
-        isGridLoading={file !== null && pages.length === 0}
+        isGridLoading={isPagesLoading}
         sidebarCustomControls={
           <>
             <div className="space-y-4 pt-2">
@@ -244,14 +246,21 @@ export default function DeletePagesClient() {
           onContinue: () => { },
         }}
       >
-        <PdfGrid
-          items={pages}
-          config={PDF_CARD_PRESETS.delete}
-          selectedIds={selectedIds}
-          extractCardData={extractCardData}
-          onReorder={reorderPages}
-          onToggle={handleToggle}
-        />
+        {hasPasswordError ? (
+          <PasswordProtectedState
+            fileName={passwordProtectedFileName || undefined}
+            onReset={handleReset}
+          />
+        ) : (
+          <PdfGrid
+            items={pages}
+            config={PDF_CARD_PRESETS.delete}
+            selectedIds={selectedIds}
+            extractCardData={extractCardData}
+            onReorder={reorderPages}
+            onToggle={handleToggle}
+          />
+        )}
       </PdfToolLayout>
 
       {/* Processing Screen */}

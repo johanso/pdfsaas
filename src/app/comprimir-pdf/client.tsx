@@ -25,6 +25,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
+import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 
 // Hooks
 import { usePdfFiles } from "@/hooks/usePdfFiles";
@@ -69,6 +70,9 @@ export default function CompressPdfClient() {
     removeFile,
     reset: resetFiles,
     isLoading: isFilesLoading,
+    hasPasswordError,
+    passwordProtectedFileName,
+    clearPasswordError,
   } = usePdfFiles();
 
   const {
@@ -115,6 +119,7 @@ export default function CompressPdfClient() {
     setImageQuality(60);
     setIsDialogOpen(false);
     handleStartNew();
+    clearPasswordError();
   };
 
   const handlePreSubmit = () => {
@@ -143,14 +148,14 @@ export default function CompressPdfClient() {
         toolId="compress-pdf"
         title="Comprimir, Reducir Tamaño y Peso de Archivos PDF"
         description="Optimiza tus documentos para web o correo electrónico. Elige entre máxima compresión o mantener la mejor calidad con nuestros ajustes inteligentes."
-        hasFiles={!!file}
+        hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
         summaryItems={[]}
         downloadButtonText="Comprimir PDF"
         isDownloadDisabled={isProcessing || files.length === 0}
         onDownload={handlePreSubmit}
-        isGridLoading={isFilesLoading && files.length === 0}
+        isGridLoading={isFilesLoading && files.length === 0 && !hasPasswordError}
         sidebarCustomControls={
           <div className="space-y-2">
             <div className="space-y-3 mb-4">
@@ -267,13 +272,20 @@ export default function CompressPdfClient() {
         }}
         layout="grid"
       >
-        <PdfGrid
-          items={files}
-          config={PDF_CARD_PRESETS.compress}
-          layout="list"
-          extractCardData={extractCardData}
-          onRemove={removeFile}
-        />
+        {hasPasswordError ? (
+          <PasswordProtectedState
+            fileName={passwordProtectedFileName || undefined}
+            onReset={handleReset}
+          />
+        ) : (
+          <PdfGrid
+            items={files}
+            config={PDF_CARD_PRESETS.compress}
+            layout="list"
+            extractCardData={extractCardData}
+            onRemove={removeFile}
+          />
+        )}
       </PdfToolLayout>
 
       {(isProcessing || isComplete) && (
@@ -291,13 +303,13 @@ export default function CompressPdfClient() {
           toolMetrics={
             result
               ? {
-                  type: "compression",
-                  data: {
-                    originalSize: result.originalSize,
-                    resultSize: result.compressedSize,
-                    reduction: result.reduction,
-                  }
+                type: "compression",
+                data: {
+                  originalSize: result.originalSize,
+                  resultSize: result.compressedSize,
+                  reduction: result.reduction,
                 }
+              }
               : undefined
           }
         />

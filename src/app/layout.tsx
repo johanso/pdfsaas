@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Nunito_Sans, Roboto } from "next/font/google";
+import { Fraunces, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ToastContainer } from "@/components/ui/toast";
@@ -9,14 +9,25 @@ import { FileContextProvider } from "@/context/FileContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Footer from "@/components/layout/footer";
 
-const nunitoSans = Nunito_Sans({
-  variable: "--font-nunito-sans",
+// Display font - Editorial, distintiva para headings
+const fraunces = Fraunces({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
-const roboto = Roboto({
-  variable: "--font-geist-mono",
+// Body font - Grotesca moderna, única y legible
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700", "800"],
+});
+
+// Monospace - Técnica y precisa
+const jetbrains = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -32,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${nunitoSans.variable} ${roboto.variable} antialiased min-h-screen`}
+        className={`${fraunces.variable} ${bricolage.variable} ${jetbrains.variable} antialiased min-h-screen`}
       >
         <ThemeProvider
           attribute="class"

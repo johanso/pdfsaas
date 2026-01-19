@@ -8,6 +8,7 @@ import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import ProcessingScreen from "@/components/processing-screen";
+import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 
 // Hooks
 import { useRotatePdf } from "@/hooks/useRotatePdf";
@@ -18,7 +19,7 @@ export default function RotatePdfClient() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
 
-  const { pages, rotateAllPages, resetRotation, rotatePage, reorderPages } = usePdfPages(file);
+  const { pages, rotateAllPages, resetRotation, rotatePage, reorderPages, isLoading: isPagesLoading, hasPasswordError, passwordProtectedFileName, clearPasswordError } = usePdfPages(file);
   const {
     isProcessing,
     progress,
@@ -75,6 +76,7 @@ export default function RotatePdfClient() {
   const handleReset = () => {
     setFile(null);
     setIsInitialLoading(false);
+    clearPasswordError();
   };
 
   const handleFilesSelected = (files: File[]) => {
@@ -111,7 +113,7 @@ export default function RotatePdfClient() {
         toolId="rotate-pdf"
         title="Rotar / Girar PDF"
         description="Endereza tus documentos escaneados. Rota páginas individuales o todo el archivo a la vez y guarda los cambios permanentemente."
-        hasFiles={!!file}
+        hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
         features={{ rotation: true }}
@@ -138,7 +140,7 @@ export default function RotatePdfClient() {
         downloadButtonText={isProcessing ? "Procesando..." : "Descargar PDF"}
         isDownloadDisabled={isProcessing || !hasModifications}
         onDownload={() => setIsDialogOpen(true)}
-        isGridLoading={isInitialLoading && pages.length === 0}
+        isGridLoading={isPagesLoading && !hasPasswordError}
         saveDialogProps={{
           open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
@@ -154,16 +156,23 @@ export default function RotatePdfClient() {
           onContinue: () => { },
         }}
       >
-        <PdfGrid
-          items={pages}
-          config={PDF_CARD_PRESETS.rotate}
-          extractCardData={extractCardData}
-          onReorder={reorderPages}
-          onRotate={rotatePage}
-          onRotateLeft={handleGridRotateLeft}
-          onRotateRight={handleGridRotateRight}
-          onRemove={handleRemovePage}
-        />
+        {hasPasswordError ? (
+          <PasswordProtectedState
+            fileName={passwordProtectedFileName || undefined}
+            onReset={handleReset}
+          />
+        ) : (
+          <PdfGrid
+            items={pages}
+            config={PDF_CARD_PRESETS.rotate}
+            extractCardData={extractCardData}
+            onReorder={reorderPages}
+            onRotate={rotatePage}
+            onRotateLeft={handleGridRotateLeft}
+            onRotateRight={handleGridRotateRight}
+            onRemove={handleRemovePage}
+          />
+        )}
       </PdfToolLayout>
 
       {/* Processing Screen */}
@@ -186,14 +195,14 @@ export default function RotatePdfClient() {
             toolMetrics={
               result
                 ? {
-                    type: "pages",
-                    data: {
-                      pagesProcessed: pages.filter(p => (p.rotation % 360) !== 0).length,
-                      pagesTotal: pages.length,
-                      operation: "Rotadas",
-                      resultSize: result.resultSize,
-                    }
+                  type: "pages",
+                  data: {
+                    pagesProcessed: pages.filter(p => (p.rotation % 360) !== 0).length,
+                    pagesTotal: pages.length,
+                    operation: "Rotadas",
+                    resultSize: result.resultSize,
                   }
+                }
                 : undefined
             }
           />

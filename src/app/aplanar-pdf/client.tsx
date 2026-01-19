@@ -3,10 +3,7 @@
 import { useState, useCallback } from "react";
 import { notify } from "@/lib/errors/notifications";
 import {
-  Info,
-  FileText,
-  MessageSquare,
-  Layers,
+  Info
 } from "lucide-react";
 
 // Components
@@ -24,6 +21,7 @@ import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import ProcessingScreen from "@/components/processing-screen";
 import { Separator } from "@/components/ui/separator";
+import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 
 // Hooks
 import { usePdfFiles } from "@/hooks/usePdfFiles";
@@ -62,6 +60,9 @@ export default function FlattenPdfClient() {
     removeFile,
     reset: resetFiles,
     isLoading: isFilesLoading,
+    hasPasswordError,
+    passwordProtectedFileName,
+    clearPasswordError,
   } = usePdfFiles();
 
   const {
@@ -106,6 +107,7 @@ export default function FlattenPdfClient() {
     setCompress(true);
     setIsDialogOpen(false);
     handleStartNew();
+    clearPasswordError();
   };
 
   const handlePreSubmit = () => {
@@ -132,14 +134,14 @@ export default function FlattenPdfClient() {
         toolId="flatten-pdf"
         title="Aplanar PDF: Unir Capas y Bloquear Edición"
         description="Convierte formularios rellenables y comentarios en contenido permanente. Evita la edición de tus documentos y asegura una impresión correcta uniendo todas las capas."
-        hasFiles={!!file}
+        hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
         summaryItems={[]}
         downloadButtonText="Descargar PDF"
         isDownloadDisabled={isProcessing || files.length === 0}
         onDownload={handlePreSubmit}
-        isGridLoading={isFilesLoading && files.length === 0}
+        isGridLoading={isFilesLoading && files.length === 0 && !hasPasswordError}
         sidebarCustomControls={
           <div className="space-y-2">
             <div className="space-y-3 mb-4">
@@ -207,13 +209,20 @@ export default function FlattenPdfClient() {
         }}
         layout="grid"
       >
-        <PdfGrid
-          items={files}
-          config={PDF_CARD_PRESETS.compress}
-          layout="list"
-          extractCardData={extractCardData}
-          onRemove={removeFile}
-        />
+        {hasPasswordError ? (
+          <PasswordProtectedState
+            fileName={passwordProtectedFileName || undefined}
+            onReset={handleReset}
+          />
+        ) : (
+          <PdfGrid
+            items={files}
+            config={PDF_CARD_PRESETS.compress}
+            layout="list"
+            extractCardData={extractCardData}
+            onRemove={removeFile}
+          />
+        )}
       </PdfToolLayout>
 
       {(isProcessing || isComplete) && (
@@ -231,13 +240,13 @@ export default function FlattenPdfClient() {
           toolMetrics={
             result
               ? {
-                  type: "compression",
-                  data: {
-                    originalSize: result.originalSize,
-                    resultSize: result.resultSize,
-                    reduction: (result.reduction / result.originalSize) * 100,
-                  }
+                type: "compression",
+                data: {
+                  originalSize: result.originalSize,
+                  resultSize: result.resultSize,
+                  reduction: (result.reduction / result.originalSize) * 100,
                 }
+              }
               : undefined
           }
         />

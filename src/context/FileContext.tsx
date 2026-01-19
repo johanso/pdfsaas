@@ -22,6 +22,8 @@ export interface PdfFile {
 interface FileStateType {
   files: PdfFile[];
   isLoading: boolean;
+  hasPasswordError: boolean;
+  passwordProtectedFileName: string | null;
 }
 
 interface FileActionsType {
@@ -33,11 +35,12 @@ interface FileActionsType {
   sortAZ: () => void;
   sortZA: () => void;
   reset: () => void;
+  clearPasswordError: () => void;
   getTotalSize: () => number;
   getTotalPages: () => number;
 }
 
-interface FileContextType extends FileStateType, FileActionsType {}
+interface FileContextType extends FileStateType, FileActionsType { }
 
 // Contextos separados para optimizar re-renders
 const FileStateContext = createContext<FileStateType | undefined>(undefined);
@@ -71,6 +74,8 @@ export function useFileContext(): FileContextType {
 export function FileContextProvider({ children }: { children: ReactNode }) {
   const [files, setFiles] = useState<PdfFile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasPasswordError, setHasPasswordError] = useState(false);
+  const [passwordProtectedFileName, setPasswordProtectedFileName] = useState<string | null>(null);
   const pathname = usePathname();
   const previousPathname = useRef<string | null>(null);
   const { getPageCount } = usePdfjs();
@@ -107,6 +112,8 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
       // Reset if navigating between different tools
       if (wasToolRoute && isNowToolRoute && previousPathname.current !== pathname) {
         setFiles([]);
+        setHasPasswordError(false);
+        setPasswordProtectedFileName(null);
       }
     }
     previousPathname.current = pathname;
@@ -125,6 +132,9 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
 
   const addFiles = useCallback(async (newFiles: File[], skipPdfValidation: boolean = false) => {
     setIsLoading(true);
+    // Limpiar errores previos de contraseña
+    setHasPasswordError(false);
+    setPasswordProtectedFileName(null);
 
     try {
       // Verificar si estamos en la herramienta de desbloqueo
@@ -163,6 +173,7 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
       if (validFiles.length === 0) return;
 
       let protectedCount = 0;
+      const protectedFileNames: string[] = [];
 
       const mappedFilesPromises = validFiles.map(async (f): Promise<PdfFile | null> => {
         let pageCount: number | undefined;
@@ -182,6 +193,7 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
               } else {
                 // En otras herramientas, descartar archivos protegidos
                 protectedCount++;
+                protectedFileNames.push(f.name);
                 return null;
               }
             } else {
@@ -208,16 +220,36 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
       const resolvedFiles = await Promise.all(mappedFilesPromises);
       const mappedFiles = resolvedFiles.filter((f): f is PdfFile => f !== null);
 
+      // IMPORTANTE: Resetear isLoading ANTES de mostrar errores
+      // Esto evita que el modal de "Preparando archivo..." se quede bloqueado
+      setIsLoading(false);
+
+      // Mostrar mensaje de error mejorado para archivos protegidos
       if (protectedCount > 0) {
+        const fileList = protectedFileNames.length <= 3
+          ? protectedFileNames.join(', ')
+          : `${protectedFileNames.slice(0, 2).join(', ')} y ${protectedCount - 2} más`;
+
+        // Setear el estado de error de contraseña para mostrar el componente visual
+        setHasPasswordError(true);
+        setPasswordProtectedFileName(protectedFileNames[0]);
+
         notify.error(
-          `${protectedCount} archivo${protectedCount > 1 ? 's' : ''} protegido${protectedCount > 1 ? 's' : ''} detectado${protectedCount > 1 ? 's' : ''} y descartado${protectedCount > 1 ? 's' : ''}.`
+          `${protectedCount > 1 ? 'Los archivos' : 'El archivo'} ${fileList} ${protectedCount > 1 ? 'están protegidos' : 'está protegido'} con contraseña. Usa la herramienta "Desbloquear PDF" para trabajar con ${protectedCount > 1 ? 'estos archivos' : 'este archivo'}.`,
+          {
+            title: "Archivos protegidos detectados",
+            duration: 8000
+          }
         );
       }
 
       if (mappedFiles.length > 0) {
         setFiles(prev => [...mappedFiles, ...prev]);
       }
-    } finally {
+    } catch (unexpectedError) {
+      // Capturar cualquier error inesperado y asegurar que el estado de carga se resetee
+      console.error("Unexpected error in addFiles:", unexpectedError);
+      notify.error("Ocurrió un error al procesar los archivos. Por favor, intenta de nuevo.");
       setIsLoading(false);
     }
   }, [files, pathname]);
@@ -251,6 +283,13 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
 
   const reset = useCallback(() => {
     setFiles([]);
+    setHasPasswordError(false);
+    setPasswordProtectedFileName(null);
+  }, []);
+
+  const clearPasswordError = useCallback(() => {
+    setHasPasswordError(false);
+    setPasswordProtectedFileName(null);
   }, []);
 
   const getTotalSize = useCallback(() => {
@@ -264,8 +303,10 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
   // Memoizar el objeto de estado (cambia cuando files o isLoading cambian)
   const stateValue = useMemo<FileStateType>(() => ({
     files,
-    isLoading
-  }), [files, isLoading]);
+    isLoading,
+    hasPasswordError,
+    passwordProtectedFileName
+  }), [files, isLoading, hasPasswordError, passwordProtectedFileName]);
 
   // Memoizar el objeto de acciones (estable, no cambia porque las funciones están en useCallback)
   const actionsValue = useMemo<FileActionsType>(() => ({
@@ -277,9 +318,10 @@ export function FileContextProvider({ children }: { children: ReactNode }) {
     sortAZ,
     sortZA,
     reset,
+    clearPasswordError,
     getTotalSize,
     getTotalPages,
-  }), [setFiles, addFiles, rotateFile, removeFile, reorderFiles, sortAZ, sortZA, reset, getTotalSize, getTotalPages]);
+  }), [setFiles, addFiles, rotateFile, removeFile, reorderFiles, sortAZ, sortZA, reset, clearPasswordError, getTotalSize, getTotalPages]);
 
   return (
     <FileStateContext.Provider value={stateValue}>
