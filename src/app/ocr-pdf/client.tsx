@@ -35,6 +35,7 @@ import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import ProcessingScreen from "@/components/processing-screen";
+import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 
 // Hook
 import { useOcrPdf, DPI_OPTIONS, type DpiOption } from "@/hooks/useOcrPdf";
@@ -61,7 +62,10 @@ export default function OcrPdfClient() {
     dpi,
     optimize,
     result,
-    
+    hasPasswordError,
+    passwordProtectedFileName,
+    clearPasswordError,
+
 
     // Setters
     setFile,
@@ -101,6 +105,11 @@ export default function OcrPdfClient() {
 
     setFile(files[0]);
   }, [setFile]);
+
+  const handleReset = () => {
+    reset();
+    clearPasswordError(); // Ensure we clear errors
+  };
 
   const handleRemovePage = useCallback((id: string) => {
     removePage(id);
@@ -302,10 +311,10 @@ export default function OcrPdfClient() {
         toolId="ocr-pdf"
         title="OCR PDF: Reconocimiento de Texto y PDF Buscable"
         description="Convierte documentos escaneados en PDFs con texto seleccionable. Haz que tus archivos sean buscables (Searchable) y copia el contenido fácilmente."
-        hasFiles={hasContent}
+        hasFiles={hasContent || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         acceptedFileTypes=".pdf,application/pdf"
-        onReset={reset}
+        onReset={handleReset}
         summaryItems={[
           { label: "Archivo", value: file?.name || "-" },
           { label: "Páginas", value: pages.length || "-" },
@@ -315,7 +324,7 @@ export default function OcrPdfClient() {
         downloadButtonText="Descargar PDF"
         isDownloadDisabled={isProcessing || !hasContent || selectedLanguages.length === 0}
         onDownload={handleApplyOcr}
-        isGridLoading={isLoading}
+        isGridLoading={isLoading && !hasPasswordError}
         sidebarCustomControls={sidebarControls}
         saveDialogProps={{
           open: isDialogOpen,
@@ -333,13 +342,20 @@ export default function OcrPdfClient() {
           onContinue: () => { },
         }}
       >
-        <PdfGrid
-          items={gridItems}
-          config={PDF_CARD_PRESETS.ocr}
-          extractCardData={extractCardData}
-          onRemove={handleRemovePage}
-          onReorder={handleReorderPages}
-        />
+        {!hasContent && hasPasswordError ? (
+          <PasswordProtectedState
+            fileName={passwordProtectedFileName || undefined}
+            onReset={handleReset}
+          />
+        ) : (
+          <PdfGrid
+            items={gridItems}
+            config={PDF_CARD_PRESETS.ocr}
+            extractCardData={extractCardData}
+            onRemove={handleRemovePage}
+            onReorder={handleReorderPages}
+          />
+        )}
       </PdfToolLayout>
 
       {(isProcessing || isComplete) && (
@@ -362,14 +378,14 @@ export default function OcrPdfClient() {
           toolMetrics={
             result
               ? {
-                  type: "pages",
-                  data: {
-                    operation: "OCR aplicado",
-                    resultSize: result.resultSize,
-                    pagesProcessed: pages.length,
-                    pagesTotal: pages.length,
-                  }
+                type: "pages",
+                data: {
+                  operation: "OCR aplicado",
+                  resultSize: result.resultSize,
+                  pagesProcessed: pages.length,
+                  pagesTotal: pages.length,
                 }
+              }
               : undefined
           }
         />

@@ -5,10 +5,15 @@ import { usePdfjs } from "@/hooks/core/usePdfjs";
 
 export function usePdfMultiLoader() {
   const [isLoading, setIsLoading] = useState(false);
+  const [hasPasswordError, setHasPasswordError] = useState(false);
+  const [passwordProtectedFileName, setPasswordProtectedFileName] = useState<string | null>(null);
   const { loadDocument } = usePdfjs();
 
   const loadPdfPages = useCallback(async (files: File[]) => {
     setIsLoading(true);
+    // Limpiar errores previos al iniciar nueva carga
+    setHasPasswordError(false);
+    setPasswordProtectedFileName(null);
 
     try {
       if (typeof window === "undefined") {
@@ -50,6 +55,9 @@ export function usePdfMultiLoader() {
         } catch (error: any) {
           console.error(`Error loading ${file.name}:`, error);
           if (error.name === "PasswordException") {
+            setHasPasswordError(true);
+            setPasswordProtectedFileName(file.name);
+
             const protectedError = createError.fileProtected(file.name);
             notify.error(protectedError.userMessage.description);
             // We continue to the next file, this one is skipped as we don't push to allPages
@@ -75,8 +83,16 @@ export function usePdfMultiLoader() {
     }
   }, [loadDocument]);
 
+  const clearPasswordError = useCallback(() => {
+    setHasPasswordError(false);
+    setPasswordProtectedFileName(null);
+  }, []);
+
   return {
     loadPdfPages,
-    isLoading
+    isLoading,
+    hasPasswordError,
+    passwordProtectedFileName,
+    clearPasswordError
   };
 }

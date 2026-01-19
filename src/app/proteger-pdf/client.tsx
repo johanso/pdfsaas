@@ -12,6 +12,7 @@ import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import ProcessingScreen from "@/components/processing-screen";
 import { Separator } from "@/components/ui/separator";
+import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 
 // Hooks
 import { usePdfFiles } from "@/hooks/usePdfFiles";
@@ -31,6 +32,9 @@ export default function ProtectPdfClient() {
     removeFile,
     reset: resetFiles,
     isLoading: isFilesLoading,
+    hasPasswordError,
+    passwordProtectedFileName,
+    clearPasswordError
   } = usePdfFiles();
 
   const {
@@ -75,6 +79,7 @@ export default function ProtectPdfClient() {
     setEncryption("256");
     setIsDialogOpen(false);
     handleStartNew();
+    clearPasswordError();
   };
 
   const handlePreSubmit = () => {
@@ -112,14 +117,14 @@ export default function ProtectPdfClient() {
         toolId="protect-pdf"
         title="Proteger PDF: Poner Contraseña y Encriptar Archivos"
         description="Añade una clave de seguridad a tus documentos confidenciales. Utiliza encriptación militar AES-256 para que solo quien tú quieras pueda leer el contenido."
-        hasFiles={!!file}
+        hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
         summaryItems={[]}
         downloadButtonText="Descargar PDF"
         isDownloadDisabled={isProcessing || files.length === 0 || !canSubmit}
         onDownload={handlePreSubmit}
-        isGridLoading={isFilesLoading && files.length === 0}
+        isGridLoading={isFilesLoading && files.length === 0 && !hasPasswordError}
         sidebarCustomControls={
           <div className="space-y-2">
             <div className="space-y-3 mb-4">
@@ -195,13 +200,20 @@ export default function ProtectPdfClient() {
         }}
         layout="grid"
       >
-        <PdfGrid
-          items={files}
-          config={PDF_CARD_PRESETS.compress}
-          layout="list"
-          extractCardData={extractCardData}
-          onRemove={removeFile}
-        />
+        {files.length === 0 && hasPasswordError ? (
+          <PasswordProtectedState
+            fileName={passwordProtectedFileName || undefined}
+            onReset={handleReset}
+          />
+        ) : (
+          <PdfGrid
+            items={files}
+            config={PDF_CARD_PRESETS.compress}
+            layout="list"
+            extractCardData={extractCardData}
+            onRemove={removeFile}
+          />
+        )}
       </PdfToolLayout>
 
       {(isProcessing || isComplete) && (
@@ -219,12 +231,12 @@ export default function ProtectPdfClient() {
           toolMetrics={
             result
               ? {
-                  type: "protect",
-                  data: {
-                    encryption: result.encryption,
-                    resultSize: result.resultSize,
-                  }
+                type: "protect",
+                data: {
+                  encryption: result.encryption,
+                  resultSize: result.resultSize,
                 }
+              }
               : undefined
           }
         />

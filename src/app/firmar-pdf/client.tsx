@@ -12,6 +12,7 @@ import { Loader2, Plus, FileText, ChevronRight, X, Edit3 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SignatureCreator, SignatureSource } from "@/components/pdf-system/signature-creator";
 import { cn } from "@/lib/utils";
+import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 
 // Hooks
 import { usePdfFiles } from "@/hooks/usePdfFiles";
@@ -46,7 +47,15 @@ export default function SignPdfClient() {
   const [filesSignatures, setFilesSignatures] = useState<Record<string, any[]>>({});
   const savedFileName = useRef<string>("");
 
-  const { files, addFiles, reset: resetFiles, isLoading: isFilesLoading } = usePdfFiles();
+  const {
+    files,
+    addFiles,
+    reset: resetFiles,
+    isLoading: isFilesLoading,
+    hasPasswordError,
+    passwordProtectedFileName,
+    clearPasswordError
+  } = usePdfFiles();
   const {
     isProcessing,
     isComplete,
@@ -176,6 +185,7 @@ export default function SignPdfClient() {
     resetFiles();
     setActiveFileId(null);
     setFilesSignatures({});
+    clearPasswordError();
   };
 
   const handleSignaturesUpdate = useCallback((sigs: any[]) => {
@@ -197,7 +207,7 @@ export default function SignPdfClient() {
         toolId="firmar-pdf"
         title="Firmar PDF Online"
         description="Dibuja, escribe o sube tu firma. Colócala exactamente donde la necesitas arrastrando y soltando. Firma documentos legalmente sin imprimir ni escanear."
-        hasFiles={files.length > 0}
+        hasFiles={files.length > 0 || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
         summaryItems={activePdfFile ? [
@@ -332,7 +342,12 @@ export default function SignPdfClient() {
           onContinue: handleStartNew,
         }}
       >
-        {activePdfFile ? (
+        {files.length === 0 && hasPasswordError ? (
+          <PasswordProtectedState
+            fileName={passwordProtectedFileName || undefined}
+            onReset={handleReset}
+          />
+        ) : activePdfFile ? (
           <div className="w-full bg-zinc-200/50 dark:bg-zinc-950/50 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-inner h-[calc(100vh-250px)] relative">
             <PdfSignerEditorArea
               file={activePdfFile.file}

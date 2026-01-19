@@ -3,7 +3,8 @@
 import { useState, useRef, useCallback } from "react";
 import { notify } from "@/lib/errors/notifications";
 
-// Components
+import { Separator } from "@/components/ui/separator";
+import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
@@ -26,6 +27,9 @@ export default function UnirPdfClient() {
     sortZA,
     reset,
     isLoading,
+    hasPasswordError,
+    passwordProtectedFileName,
+    clearPasswordError
   } = usePdfFiles();
   const {
     isProcessing,
@@ -69,16 +73,21 @@ export default function UnirPdfClient() {
     rotation: f.rotation
   }), []);
 
+  const handleReset = () => {
+    reset();
+    clearPasswordError(); // Ensure we clear errors
+  };
+
   return (
     <>
       <PdfToolLayout
         toolId="merge-pdf"
         title="Unir PDF: Juntar y combinar PDF"
         description="Combina múltiples documentos en un solo archivo PDF. Sin marcas de agua, sin registro y con un límite de hasta 150MB por archivo."
-        hasFiles={files.length > 0}
+        hasFiles={files.length > 0 || hasPasswordError}
         onFilesSelected={handleFiles}
         dropzoneMultiple={true}
-        onReset={reset}
+        onReset={handleReset}
         textAdd="Añadir otro PDF"
         features={{ sorting: true }}
         actions={{
@@ -93,7 +102,7 @@ export default function UnirPdfClient() {
         downloadButtonText={isProcessing ? "Procesando..." : "Descargar PDF"}
         isDownloadDisabled={files.length < 2 || isProcessing}
         onDownload={() => setIsDialogOpen(true)}
-        isGridLoading={isLoading && files.length === 0}
+        isGridLoading={isLoading && files.length === 0 && !hasPasswordError}
         saveDialogProps={{
           open: isDialogOpen,
           onOpenChange: setIsDialogOpen,
@@ -109,33 +118,42 @@ export default function UnirPdfClient() {
         }}
         layout="grid"
       >
-        <PdfGrid
-          items={files}
-          config={PDF_CARD_PRESETS.merge}
-          layout="grid"
-          extractCardData={extractCardData}
-          onReorder={reorderFiles}
-          onRemove={removeFile}
-          showAddCard={true}
-          onAddFiles={handleFiles}
-          addCardText="Añadir PDF"
-          addCardSubtext="Arrastra o haz clic"
-          addCardDisabled={isProcessing}
-        />
+        {files.length === 0 && hasPasswordError ? (
+          <PasswordProtectedState
+            fileName={passwordProtectedFileName || undefined}
+            onReset={handleReset}
+          />
+        ) : (
+          <>
+            <PdfGrid
+              items={files}
+              config={PDF_CARD_PRESETS.merge}
+              layout="grid"
+              extractCardData={extractCardData}
+              onReorder={reorderFiles}
+              onRemove={removeFile}
+              showAddCard={true}
+              onAddFiles={handleFiles}
+              addCardText="Añadir PDF"
+              addCardSubtext="Arrastra o haz clic"
+              addCardDisabled={isProcessing}
+            />
 
-        {/* Hidden file input for "Añadir PDF" button */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="application/pdf"
-          multiple
-          className="hidden"
-          onChange={(e) => {
-            if (e.target.files) {
-              handleFiles(Array.from(e.target.files));
-            }
-          }}
-        />
+            {/* Hidden file input for "Añadir PDF" button */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files) {
+                  handleFiles(Array.from(e.target.files));
+                }
+              }}
+            />
+          </>
+        )}
       </PdfToolLayout >
 
       {/* Processing Screen */}
@@ -158,13 +176,13 @@ export default function UnirPdfClient() {
             toolMetrics={
               result
                 ? {
-                    type: "merge",
-                    data: {
-                      filesCount: files.length,
-                      totalPages: files.reduce((acc, f) => acc + (f.pageCount || 0), 0),
-                      resultSize: result.resultSize,
-                    }
+                  type: "merge",
+                  data: {
+                    filesCount: files.length,
+                    totalPages: files.reduce((acc, f) => acc + (f.pageCount || 0), 0),
+                    resultSize: result.resultSize,
                   }
+                }
                 : undefined
             }
           />

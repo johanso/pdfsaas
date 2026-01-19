@@ -54,7 +54,14 @@ export type { DpiOption, Language } from "@/lib/ocr-constants";
 // ============================================================================
 
 export function useOcrPdf() {
-  const { files, addFiles, reset: resetContextFiles } = usePdfFiles();
+  const {
+    files,
+    addFiles,
+    reset: resetContextFiles,
+    hasPasswordError,
+    passwordProtectedFileName,
+    clearPasswordError
+  } = usePdfFiles();
   const file = files[0]?.file || null;
   const { loadDocument } = usePdfjs();
 
@@ -116,10 +123,10 @@ export function useOcrPdf() {
 
   // -- Core Processor --
   const processor = useToolProcessor<
-    { 
-      languages: string[]; 
-      dpi: DpiOption; 
-      optimize: boolean; 
+    {
+      languages: string[];
+      dpi: DpiOption;
+      optimize: boolean;
       pages: PageInfo[];
       fileName?: string;
     },
@@ -350,6 +357,9 @@ export function useOcrPdf() {
     dpi,
     optimize,
     result: processor.result,
+    hasPasswordError,
+    passwordProtectedFileName,
+    clearPasswordError,
 
     // Setters
     setFile,
@@ -371,10 +381,10 @@ export function useOcrPdf() {
       const finalName = outputFileName || file.name.replace(/\.pdf$/i, "-ocr.pdf");
       return processor.process(
         [file],
-        { 
-          languages: selectedLanguages, 
-          dpi, 
-          optimize, 
+        {
+          languages: selectedLanguages,
+          dpi,
+          optimize,
           pages,
           fileName: finalName
         },

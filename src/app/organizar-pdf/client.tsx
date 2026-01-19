@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation";
 import { notify } from "@/lib/errors/notifications";
 
 // Components
+import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import ProcessingScreen from "@/components/processing-screen";
+
 
 // Hooks
 import { useOrganizePdf } from "@/hooks/useOrganizePdf";
@@ -48,7 +50,7 @@ export default function OrganizePdfClient() {
     handleStartNew,
     cancelOperation,
   } = useOrganizePdf();
-  const { loadPdfPages } = usePdfMultiLoader();
+  const { loadPdfPages, hasPasswordError, passwordProtectedFileName, clearPasswordError } = usePdfMultiLoader();
 
   // Unique files for summary
   const uniqueFiles = Array.from(
@@ -76,7 +78,8 @@ export default function OrganizePdfClient() {
   const handleReset = useCallback(() => {
     setPages([]);
     setSelectedIds([]);
-  }, []);
+    clearPasswordError(); // Clear password errors
+  }, [clearPasswordError]);
 
   const handleToggle = useCallback((id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]);
@@ -158,21 +161,19 @@ export default function OrganizePdfClient() {
         toolId="organize-pdf"
         title="Organizar, Ordenar, Eliminar y Añadir PDFs"
         description="El editor de estructura completo. Arrastra para cambiar el orden, inserta páginas en blanco, duplica hojas o combina varios archivos en uno nuevo."
-        hasFiles={pages.length > 0}
+        hasFiles={pages.length > 0 || hasPasswordError}
         onFilesSelected={handleAddFiles}
-        dropzoneMultiple
         onReset={handleReset}
-        features={{
-          selection: true,
-          rotation: true,
-          bulkActions: true,
-        }}
-        state={{ hasSelection: selectedIds.length > 0 }}
-        summaryItems={summaryItems}
-        downloadButtonText={isProcessing ? "Procesando..." : "Descargar PDF"}
-        isDownloadDisabled={isProcessing || pages.length === 0}
+        dropzoneMultiple={true}
+        summaryItems={[
+          { label: "Archivos", value: uniqueFiles.length },
+          { label: "Total Páginas", value: pages.length },
+          { label: "Seleccionadas", value: selectedIds.length },
+        ]}
+        downloadButtonText="Organizar y Descargar"
+        isDownloadDisabled={pages.length === 0 || isProcessing}
         onDownload={() => setShowSaveDialog(true)}
-        isGridLoading={isGridLoading}
+        isGridLoading={isGridLoading && !hasPasswordError}
         saveDialogProps={{
           open: showSaveDialog,
           onOpenChange: setShowSaveDialog,
@@ -188,24 +189,31 @@ export default function OrganizePdfClient() {
           onContinue: () => { },
         }}
       >
-        <PdfGrid
-          items={pages}
-          config={PDF_CARD_PRESETS.organize}
-          selectedIds={selectedIds}
-          showAddCard={true}
-          onAddFiles={handleAddFiles}
-          addCardText="Añadir PDF"
-          addCardSubtext="Arrastra o haz clic"
-          addCardDisabled={isProcessing || isGridLoading}
-          extractCardData={extractCardData}
-          onReorder={setPages}
-          onToggle={handleToggle}
-          onRotateLeft={handleGridRotateLeft}
-          onRotateRight={handleGridRotateRight}
-          onDuplicate={handleDuplicate}
-          onInsertBlank={handleInsertBlank}
-          onRemove={handleRemove}
-        />
+        {pages.length === 0 && hasPasswordError ? (
+          <PasswordProtectedState
+            fileName={passwordProtectedFileName || undefined}
+            onReset={handleReset}
+          />
+        ) : (
+          <PdfGrid
+            items={pages}
+            config={PDF_CARD_PRESETS.organize}
+            layout="grid"
+            extractCardData={extractCardData}
+            onRemove={handleRemove}
+            onReorder={setPages}
+            showAddCard={true}
+            onAddFiles={handleAddFiles}
+            addCardText="Añadir PDF"
+            addCardSubtext="Arrastra o haz clic"
+            selectedIds={selectedIds}
+            onToggle={handleToggle}
+            onRotateLeft={handleGridRotateLeft}
+            onRotateRight={handleGridRotateRight}
+            onDuplicate={handleDuplicate}
+            onInsertBlank={handleInsertBlank}
+          />
+        )}
         <input
           ref={fileInputRef}
           type="file"
@@ -239,14 +247,14 @@ export default function OrganizePdfClient() {
             toolMetrics={
               result
                 ? {
-                    type: "pages",
-                    data: {
-                      pagesProcessed: pages.length,
-                      pagesTotal: pages.length,
-                      operation: `Organizadas (${result.filesUsed} archivo${result.filesUsed !== 1 ? 's' : ''}, ${result.blankPages} en blanco)`,
-                      resultSize: result.resultSize,
-                    }
+                  type: "pages",
+                  data: {
+                    pagesProcessed: pages.length,
+                    pagesTotal: pages.length,
+                    operation: `Organizadas (${result.filesUsed} archivo${result.filesUsed !== 1 ? 's' : ''}, ${result.blankPages} en blanco)`,
+                    resultSize: result.resultSize,
                   }
+                }
                 : undefined
             }
           />

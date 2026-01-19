@@ -21,6 +21,7 @@ import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import ProcessingScreen from "@/components/processing-screen";
 import { Separator } from "@/components/ui/separator";
+import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 import { Card, CardContent } from "@/components/ui/card";
 
 // Hooks
@@ -62,6 +63,9 @@ export default function RepairPdfClient() {
     removeFile,
     reset: resetFiles,
     isLoading: isFilesLoading,
+    hasPasswordError,
+    passwordProtectedFileName,
+    clearPasswordError,
   } = usePdfFiles();
 
   const {
@@ -139,6 +143,7 @@ export default function RepairPdfClient() {
     setIsDialogOpen(false);
     setCheckResult(null);
     handleStartNew();
+    clearPasswordError();
   };
 
   const handlePreSubmit = () => {
@@ -166,14 +171,14 @@ export default function RepairPdfClient() {
         toolId="repair-pdf"
         title="Recuperar PDF Dañados y Corruptos"
         description="¿Tu PDF no abre o muestra errores? Nuestra herramienta diagnostica y reconstruye la estructura interna para recuperar tu información valiosa."
-        hasFiles={!!file}
+        hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
         summaryItems={[]}
         downloadButtonText="Reparar PDF"
         isDownloadDisabled={!showRepairButton || isProcessing || isChecking}
         onDownload={handlePreSubmit}
-        isGridLoading={isFilesLoading && files.length === 0}
+        isGridLoading={isFilesLoading && files.length === 0 && !hasPasswordError}
         sidebarCustomControls={
           <div className="space-y-2">
             <div className="space-y-3 mb-4">
@@ -220,15 +225,14 @@ export default function RepairPdfClient() {
                 </Button>
 
                 {checkResult && (
-                  <Card className={`border ${
-                    checkResult.status === "ok"
+                  <Card className={`border ${checkResult.status === "ok"
                       ? "border-green-500 bg-green-50 dark:bg-green-900/20"
                       : checkResult.status === "damaged"
-                      ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20"
-                      : checkResult.status === "encrypted"
-                      ? "border-red-500 bg-red-50 dark:bg-red-900/20"
-                      : "border-red-500 bg-red-50 dark:bg-red-900/20"
-                  }`}>
+                        ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20"
+                        : checkResult.status === "encrypted"
+                          ? "border-red-500 bg-red-50 dark:bg-red-900/20"
+                          : "border-red-500 bg-red-50 dark:bg-red-900/20"
+                    }`}>
                     <CardContent className="py-2">
                       <div className="flex">
                         <div className="flex-1">
@@ -236,10 +240,10 @@ export default function RepairPdfClient() {
                             {checkResult.status === "ok"
                               ? "El PDF está en buen estado"
                               : checkResult.status === "damaged"
-                              ? "El PDF está dañado"
-                              : checkResult.status === "encrypted"
-                              ? "El PDF está protegido"
-                              : "El archivo no es válido"}
+                                ? "El PDF está dañado"
+                                : checkResult.status === "encrypted"
+                                  ? "El PDF está protegido"
+                                  : "El archivo no es válido"}
                           </p>
                           {checkResult.recommendation && (
                             <p className="text-xs text-muted-foreground">
@@ -281,13 +285,20 @@ export default function RepairPdfClient() {
         }}
         layout="grid"
       >
-        <PdfGrid
-          items={files}
-          config={PDF_CARD_PRESETS.compress}
-          layout="list"
-          extractCardData={extractCardData}
-          onRemove={removeFile}
-        />
+        {files.length === 0 && hasPasswordError ? (
+          <PasswordProtectedState
+            fileName={passwordProtectedFileName || undefined}
+            onReset={handleReset}
+          />
+        ) : (
+          <PdfGrid
+            items={files}
+            config={PDF_CARD_PRESETS.compress}
+            layout="list"
+            extractCardData={extractCardData}
+            onRemove={removeFile}
+          />
+        )}
       </PdfToolLayout>
 
       {(isProcessing || isComplete) && (
@@ -305,13 +316,13 @@ export default function RepairPdfClient() {
           toolMetrics={
             result
               ? {
-                  type: "repair",
-                  data: {
-                    repairActions: result.repairActions,
-                    fullyRepaired: result.fullyRepaired,
-                    resultSize: result.resultSize,
-                  }
+                type: "repair",
+                data: {
+                  repairActions: result.repairActions,
+                  fullyRepaired: result.fullyRepaired,
+                  resultSize: result.resultSize,
                 }
+              }
               : undefined
           }
         />
