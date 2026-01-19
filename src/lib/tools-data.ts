@@ -16,7 +16,7 @@ export const TOOLS: Record<string, Tool> = {
   'merge-pdf': {
     id: 'merge-pdf',
     name: 'Unir PDF',
-    description: 'Combina múltiples PDFs en uno solo',
+    description: 'Combina múltiples documentos en un solo archivo ordenado.',
     path: '/unir-pdf',
     icon: 'Combine',
     category: 'organize',
@@ -25,7 +25,7 @@ export const TOOLS: Record<string, Tool> = {
   'split-pdf': {
     id: 'split-pdf',
     name: 'Dividir PDF',
-    description: 'Separa un PDF en múltiples archivos',
+    description: 'Extrae páginas o separa un documento grande en partes.',
     path: '/dividir-pdf',
     icon: 'Split',
     category: 'organize',
@@ -52,7 +52,7 @@ export const TOOLS: Record<string, Tool> = {
   'organize-pdf': {
     id: 'organize-pdf',
     name: 'Organizar PDF',
-    description: 'Reordena y gestiona páginas',
+    description: 'Ordena, rota o elimina páginas innecesarias de tu documento.',
     path: '/organizar-pdf',
     icon: 'Layers',
     category: 'organize',
@@ -73,7 +73,7 @@ export const TOOLS: Record<string, Tool> = {
   'pdf-to-image': {
     id: 'pdf-to-image',
     name: 'PDF a Imagen',
-    description: 'Convierte páginas a JPG, PNG, WebP',
+    description: 'Convierte páginas de PDF a imágenes JPG, PNG o WebP de alta calidad.',
     path: '/pdf-a-imagen',
     icon: 'Image',
     category: 'convert-from-pdf',
@@ -114,7 +114,7 @@ export const TOOLS: Record<string, Tool> = {
   'images-to-pdf': {
     id: 'images-to-pdf',
     name: 'Imagen a PDF',
-    description: 'Convierte fotos a documentos PDF',
+    description: 'Transforma imágenes (JPG, PNG) o documentos Office a PDF.',
     path: '/imagen-a-pdf',
     icon: 'Images',
     category: 'convert-to-pdf',
@@ -237,7 +237,7 @@ export const TOOLS: Record<string, Tool> = {
   'protect-pdf': {
     id: 'protect-pdf',
     name: 'Proteger PDF',
-    description: 'Agrega contraseña de seguridad',
+    description: 'Encripta tus archivos con contraseña para máxima seguridad.',
     path: '/proteger-pdf',
     icon: 'Lock',
     category: 'security',
@@ -247,7 +247,7 @@ export const TOOLS: Record<string, Tool> = {
   'unlock-pdf': {
     id: 'unlock-pdf',
     name: 'Desbloquear',
-    description: 'Elimina restricciones del PDF',
+    description: 'Elimina contraseñas de seguridad de archivos PDF.',
     path: '/desbloquear-pdf',
     icon: 'Unlock',
     category: 'security',
@@ -257,7 +257,7 @@ export const TOOLS: Record<string, Tool> = {
   'sign-pdf': {
     id: 'sign-pdf',
     name: 'Firmar PDF',
-    description: 'Dibuja o sube tu firma',
+    description: 'Dibuja tu firma digital y sella tus documentos legalmente.',
     path: '/firmar-pdf',
     icon: 'PenTool',
     category: 'security',
@@ -276,54 +276,54 @@ export const TOOLS: Record<string, Tool> = {
   },
 
   // --- OPTIMIZE ---
-'compress-pdf': {
-  id: 'compress-pdf',
-  name: 'Comprimir PDF',
-  description: 'Reduce el tamaño del archivo manteniendo calidad',
-  path: '/comprimir-pdf',
-  icon: 'Minimize2',
-  category: 'optimize',
-  isAvailable: true,
-  comingSoon: false
-},
-'ocr-pdf': {
-  id: 'ocr-pdf',
-  name: 'OCR PDF',
-  description: 'Convierte PDFs escaneados en texto seleccionable y buscable',
-  path: '/ocr-pdf',
-  icon: 'ScanText',
-  category: 'optimize',
-  isAvailable: true,
-  comingSoon: false
-},
-'pdf-to-grayscale': {
-  id: 'pdf-to-grayscale',
-  name: 'Escala de Grises',
-  description: 'Convierte a blanco y negro para ahorrar tinta',
-  path: '/pdf-escala-grises',
-  icon: 'Contrast',
-  category: 'optimize',
-  isAvailable: true,
-  comingSoon: false
-},
-'flatten-pdf': {
-  id: 'flatten-pdf',
-  name: 'Aplanar PDF',
-  description: 'Fusiona formularios y anotaciones en el documento',
-  path: '/aplanar-pdf',
-  icon: 'Layers',
-  category: 'optimize',
-  isAvailable: true,
-  comingSoon: false
-},
-'repair-pdf': {
-  id: 'repair-pdf',
-  name: 'Reparar PDF',
-  description: 'Intenta recuperar PDFs corruptos o dañados',
-  path: '/reparar-pdf',
-  icon: 'Wrench',
-  category: 'optimize',
-  isAvailable: true,
-  comingSoon: false
-}
+  'compress-pdf': {
+    id: 'compress-pdf',
+    name: 'Comprimir PDF',
+    description: 'Reduce el peso de tu archivo manteniendo la mejor calidad.',
+    path: '/comprimir-pdf',
+    icon: 'Minimize2',
+    category: 'optimize',
+    isAvailable: true,
+    comingSoon: false
+  },
+  'ocr-pdf': {
+    id: 'ocr-pdf',
+    name: 'OCR PDF',
+    description: 'Reconoce texto en documentos escaneados y hazlos buscables.',
+    path: '/ocr-pdf',
+    icon: 'ScanText',
+    category: 'optimize',
+    isAvailable: true,
+    comingSoon: false
+  },
+  'pdf-to-grayscale': {
+    id: 'pdf-to-grayscale',
+    name: 'Escala de Grises',
+    description: 'Convierte a blanco y negro para ahorrar tinta',
+    path: '/pdf-escala-grises',
+    icon: 'Contrast',
+    category: 'optimize',
+    isAvailable: true,
+    comingSoon: false
+  },
+  'flatten-pdf': {
+    id: 'flatten-pdf',
+    name: 'Aplanar PDF',
+    description: 'Fusiona capas y formularios para evitar la edición del contenido.',
+    path: '/aplanar-pdf',
+    icon: 'Layers',
+    category: 'optimize',
+    isAvailable: true,
+    comingSoon: false
+  },
+  'repair-pdf': {
+    id: 'repair-pdf',
+    name: 'Reparar PDF',
+    description: 'Intenta recuperar PDFs corruptos o dañados',
+    path: '/reparar-pdf',
+    icon: 'Wrench',
+    category: 'optimize',
+    isAvailable: true,
+    comingSoon: false
+  }
 };

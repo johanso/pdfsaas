@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Grip, FileText, Zap, Menu } from "lucide-react";
+import { Grip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -13,10 +13,7 @@ import {
   SheetTrigger,
   SheetClose
 } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
-import merge from "@/images/merge.png";
 import { ThemeToggle } from "../theme-toggle";
 import { TOOL_CATEGORIES } from "@/lib/tools-categories";
 import { TOOLS } from "@/lib/tools-data";

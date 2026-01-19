@@ -25,7 +25,7 @@ const Features = () => {
     : allTools.filter(tool => tool.categoryInfo.id === activeCategory);
 
   return (
-    <section id="features" className="relative py-32 overflow-hidden">
+    <section id="features" className="relative py-20 overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-muted/30" />
 
@@ -41,14 +41,12 @@ const Features = () => {
             <span className="text-sm font-medium tracking-wide uppercase">Suite Completa</span>
           </div>
 
-          <h2 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-            Herramientas
-            <span className="block text-primary">Profesionales</span>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6 leading-tight">
+            Herramientas Populares
           </h2>
 
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Todo lo que necesitas para trabajar con documentos PDF.
-            Procesamiento local, sin límites, sin compromisos.
+            Selecciona una herramienta para comenzar a trabajar con tus archivos PDF
           </p>
         </div>
 

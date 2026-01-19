@@ -19,10 +19,10 @@ const steps = [
 ];
 
 const benefits = [
-  "Procesamiento 100% local en tu navegador",
-  "Tus archivos nunca salen de tu dispositivo",
-  "Sin registro ni instalación requerida",
-  "Funciona offline después de cargar",
+  "Nuestros servidores en la nube procesan tus archivos en segundos. Sin colas de espera ni software que ralentice tu ordenador.",
+  "Tu privacidad es sagrada. Usamos encriptación SSL de 256 bits y eliminamos tus archivos de nuestros servidores automáticamente tras 2 horas.",
+  "Funciona donde tú estés. Accede desde Windows, Mac, Linux, iOS o Android. Solo necesitas un navegador web.",
+  "Mantenemos el formato original de tus documentos. Tablas, imágenes y fuentes se conservan perfectas tras la conversión o compresión.",
 ];
 
 const HowItWorks = () => {
@@ -67,7 +67,7 @@ const HowItWorks = () => {
         {/* Benefits */}
         <div className="bg-card border border-border rounded-2xl p-8 md:p-12 max-w-4xl mx-auto">
           <h3 className="text-xl font-bold text-foreground text-center mb-8">
-            ¿Por qué elegirnos?
+            La forma inteligente de trabajar con documentos
           </h3>
 
           <div className="grid sm:grid-cols-2 gap-4">
