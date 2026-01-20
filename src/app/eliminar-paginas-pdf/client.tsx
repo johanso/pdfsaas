@@ -150,6 +150,8 @@ export default function DeletePagesClient() {
         hasFiles={!!file}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
+        hasPasswordError={hasPasswordError}
+        passwordProtectedFileName={passwordProtectedFileName}
         features={{ selection: true }}
         actions={{
           onSelectAll: selectAll,
@@ -246,21 +248,14 @@ export default function DeletePagesClient() {
           onContinue: () => { },
         }}
       >
-        {hasPasswordError ? (
-          <PasswordProtectedState
-            fileName={passwordProtectedFileName || undefined}
-            onReset={handleReset}
-          />
-        ) : (
-          <PdfGrid
-            items={pages}
-            config={PDF_CARD_PRESETS.delete}
-            selectedIds={selectedIds}
-            extractCardData={extractCardData}
-            onReorder={reorderPages}
-            onToggle={handleToggle}
-          />
-        )}
+        <PdfGrid
+          items={pages}
+          config={PDF_CARD_PRESETS.delete}
+          selectedIds={selectedIds}
+          extractCardData={extractCardData}
+          onReorder={reorderPages}
+          onToggle={handleToggle}
+        />
       </PdfToolLayout>
 
       {/* Processing Screen */}

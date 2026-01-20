@@ -152,6 +152,8 @@ export default function ExtractPdfClient() {
         hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
+        hasPasswordError={hasPasswordError}
+        passwordProtectedFileName={passwordProtectedFileName}
         features={{ selection: true }}
         actions={{
           onSelectAll: selectAll,
@@ -246,21 +248,14 @@ export default function ExtractPdfClient() {
           onContinue: () => { },
         }}
       >
-        {hasPasswordError ? (
-          <PasswordProtectedState
-            fileName={passwordProtectedFileName || undefined}
-            onReset={handleReset}
-          />
-        ) : (
-          <PdfGrid
-            items={pages}
-            config={PDF_CARD_PRESETS.extract}
-            extractCardData={extractCardData}
-            selectedIds={selectedIds}
-            onToggle={handleToggle}
-            onReorder={reorderPages}
-          />
-        )}
+        <PdfGrid
+          items={pages}
+          config={PDF_CARD_PRESETS.extract}
+          extractCardData={extractCardData}
+          selectedIds={selectedIds}
+          onToggle={handleToggle}
+          onReorder={reorderPages}
+        />
       </PdfToolLayout>
 
       {/* Processing Screen */}

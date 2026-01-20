@@ -20,7 +20,6 @@ import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
 import ProcessingScreen from "@/components/processing-screen";
 import { Separator } from "@/components/ui/separator";
-import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 
 // Hooks
 import { usePdfFiles } from "@/hooks/usePdfFiles";
@@ -142,6 +141,8 @@ export default function GrayscalePdfClient() {
         hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
+        hasPasswordError={hasPasswordError}
+        passwordProtectedFileName={passwordProtectedFileName}
         summaryItems={[]}
         downloadButtonText="Descargar PDF"
         isDownloadDisabled={isProcessing || files.length === 0}
@@ -206,20 +207,13 @@ export default function GrayscalePdfClient() {
         }}
         layout="grid"
       >
-        {files.length === 0 && hasPasswordError ? (
-          <PasswordProtectedState
-            fileName={passwordProtectedFileName || undefined}
-            onReset={handleReset}
-          />
-        ) : (
-          <PdfGrid
-            items={files}
-            config={PDF_CARD_PRESETS.compress}
-            layout="list"
-            extractCardData={extractCardData}
-            onRemove={removeFile}
-          />
-        )}
+        <PdfGrid
+          items={files}
+          config={PDF_CARD_PRESETS.compress}
+          layout="list"
+          extractCardData={extractCardData}
+          onRemove={removeFile}
+        />
       </PdfToolLayout>
 
       {(isProcessing || isComplete) && (

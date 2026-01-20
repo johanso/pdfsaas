@@ -48,13 +48,13 @@ export function GlobalToolbar({
   // Desktop implementation
   const DesktopToolbar = () => (
     <div className="hidden lg:flex justify-start items-center gap-2 overflow-x-auto mb-4">
-      <div className="flex relative left-1 gap-1 bg-white border dark:bg-card p-1 my-0.5 rounded-lg">
+      <div className="flex relative left-1 gap-1 bg-white border dark:bg-card p-1 my-0.5 rounded-3xl">
         {/* Grupo Selección */}
         {features.selection && (
           <>
             <TooltipButton
               icon="check-square"
-              variant="secondary"
+              variant="default"
               side="top"
               disabled={!actions.onSelectAll}
               tooltip="Seleccionar todos"
@@ -63,7 +63,7 @@ export function GlobalToolbar({
 
             <TooltipButton
               icon="square"
-              variant="secondary"
+              variant="default"
               side="top"
               disabled={!actions.onDeselectAll}
               tooltip="Deseleccionar todos"
@@ -72,7 +72,7 @@ export function GlobalToolbar({
 
             <TooltipButton
               icon="arrow-left-right"
-              variant="secondary"
+              variant="default"
               side="top"
               disabled={!actions.onInvertSelection}
               tooltip="Invertir selección"
@@ -86,7 +86,7 @@ export function GlobalToolbar({
           <>
             <TooltipButton
               icon="sort-alpha-down"
-              variant="secondary"
+              variant="default"
               side="top"
               disabled={!actions.onSortAZ}
               tooltip="Ordenar alfabéticamente (A-Z)"
@@ -95,7 +95,7 @@ export function GlobalToolbar({
 
             <TooltipButton
               icon="sort-alpha-down-alt"
-              variant="secondary"
+              variant="default"
               side="top"
               disabled={!actions.onSortZA}
               tooltip="Ordenar alfabéticamente (Z-A)"
@@ -109,7 +109,7 @@ export function GlobalToolbar({
           <>
             <TooltipButton
               icon="arrow-clockwise"
-              variant="secondary"
+              variant="default"
               side="top"
               tooltip="Girar documentos 90° a la derecha"
               disabled={!actions.onRotateRights}
@@ -118,7 +118,7 @@ export function GlobalToolbar({
 
             <TooltipButton
               icon="arrow-counterclockwise"
-              variant="secondary"
+              variant="default"
               side="top"
               tooltip="Girar documentos 90° a la izquierda"
               disabled={!actions.onRotateLefts}
@@ -127,7 +127,7 @@ export function GlobalToolbar({
 
             <TooltipButton
               icon="arrow-repeat"
-              variant="secondary"
+              variant="default"
               side="top"
               tooltip="Restablecer orientación"
               disabled={!actions.onResetOrientation}
@@ -141,7 +141,7 @@ export function GlobalToolbar({
           <>
             <TooltipButton
               icon="copy"
-              variant="secondary"
+              variant="default"
               side="top"
               tooltip="Duplicar archivos seleccionados"
               disabled={!actions.onDuplicateSelected || !state.hasSelection}

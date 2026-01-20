@@ -116,6 +116,8 @@ export default function RotatePdfClient() {
         hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
+        hasPasswordError={hasPasswordError}
+        passwordProtectedFileName={passwordProtectedFileName}
         features={{ rotation: true }}
         actions={{
           onRotateRights: handleRotateRight,
@@ -156,23 +158,16 @@ export default function RotatePdfClient() {
           onContinue: () => { },
         }}
       >
-        {hasPasswordError ? (
-          <PasswordProtectedState
-            fileName={passwordProtectedFileName || undefined}
-            onReset={handleReset}
-          />
-        ) : (
-          <PdfGrid
-            items={pages}
-            config={PDF_CARD_PRESETS.rotate}
-            extractCardData={extractCardData}
-            onReorder={reorderPages}
-            onRotate={rotatePage}
-            onRotateLeft={handleGridRotateLeft}
-            onRotateRight={handleGridRotateRight}
-            onRemove={handleRemovePage}
-          />
-        )}
+        <PdfGrid
+          items={pages}
+          config={PDF_CARD_PRESETS.rotate}
+          extractCardData={extractCardData}
+          onReorder={reorderPages}
+          onRotate={rotatePage}
+          onRotateLeft={handleGridRotateLeft}
+          onRotateRight={handleGridRotateRight}
+          onRemove={handleRemovePage}
+        />
       </PdfToolLayout>
 
       {/* Processing Screen */}

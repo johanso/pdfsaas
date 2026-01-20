@@ -25,7 +25,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
-import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 
 // Hooks
 import { usePdfFiles } from "@/hooks/usePdfFiles";
@@ -151,6 +150,8 @@ export default function CompressPdfClient() {
         hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
+        hasPasswordError={hasPasswordError}
+        passwordProtectedFileName={passwordProtectedFileName}
         summaryItems={[]}
         downloadButtonText="Comprimir PDF"
         isDownloadDisabled={isProcessing || files.length === 0}
@@ -272,20 +273,13 @@ export default function CompressPdfClient() {
         }}
         layout="grid"
       >
-        {hasPasswordError ? (
-          <PasswordProtectedState
-            fileName={passwordProtectedFileName || undefined}
-            onReset={handleReset}
-          />
-        ) : (
-          <PdfGrid
-            items={files}
-            config={PDF_CARD_PRESETS.compress}
-            layout="list"
-            extractCardData={extractCardData}
-            onRemove={removeFile}
-          />
-        )}
+        <PdfGrid
+          items={files}
+          config={PDF_CARD_PRESETS.compress}
+          layout="list"
+          extractCardData={extractCardData}
+          onRemove={removeFile}
+        />
       </PdfToolLayout>
 
       {(isProcessing || isComplete) && (

@@ -210,6 +210,8 @@ export default function SignPdfClient() {
         hasFiles={files.length > 0 || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
+        hasPasswordError={hasPasswordError}
+        passwordProtectedFileName={passwordProtectedFileName}
         summaryItems={activePdfFile ? [
           { label: "Archivo", value: activePdfFile.name },
           { label: "Firmas colocadas", value: (filesSignatures[activePdfFile.id]?.length || 0) }
@@ -342,12 +344,7 @@ export default function SignPdfClient() {
           onContinue: handleStartNew,
         }}
       >
-        {files.length === 0 && hasPasswordError ? (
-          <PasswordProtectedState
-            fileName={passwordProtectedFileName || undefined}
-            onReset={handleReset}
-          />
-        ) : activePdfFile ? (
+        {activePdfFile ? (
           <div className="w-full bg-zinc-200/50 dark:bg-zinc-950/50 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-inner h-[calc(100vh-250px)] relative">
             <PdfSignerEditorArea
               file={activePdfFile.file}

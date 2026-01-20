@@ -315,6 +315,8 @@ export default function OcrPdfClient() {
         onFilesSelected={handleFilesSelected}
         acceptedFileTypes=".pdf,application/pdf"
         onReset={handleReset}
+        hasPasswordError={hasPasswordError}
+        passwordProtectedFileName={passwordProtectedFileName}
         summaryItems={[
           { label: "Archivo", value: file?.name || "-" },
           { label: "Páginas", value: pages.length || "-" },
@@ -342,20 +344,13 @@ export default function OcrPdfClient() {
           onContinue: () => { },
         }}
       >
-        {!hasContent && hasPasswordError ? (
-          <PasswordProtectedState
-            fileName={passwordProtectedFileName || undefined}
-            onReset={handleReset}
-          />
-        ) : (
-          <PdfGrid
-            items={gridItems}
-            config={PDF_CARD_PRESETS.ocr}
-            extractCardData={extractCardData}
-            onRemove={handleRemovePage}
-            onReorder={handleReorderPages}
-          />
-        )}
+        <PdfGrid
+          items={gridItems}
+          config={PDF_CARD_PRESETS.ocr}
+          extractCardData={extractCardData}
+          onRemove={handleRemovePage}
+          onReorder={handleReorderPages}
+        />
       </PdfToolLayout>
 
       {(isProcessing || isComplete) && (

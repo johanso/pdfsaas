@@ -188,6 +188,8 @@ export default function PdfToImageClient() {
         hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
+        hasPasswordError={hasPasswordError}
+        passwordProtectedFileName={passwordProtectedFileName}
         summaryItems={[
           { label: "Archivo", value: file ? file.name : "Ningún archivo seleccionado" },
           { label: "Páginas", value: pages.length },
@@ -326,20 +328,13 @@ export default function PdfToImageClient() {
           onContinue: () => { },
         }}
       >
-        {hasPasswordError ? (
-          <PasswordProtectedState
-            fileName={passwordProtectedFileName || undefined}
-            onReset={handleReset}
-          />
-        ) : (
-          <PdfGrid
-            items={pages}
-            config={PDF_CARD_PRESETS.pdftoImg}
-            extractCardData={extractCardData}
-            onRemove={handleRemove}
-            onReorder={reorderPages}
-          />
-        )}
+        <PdfGrid
+          items={pages}
+          config={PDF_CARD_PRESETS.pdftoImg}
+          extractCardData={extractCardData}
+          onRemove={handleRemove}
+          onReorder={reorderPages}
+        />
       </PdfToolLayout>
 
       {(isProcessing || isComplete) && (

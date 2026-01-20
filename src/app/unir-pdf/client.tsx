@@ -4,7 +4,6 @@ import { useState, useRef, useCallback } from "react";
 import { notify } from "@/lib/errors/notifications";
 
 import { Separator } from "@/components/ui/separator";
-import { PasswordProtectedState } from "@/components/pdf-system/password-protected-state";
 import { PdfGrid } from "@/components/pdf-system/pdf-grid";
 import { PDF_CARD_PRESETS } from "@/components/pdf-system/pdf-card";
 import { PdfToolLayout } from "@/components/pdf-system/pdf-tool-layout";
@@ -89,6 +88,8 @@ export default function UnirPdfClient() {
         dropzoneMultiple={true}
         onReset={handleReset}
         textAdd="Añadir otro PDF"
+        hasPasswordError={hasPasswordError}
+        passwordProtectedFileName={passwordProtectedFileName}
         features={{ sorting: true }}
         actions={{
           onSortAZ: sortAZ,
@@ -118,43 +119,34 @@ export default function UnirPdfClient() {
         }}
         layout="grid"
       >
-        {files.length === 0 && hasPasswordError ? (
-          <PasswordProtectedState
-            fileName={passwordProtectedFileName || undefined}
-            onReset={handleReset}
-          />
-        ) : (
-          <>
-            <PdfGrid
-              items={files}
-              config={PDF_CARD_PRESETS.merge}
-              layout="grid"
-              extractCardData={extractCardData}
-              onReorder={reorderFiles}
-              onRemove={removeFile}
-              showAddCard={true}
-              onAddFiles={handleFiles}
-              addCardText="Añadir PDF"
-              addCardSubtext="Arrastra o haz clic"
-              addCardDisabled={isProcessing}
-            />
+        <PdfGrid
+          items={files}
+          config={PDF_CARD_PRESETS.merge}
+          layout="grid"
+          extractCardData={extractCardData}
+          onReorder={reorderFiles}
+          onRemove={removeFile}
+          showAddCard={true}
+          onAddFiles={handleFiles}
+          addCardText="Añadir PDF"
+          addCardSubtext="Arrastra o haz clic"
+          addCardDisabled={isProcessing}
+        />
 
-            {/* Hidden file input for "Añadir PDF" button */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/pdf"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files) {
-                  handleFiles(Array.from(e.target.files));
-                }
-              }}
-            />
-          </>
-        )}
-      </PdfToolLayout >
+        {/* Hidden file input for "Añadir PDF" button */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files) {
+              handleFiles(Array.from(e.target.files));
+            }
+          }}
+        />
+      </PdfToolLayout>
 
       {/* Processing Screen */}
       {

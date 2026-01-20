@@ -164,6 +164,8 @@ export default function OrganizePdfClient() {
         hasFiles={pages.length > 0 || hasPasswordError}
         onFilesSelected={handleAddFiles}
         onReset={handleReset}
+        hasPasswordError={hasPasswordError}
+        passwordProtectedFileName={passwordProtectedFileName}
         dropzoneMultiple={true}
         summaryItems={[
           { label: "Archivos", value: uniqueFiles.length },

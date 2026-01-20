@@ -174,6 +174,8 @@ export default function RepairPdfClient() {
         hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
+        hasPasswordError={hasPasswordError}
+        passwordProtectedFileName={passwordProtectedFileName}
         summaryItems={[]}
         downloadButtonText="Reparar PDF"
         isDownloadDisabled={!showRepairButton || isProcessing || isChecking}
@@ -226,12 +228,12 @@ export default function RepairPdfClient() {
 
                 {checkResult && (
                   <Card className={`border ${checkResult.status === "ok"
-                      ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                      : checkResult.status === "damaged"
-                        ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20"
-                        : checkResult.status === "encrypted"
-                          ? "border-red-500 bg-red-50 dark:bg-red-900/20"
-                          : "border-red-500 bg-red-50 dark:bg-red-900/20"
+                    ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                    : checkResult.status === "damaged"
+                      ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20"
+                      : checkResult.status === "encrypted"
+                        ? "border-red-500 bg-red-50 dark:bg-red-900/20"
+                        : "border-red-500 bg-red-50 dark:bg-red-900/20"
                     }`}>
                     <CardContent className="py-2">
                       <div className="flex">
@@ -285,20 +287,13 @@ export default function RepairPdfClient() {
         }}
         layout="grid"
       >
-        {files.length === 0 && hasPasswordError ? (
-          <PasswordProtectedState
-            fileName={passwordProtectedFileName || undefined}
-            onReset={handleReset}
-          />
-        ) : (
-          <PdfGrid
-            items={files}
-            config={PDF_CARD_PRESETS.compress}
-            layout="list"
-            extractCardData={extractCardData}
-            onRemove={removeFile}
-          />
-        )}
+        <PdfGrid
+          items={files}
+          config={PDF_CARD_PRESETS.compress}
+          layout="list"
+          extractCardData={extractCardData}
+          onRemove={removeFile}
+        />
       </PdfToolLayout>
 
       {(isProcessing || isComplete) && (

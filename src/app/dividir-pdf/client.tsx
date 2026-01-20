@@ -146,6 +146,8 @@ export default function SplitPdfClient() {
         hasFiles={!!file || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}
+        hasPasswordError={hasPasswordError}
+        passwordProtectedFileName={passwordProtectedFileName}
         summaryItems={[
           { label: "Total páginas", value: numPages },
           { label: "Modo", value: mode === "ranges" ? "Por Rangos" : "Cantidad Fija" },
@@ -254,21 +256,14 @@ export default function SplitPdfClient() {
           onContinue: () => { },
         }}
       >
-        {hasPasswordError ? (
-          <PasswordProtectedState
-            fileName={passwordProtectedFileName || undefined}
-            onReset={handleReset}
-          />
-        ) : (
-          <SplitGrid
-            file={file!}
-            numPages={numPages}
-            mode={mode}
-            ranges={ranges}
-            fixedSize={fixedSize}
-            onRangeClick={handleRangeClick}
-          />
-        )}
+        <SplitGrid
+          file={file!}
+          numPages={numPages}
+          mode={mode}
+          ranges={ranges}
+          fixedSize={fixedSize}
+          onRangeClick={handleRangeClick}
+        />
       </PdfToolLayout>
 
       {(isProcessing || isComplete) && (

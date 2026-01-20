@@ -31,11 +31,11 @@ export function TooltipButton({
         <Button
           size="icon"
           variant={variant}
-          className={`shadow-none disabled:opacity-15 disabled:bg-zinc-100 ${disabled ? "hidden" : ""}`}
+          className={`rounded-full shadow-none disabled:opacity-15 disabled:bg-zinc-100 ${disabled ? "hidden" : ""}`}
           disabled={disabled}
           onClick={onClick}
         >
-          <BootstrapIcon name={icon} size={iconSize} color={variant === "destructive" ? "#fff" : "var(--accent-foreground)"} />
+          <BootstrapIcon name={icon} size={iconSize} color="white" />
         </Button>
       </TooltipTrigger>
       <TooltipContent side={side}>
