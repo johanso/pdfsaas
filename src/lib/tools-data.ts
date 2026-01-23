@@ -189,8 +189,8 @@ export const TOOLS: Record<string, Tool> = {
     path: '/marca-de-agua',
     icon: 'Droplet',
     category: 'edit',
-    isAvailable: false,
-    comingSoon: true
+    isAvailable: true,
+    comingSoon: false
   },
   'add-page-numbers': {
     id: 'add-page-numbers',

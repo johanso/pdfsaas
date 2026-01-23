@@ -26,6 +26,8 @@ export function usePdfMultiLoader() {
         originalIndex: number;
         rotation: number;
         isBlank: boolean;
+        width: number;
+        height: number;
       }> = [];
 
       for (const file of files) {
@@ -41,12 +43,17 @@ export function usePdfMultiLoader() {
           const pdf = await loadDocument(objectUrl);
 
           for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({ scale: 1 });
+
             allPages.push({
               id: crypto.randomUUID(),
               file: file,
               originalIndex: i,
               rotation: 0,
-              isBlank: false
+              isBlank: false,
+              width: viewport.width,
+              height: viewport.height
             });
           }
 

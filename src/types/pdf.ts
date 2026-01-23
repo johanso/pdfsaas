@@ -13,4 +13,6 @@ export interface PageData {
     rotation: number;
     file: File;
     isBlank: boolean;
+    width?: number;
+    height?: number;
 }

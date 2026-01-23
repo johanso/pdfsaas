@@ -43,6 +43,8 @@ export interface PdfCardData {
   pageCount?: number;
   isBlank?: boolean;
   previewUrl?: string;
+  width?: number;
+  height?: number;
 }
 
 export interface PdfCardConfig {
@@ -60,12 +62,16 @@ export interface PdfCardConfig {
   removable?: boolean; // Mantenido por compatibilidad
   allowDelete?: boolean;
   showPreview?: boolean;
+  disableInteractions?: boolean;
 
   // Información a mostrar
   showFileName?: boolean;
   showPageNumber?: boolean;
   showFileInfo?: boolean;
   showRotationBadge?: boolean;
+
+  // Contenido personalizado
+  overlayContent?: (data: PdfCardData) => React.ReactNode;
 
   // Estilos personalizados
   selectedColorName?: string;
@@ -229,6 +235,21 @@ export const PDF_CARD_PRESETS = {
     showRotationBadge: false,
     showPreview: false,
   } as PdfCardConfig,
+
+  watermark: {
+    layout: "grid",
+    draggable: false,
+    selectable: false,
+    rotatable: false,
+    removable: false,
+    disableInteractions: true,
+    showFileName: false,
+    showPageNumber: true,
+    showFileInfo: false,
+    showRotationBadge: false,
+    showPreview: true,
+    aspectRatio: "3/4",
+  } as PdfCardConfig,
 };
 
 import { FileText } from "lucide-react";
@@ -263,11 +284,13 @@ export const PdfCard = memo(function PdfCard({
     allowInsertBlank = false,
     removable = false,
     allowDelete = false,
+    showPreview = true,
+    disableInteractions = false,
     showFileName = false,
     showPageNumber = false,
     showFileInfo = false,
     showRotationBadge = true,
-    showPreview = true,
+    overlayContent,
     selectedColorName,
     iconSelectedName,
     aspectRatio = "3/4",
@@ -394,7 +417,7 @@ export const PdfCard = memo(function PdfCard({
               </Button>
             )}
 
-            {(allowDelete || removable) && onRemove && (
+            {!disableInteractions && (allowDelete || removable) && onRemove && (
               <Button
                 size="icon"
                 variant="ghost"
@@ -493,7 +516,7 @@ export const PdfCard = memo(function PdfCard({
               {customActions}
 
               {/* Delete Action */}
-              {(allowDelete || removable) && onRemove && (
+              {!disableInteractions && (allowDelete || removable) && onRemove && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -524,7 +547,7 @@ export const PdfCard = memo(function PdfCard({
             )}
             onClick={handleCardClick}
           >
-            {selectable && (
+            {!disableInteractions && selectable && (
               <Checkbox
                 checked={isSelected}
                 onCheckedChange={onToggle}
@@ -540,10 +563,15 @@ export const PdfCard = memo(function PdfCard({
 
             <div
               className={cn(
-                "relative transition-all duration-300 ease-in-out origin-center flex flex-col items-center justify-center w-full h-full",
+                "relative transition-all duration-300 ease-in-out origin-center flex items-center justify-center max-w-full max-h-full shadow-sm",
                 isSelected && "opacity-20"
               )}
-              style={{ transform: `rotate(${rotation}deg)` }}
+              style={{
+                transform: `rotate(${rotation}deg)`,
+                aspectRatio: (data.width && data.height) ? `${data.width} / ${data.height}` : undefined,
+                width: !(data.width && data.height) ? '100%' : undefined,
+                height: !(data.width && data.height) ? '100%' : undefined,
+              }}
             >
               {data.isBlank ? (
                 <div className="w-full h-full bg-white dark:bg-zinc-800 border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded flex items-center justify-center text-zinc-400 text-xs">
@@ -567,6 +595,13 @@ export const PdfCard = memo(function PdfCard({
                   pageNumber={pageNumber}
                   className="w-full h-full object-contain pointer-events-none"
                 />
+              )}
+
+              {/* Custom Overlay Content - Now correctly scoped to the page bounds */}
+              {overlayContent && (
+                <div className="absolute inset-0 pointer-events-none overflow-hidden rounded">
+                  {overlayContent(data)}
+                </div>
               )}
             </div>
 
@@ -594,7 +629,7 @@ export const PdfCard = memo(function PdfCard({
           </div>
 
           {/* Footer Actions */}
-          {(rotatable || allowRotateLeft || allowRotateRight || subtitle) && (
+          {!disableInteractions && (rotatable || allowRotateLeft || allowRotateRight || subtitle) && (
             <div className="w-max absolute left-1/2 -translate-x-1/2 bottom-4 rounded-full shadow-sm h-8 flex items-center justify-center gap-2 px-3 bg-white dark:bg-zinc-900">
 
               {/* Left Rotation */}
@@ -644,7 +679,7 @@ export const PdfCard = memo(function PdfCard({
                 </Tooltip>
               )}
 
-              {allowInsertBlank && onInsertBlank && (
+              {!disableInteractions && allowInsertBlank && onInsertBlank && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -666,7 +701,7 @@ export const PdfCard = memo(function PdfCard({
                 </Tooltip>
               )}
 
-              {allowDuplicate && onDuplicate && (
+              {!disableInteractions && allowDuplicate && onDuplicate && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button

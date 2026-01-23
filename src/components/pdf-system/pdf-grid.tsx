@@ -33,6 +33,8 @@ export interface PdfGridItem {
   pageCount?: number;
   isBlank?: boolean;
   previewUrl?: string;
+  width?: number;
+  height?: number;
 }
 
 // Helper para extraer datos de card de cualquier tipo
