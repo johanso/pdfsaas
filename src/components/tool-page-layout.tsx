@@ -55,6 +55,8 @@ import {
   Hammer,
   MonitorSmartphone,
   PenTool,
+  Stamp,
+  EyeOff,
 } from "lucide-react";
 import {
   Accordion,
@@ -129,6 +131,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Hammer,
   MonitorSmartphone,
   PenTool,
+  Stamp,
+  EyeOff,
 };
 
 export function ToolPageLayout({

@@ -146,7 +146,7 @@ export default function WatermarkClient() {
 
   // Check if a page should have watermark based on config.pages
   const shouldShowWatermark = useCallback((pageNumber: number) => {
-    console.log('🔍 Checking watermark for page:', pageNumber, 'config.pages:', config.pages);
+    console.log('Checking watermark for page:', pageNumber, 'config.pages:', config.pages);
 
     if (config.pages === 'all') return true;
 
@@ -180,8 +180,8 @@ export default function WatermarkClient() {
 
       <PdfToolLayout
         toolId="add-watermark"
-        title="Marca de Agua PDF"
-        description="Agrega logotipos, sellos o texto confidencial a tus documentos PDF de forma segura."
+        title="Marca de Agua PDF: Poner Logo o Texto en tus Documentos"
+        description='Protege tu propiedad intelectual. Añade sellos de "Confidencial", "Borrador" o tu propio logotipo en todas las páginas de tu PDF en segundos.'
         hasFiles={pages.length > 0 || hasPasswordError}
         onFilesSelected={handleFilesSelected}
         onReset={handleReset}

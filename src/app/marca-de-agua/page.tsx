@@ -1,11 +1,57 @@
-import type { Metadata } from 'next';
-import WatermarkClient from './client';
+import type { Metadata } from "next";
+import dynamic from "next/dynamic";
+import { ToolPageLayout } from "@/components/tool-page-layout";
+import { ToolLoadingSkeleton } from "@/components/tool-loading-skeleton";
+import { watermarkPdfContent } from "@/content/tools/watermark-pdf";
+
+const WatermarkClient = dynamic(() => import("./client"), {
+  loading: () => <ToolLoadingSkeleton />,
+});
+
+const { metadata: meta, jsonLd } = watermarkPdfContent;
 
 export const metadata: Metadata = {
-  title: 'Agregar Marca de Agua a PDF | Herramienta Online Gratuita',
-  description: 'Agrega texto o imágenes como marca de agua a tus documentos PDF. Personaliza posición, transparencia y más. Rápido, seguro y gratuito.',
+  title: meta.title,
+  description: meta.description,
+  keywords: meta.keywords,
+  alternates: {
+    canonical: meta.canonical,
+  },
+  openGraph: {
+    title: meta.title,
+    description: meta.description,
+    type: "website",
+    url: meta.canonical,
+    siteName: "PDF SaaS",
+    images: meta.ogImage ? [
+      {
+        url: meta.ogImage,
+        width: 1200,
+        height: 630,
+        alt: meta.title,
+      },
+    ] : undefined,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function WatermarkPage() {
-  return <WatermarkClient />;
+  return (
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+
+      <ToolPageLayout data={watermarkPdfContent} categoryId="EDIT">
+        <WatermarkClient />
+      </ToolPageLayout>
+    </>
+  );
 }
+
